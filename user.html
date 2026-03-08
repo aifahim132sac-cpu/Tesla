@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
@@ -153,7 +152,7 @@
         };
         
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
+        const auth = firebase.auth(), db = firebase.database();
         let isLogin = true;
         let countdowns = {};
 
@@ -167,37 +166,51 @@
             if(file) document.getElementById('fileName').innerText = "Selected: " + file.name;
         }
 
+        // --- NEW IMGBB UPLOAD FUNCTION ---
         function uploadDeposit() {
             const amount = document.getElementById('depAmount').value;
             const file = document.getElementById('depFile').files[0];
             const btn = document.getElementById('depBtn');
+            const apiKey = 'bb6ae5282e75af49c1e446d17733e498'; // Your ImgBB Key
 
-            if(!amount || !file) return toast("Empty!", "টাকার পরিমাণ এবং স্ক্রিনশট দিন", "warning");
+            if(!amount || !file) return toast("ভুল!", "টাকার পরিমাণ এবং স্ক্রিনশট দিন", "warning");
 
             btn.disabled = true;
             btn.innerText = "UPLOADING...";
 
-            const path = 'deposits/' + auth.currentUser.uid + '_' + Date.now() + '.jpg';
-            const ref = storage.ref(path);
+            const formData = new FormData();
+            formData.append('image', file);
 
-            ref.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
-                return db.ref('payments').push({
-                    uid: auth.currentUser.uid,
-                    amount: parseInt(amount),
-                    type: "Deposit",
-                    ssUrl: url,
-                    time: Date.now(),
-                    status: "Pending"
-                });
-            }).then(() => {
-                toast("Success!", "আপনার পেমেন্ট রিকোয়েস্ট পাঠানো হয়েছে!", "success");
+            fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    const url = data.data.url;
+                    return db.ref('payments').push({
+                        uid: auth.currentUser.uid,
+                        amount: parseInt(amount),
+                        type: "Deposit",
+                        ssUrl: url,
+                        time: Date.now(),
+                        status: "Pending"
+                    });
+                } else {
+                    throw new Error("ImgBB Upload Failed");
+                }
+            })
+            .then(() => {
+                toast("সফল!", "আপনার রিকোয়েস্ট পাঠানো হয়েছে!", "success");
                 document.getElementById('depAmount').value = "";
                 document.getElementById('depFile').value = "";
                 document.getElementById('fileName').innerText = "Select Payment Screenshot";
                 btn.disabled = false;
                 btn.innerText = "SEND SCREENSHOT";
-            }).catch(e => {
-                toast("Error!", e.message, "error");
+            })
+            .catch(e => {
+                toast("Error!", "আপলোড ফেইল হয়েছে, আবার চেষ্টা করুন।", "error");
                 btn.disabled = false;
                 btn.innerText = "SEND SCREENSHOT";
             });
