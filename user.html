@@ -40,8 +40,15 @@
         .action-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .action-btn i { color: var(--p); font-size: 14px; }
 
-        .p-img-box { width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--p); margin: 0 auto 10px; overflow: hidden; background: #222;}
-        .p-img { width: 100%; height: 100%; object-fit: cover; }
+        /* Profile Img & Name Edit Styles */
+        .p-img-box { position: relative; width: 90px; height: 90px; margin: 0 auto 10px; }
+        .p-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--p); object-fit: cover; background: #222; }
+        .plus-icon { position: absolute; bottom: 0; right: 0; background: var(--p); color: #000; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--b); cursor: pointer; }
+        
+        .name-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 5px 0; }
+        .edit-name-icon { font-size: 14px; color: var(--p); cursor: pointer; background: rgba(0, 255, 0, 0.1); padding: 5px; border-radius: 50%; transition: 0.3s; }
+        .edit-name-icon:hover { background: rgba(0, 255, 0, 0.2); }
+
         .w-card { background: linear-gradient(135deg, #0a0a0a, #1a1a1a); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #333; }
         .stats { display: flex; justify-content: space-around; margin: 15px 0; border-top: 1px solid #222; padding-top: 15px; }
 
@@ -50,7 +57,6 @@
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
-        /* Deposit Styles */
         .dep-card { background: #111; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
         .dep-title { color: var(--p); font-size: 16px; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: 'Orbitron'; }
         .dep-msg { font-size: 12px; color: #bbb; line-height: 1.6; margin-bottom: 12px; border-left: 3px solid var(--p); padding-left: 10px; }
@@ -94,8 +100,17 @@
         <div class="w-card">
             <div class="p-img-box">
                 <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="uPic" class="p-img">
+                <input type="file" id="proPicFile" style="display:none;" accept="image/*" onchange="uploadProfilePic(this)">
+                <label for="proPicFile" class="plus-icon">
+                    <i class="fas fa-plus"></i>
+                </label>
             </div>
-            <h3 id="uIgn" style="margin:5px 0;">Player Name</h3>
+            
+            <div class="name-container">
+                <h3 id="uIgn" style="margin:0;">Player Name</h3>
+                <i class="fas fa-pen edit-name-icon" onclick="editNamePopup()"></i>
+            </div>
+            
             <p id="myUid" style="font-size: 10px; color: #666;">UID: ...</p>
             
             <div class="stats">
@@ -110,11 +125,11 @@
         <div class="dep-card">
             <div class="dep-title"><i class="fas fa-wallet"></i> DEPOSIT</div>
             <p class="dep-msg">
-                টাকা ডিপোজিট করতে চাইলে <b>01774774830</b> এই নম্বর এ নগদ / bKash এ টাকা পাঠিয়ে screenshot পাঠান নিচের অপশন দিয়ে।
+                টাকা ডিপোজিট করতে চাইলে <b>01774774830</b> এই নম্বর এ নগদ / bKash এ টাকা পাঠিয়ে screenshot পাঠান।
             </p>
             <input type="number" id="depAmount" placeholder="টাকার পরিমাণ (Amount)">
             
-            <label for="depFile" class="file-label" id="fileLabel">
+            <label for="depFile" class="file-label">
                 <i class="fas fa-cloud-upload-alt"></i>
                 <span id="fileName">Select Payment Screenshot</span>
             </label>
@@ -123,14 +138,7 @@
             <button class="btn" id="depBtn" onclick="uploadDeposit()">SEND SCREENSHOT</button>
         </div>
 
-        <div class="card">
-            <h4 style="margin:0 0 10px 0; color:var(--p);">Edit Profile</h4>
-            <input type="text" id="newIgn" placeholder="New In-Game Name">
-            <input type="text" id="newPic" placeholder="Profile Photo URL">
-            <button class="btn" onclick="updatePro()">UPDATE DETAILS</button>
-        </div>
-
-        <button class="btn" style="background:var(--red); color:white;" onclick="firebase.auth().signOut()">LOGOUT</button>
+        <button class="btn" style="background:var(--red); color:white; margin-top: 20px;" onclick="firebase.auth().signOut()">LOGOUT</button>
     </div>
 
     <div class="nav">
@@ -153,66 +161,90 @@
         
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
-        let isLogin = true;
-        let countdowns = {};
+        const IMGBB_API = 'bb6ae5282e75af49c1e446d17733e498'; 
 
         function toast(t, m, i) {
             Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
         }
 
-        // Deposit Helpers
+        // --- NAME EDIT POPUP ---
+        function editNamePopup() {
+            Swal.fire({
+                title: 'Edit In-Game Name',
+                input: 'text',
+                inputPlaceholder: 'আপনার নতুন নাম লিখুন...',
+                showCancelButton: true,
+                confirmButtonText: 'Update',
+                background: '#111',
+                color: '#fff',
+                confirmButtonColor: '#00ff00',
+                cancelButtonColor: '#d33',
+                preConfirm: (newName) => {
+                    if (!newName) { Swal.showValidationMessage('দয়া করে একটি নাম দিন!'); }
+                    return newName;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    db.ref('users/' + auth.currentUser.uid).update({ ign: result.value })
+                    .then(() => toast("Success!", "আপনার নাম আপডেট হয়েছে!", "success"));
+                }
+            });
+        }
+
+        // --- PROFILE PICTURE UPLOAD (ImgBB) ---
+        function uploadProfilePic(input) {
+            if (input.files && input.files[0]) {
+                Swal.fire({ title: 'Uploading Profile...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                const formData = new FormData();
+                formData.append("image", input.files[0]);
+                fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API}`, { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const url = data.data.url;
+                        db.ref('users/' + auth.currentUser.uid).update({ pic: url }).then(() => {
+                            document.getElementById('uPic').src = url;
+                            Swal.fire('Success', 'প্রোফাইল পিকচার আপডেট হয়েছে!', 'success');
+                        });
+                    }
+                })
+                .catch(() => Swal.fire('Error', 'আপলোড ব্যর্থ হয়েছে!', 'error'));
+            }
+        }
+
+        // --- DEPOSIT UPLOAD (ImgBB) ---
         function updateFileName() {
             const file = document.getElementById('depFile').files[0];
             if(file) document.getElementById('fileName').innerText = "Selected: " + file.name;
         }
 
-        // --- NEW IMGBB UPLOAD FUNCTION ---
         function uploadDeposit() {
             const amount = document.getElementById('depAmount').value;
             const file = document.getElementById('depFile').files[0];
             const btn = document.getElementById('depBtn');
-            const apiKey = 'bb6ae5282e75af49c1e446d17733e498'; // Your ImgBB Key
-
             if(!amount || !file) return toast("ভুল!", "টাকার পরিমাণ এবং স্ক্রিনশট দিন", "warning");
-
-            btn.disabled = true;
-            btn.innerText = "UPLOADING...";
-
+            btn.disabled = true; btn.innerText = "UPLOADING...";
             const formData = new FormData();
             formData.append('image', file);
-
-            fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
+            fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API}`, { method: 'POST', body: formData })
+            .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    const url = data.data.url;
                     return db.ref('payments').push({
-                        uid: auth.currentUser.uid,
-                        amount: parseInt(amount),
-                        type: "Deposit",
-                        ssUrl: url,
-                        time: Date.now(),
-                        status: "Pending"
+                        uid: auth.currentUser.uid, amount: parseInt(amount), type: "Deposit",
+                        ssUrl: data.data.url, time: Date.now(), status: "Pending"
                     });
-                } else {
-                    throw new Error("ImgBB Upload Failed");
                 }
             })
             .then(() => {
-                toast("সফল!", "আপনার রিকোয়েস্ট পাঠানো হয়েছে!", "success");
-                document.getElementById('depAmount').value = "";
-                document.getElementById('depFile').value = "";
+                toast("সফল!", "রিকোয়েস্ট পাঠানো হয়েছে!", "success");
+                document.getElementById('depAmount').value = ""; document.getElementById('depFile').value = "";
                 document.getElementById('fileName').innerText = "Select Payment Screenshot";
-                btn.disabled = false;
-                btn.innerText = "SEND SCREENSHOT";
+                btn.disabled = false; btn.innerText = "SEND SCREENSHOT";
             })
-            .catch(e => {
-                toast("Error!", "আপলোড ফেইল হয়েছে, আবার চেষ্টা করুন।", "error");
-                btn.disabled = false;
-                btn.innerText = "SEND SCREENSHOT";
+            .catch(() => {
+                toast("Error!", "আপলোড ফেইল হয়েছে!", "error");
+                btn.disabled = false; btn.innerText = "SEND SCREENSHOT";
             });
         }
 
@@ -225,9 +257,8 @@
         function handleAuth() {
             const e = document.getElementById('em').value, p = document.getElementById('ps').value;
             if(!e || !p) return toast("Empty!", "দয়া করে ইমেইল ও পাসওয়ার্ড দিন", "warning");
-            
             if(isLogin) {
-                auth.signInWithEmailAndPassword(e, p).catch(err => toast("Error!", "ভুল ইমেইল বা পাসওয়ার্ড", "error"));
+                auth.signInWithEmailAndPassword(e, p).catch(() => toast("Error!", "ভুল ইমেইল বা পাসওয়ার্ড", "error"));
             } else {
                 auth.createUserWithEmailAndPassword(e, p).then(r => {
                     db.ref('users/' + r.user.uid).set({ winning: 0, ign: "Player", pic: "", played: 0 });
@@ -262,105 +293,56 @@
         function loadMatches(uid) {
             db.ref('matches').on('value', snap => {
                 let hPlay = "", hMy = "";
-                countdowns = {};
-                
                 snap.forEach(c => {
                     let m = c.val(), id = c.key;
                     let joined = m.joined ? Object.keys(m.joined).length : 0;
                     let isJoined = m.joined && m.joined[uid];
-                    
-                    if(m.startTime) countdowns[id] = m.startTime;
-
                     let card = `<div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                             <span style="color:var(--p); font-weight:bold;">#${m.matchNo} ${m.name}</span>
                             <span class="m-badge">${m.mode || 'Classic'}</span>
                         </div>
-                        
                         <div class="timer" id="timer_${id}"><i class="fas fa-clock"></i> Calculating...</div>
-
                         <div class="grid">
                             <div class="g-box">TOTAL PRIZE<b>${m.prize} TK</b></div>
                             <div class="g-box">PER KILL<b>${m.perKill} TK</b></div>
                             <div class="g-box">ENTRY FEE<b>${m.entry} TK</b></div>
                         </div>
-
                         <div class="m-actions">
-                            <button class="action-btn" onclick="showRules(\`${m.rules ? m.rules.replace(/\n/g, '<br>') : 'No rules provided.'}\`)">
-                                <i class="fas fa-file-alt"></i> Rules
-                            </button>
-                            ${isJoined ? `
-                            <button class="action-btn" onclick="showRoomInfo('${m.roomId}', '${m.roomPass}')">
-                                <i class="fas fa-key"></i> ID & Pass
-                            </button>
-                            ` : ''}
+                            <button class="action-btn" onclick="showRules(\`${m.rules ? m.rules.replace(/\n/g, '<br>') : 'No rules'}\`)"><i class="fas fa-file-alt"></i> Rules</button>
+                            ${isJoined ? `<button class="action-btn" onclick="showRoomInfo('${m.roomId}', '${m.roomPass}')"><i class="fas fa-key"></i> ID & Pass</button>` : ''}
                         </div>
-
-                        ${isJoined ? `<div class="room-box"><i class="fas fa-check-circle"></i> আপনি এই ম্যাচে জয়েন করেছেন</div>` : 
-                        `<button class="btn" onclick="joinM('${id}', ${m.entry}, ${joined}, ${m.totalSlots || 100})">JOIN NOW (${joined}/${m.totalSlots || 100})</button>`}
+                        ${isJoined ? `<div class="room-box"><i class="fas fa-check-circle"></i> Joined</div>` : 
+                        `<button class="btn" onclick="joinM('${id}', ${m.entry}, ${joined}, ${m.totalSlots || 100})">JOIN (${joined}/${m.totalSlots || 100})</button>`}
                     </div>`;
-                    
-                    hPlay += card;
-                    if(isJoined) hMy += card;
+                    hPlay += card; if(isJoined) hMy += card;
                 });
                 document.getElementById('mList').innerHTML = hPlay || "No Live Matches.";
-                document.getElementById('myMList').innerHTML = hMy || "Not joined any match.";
+                document.getElementById('myMList').innerHTML = hMy || "Not joined.";
             });
         }
 
-        function showRules(rules) {
-            Swal.fire({
-                title: 'Match Rules',
-                html: `<div style="text-align:left; font-size:14px; line-height:1.5;">${rules}</div>`,
-                background: '#111', color: '#fff', confirmButtonColor: '#00ff00'
-            });
-        }
-
+        function showRules(rules) { Swal.fire({ title: 'Rules', html: rules, background: '#111', color: '#fff' }); }
         function showRoomInfo(id, pass) {
-            let msg = "";
-            if(!id || id === "Pending" || id === "Wait...") {
-                msg = "ম্যাচ শুরু হওয়ার ৫ মিনিট আগে আইডি আর পাসওয়ার্ড দেওয়া হবে।";
-            } else {
-                msg = `<b>Room ID:</b> ${id}<br><b>Password:</b> ${pass}`;
-            }
-            Swal.fire({
-                title: 'Room Details',
-                html: `<div style="padding:10px; border:1px solid var(--p); border-radius:10px; background:#1a1a1a;">${msg}</div>`,
-                background: '#111', color: '#fff', confirmButtonColor: '#00ff00'
-            });
+            let msg = (id === "Pending") ? "ম্যাচ শুরুর ৫ মিনিট আগে আইডি-পাস দেওয়া হবে।" : `<b>ID:</b> ${id}<br><b>Pass:</b> ${pass}`;
+            Swal.fire({ title: 'Room Info', html: msg, background: '#111', color: '#fff' });
         }
-
-        setInterval(() => {
-            Object.keys(countdowns).forEach(id => {
-                const el = document.getElementById('timer_' + id);
-                if (!el) return;
-                const diff = new Date(countdowns[id]).getTime() - new Date().getTime();
-                if (diff <= 0) {
-                    el.innerHTML = `<i class="fas fa-play-circle"></i> Match Started!`;
-                    el.style.color = "var(--p)";
-                } else {
-                    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
-                    el.innerHTML = `<i class="fas fa-clock"></i> Starts in: ${h}h ${m}m ${s}s`;
-                }
-            });
-        }, 1000);
 
         function joinM(id, fee, now, total) {
-            if(now >= total) return toast("Full!", "সব স্লট পূরণ হয়ে গেছে!", "error");
-            const uid = auth.currentUser.uid;
-            db.ref('users/' + uid).once('value', s => {
+            if(now >= total) return toast("Full!", "স্লট নেই!", "error");
+            db.ref('users/' + auth.currentUser.uid).once('value', s => {
                 let bal = s.val().winning || 0;
-                if(bal < fee) return toast("Insufficient Balance!", "ম্যাচে জয়েন করার পর্যাপ্ত টাকা নেই।", "error");
-                db.ref('users/' + uid).update({ winning: bal - fee, played: (s.val().played || 0) + 1 });
-                db.ref('matches/' + id + '/joined/' + uid).set(true);
-                toast("Success!", "আপনি সফলভাবে জয়েন করেছেন!", "success");
+                if(bal < fee) return toast("Low Balance!", "টাকা নেই!", "error");
+                db.ref('users/' + auth.currentUser.uid).update({ winning: bal - fee, played: (s.val().played || 0) + 1 });
+                db.ref('matches/' + id + '/joined/' + auth.currentUser.uid).set(true);
+                toast("Success!", "জয়েন হয়েছেন!", "success");
             });
         }
 
-        function updatePro() {
-            const ign = document.getElementById('newIgn').value, pic = document.getElementById('newPic').value;
-            const up = {}; if(ign) up.ign = ign; if(pic) up.pic = pic;
-            db.ref('users/' + auth.currentUser.uid).update(up).then(() => toast("Updated!", "আপনার প্রোফাইল আপডেট হয়েছে", "success"));
+        function nav(id, el) {
+            document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.n-i').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
         function loadResults() {
@@ -372,12 +354,6 @@
                 });
                 document.getElementById('rList').innerHTML = h || "No Results.";
             });
-        }
-
-        function nav(id, el) {
-            document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.n-i').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
     </script>
 </body>
