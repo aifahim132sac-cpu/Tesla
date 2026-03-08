@@ -28,7 +28,7 @@
 
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; box-sizing: border-box; font-size: 13px; }
         
-        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; }
+        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; }
         .btn:active { transform: scale(0.98); }
         
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
@@ -44,6 +44,11 @@
         .u-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding: 12px 0; }
         .u-info b { color: var(--p); font-size: 14px; }
         .u-info p { margin: 2px 0; font-size: 11px; color: #888; }
+
+        .timer { font-size: 12px; color: var(--yellow); font-weight: bold; margin-top: 5px; display: block; border: 1px solid #333; padding: 4px; border-radius: 5px; text-align: center; background: #000; }
+        .slot-tag { background: var(--blue); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .player-list-box { background: #080808; margin-top: 10px; padding: 10px; border-radius: 8px; border: 1px solid #222; display: none; max-height: 200px; overflow-y: auto; }
+        .p-row { font-size: 11px; padding: 5px 0; border-bottom: 1px solid #111; color: #ccc; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -62,15 +67,18 @@
             <input type="number" id="mNo" placeholder="Match No (Ex: 01)">
             <input type="text" id="mTitle" placeholder="Match Name">
             
-            <select id="mType">
-                <option value="BR Solo">BR Solo</option>
-                <option value="BR Duo">BR Duo</option>
-                <option value="BR Squad">BR Squad</option>
-                <option value="Clash Squad">Clash Squad</option>
-                <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-                <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
-                <option value="Free Match">Free Match</option>
-            </select>
+            <div style="display:flex; gap:10px;">
+                <select id="mType" style="flex:1;">
+                    <option value="BR Solo">BR Solo</option>
+                    <option value="BR Duo">BR Duo</option>
+                    <option value="BR Squad">BR Squad</option>
+                    <option value="Clash Squad">Clash Squad</option>
+                    <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
+                    <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
+                    <option value="Free Match">Free Match</option>
+                </select>
+                <input type="number" id="mMaxSlots" placeholder="Total Slots (Ex: 48)" style="flex:1;">
+            </div>
 
             <div style="display:flex; gap:10px;">
                 <input type="number" id="mEntry" placeholder="Entry Tk">
@@ -84,7 +92,7 @@
             <button class="btn" onclick="postMatch()"><i class="fas fa-check-circle"></i> Publish Match</button>
         </div>
 
-        <h3><i class="fas fa-tasks"></i> Live Matches (Update ID/Pass)</h3>
+        <h3><i class="fas fa-tasks"></i> Live Matches (Control Center)</h3>
         <div id="mList">Loading...</div>
     </div>
 
@@ -96,9 +104,7 @@
     <div id="results" class="sec">
         <div class="card">
             <h3><i class="fas fa-trophy"></i> Declare Result</h3>
-            <p style="font-size: 10px; color: #888; margin-top: -10px;">একাধিক প্লেয়ার হলে কমা (,) ব্যবহার করুন।</p>
             <input type="number" id="resMNo" placeholder="Match No">
-
             <select id="resMode">
                 <option value="BR Solo">BR Solo</option>
                 <option value="BR Duo">BR Duo</option>
@@ -108,7 +114,6 @@
                 <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
                 <option value="Free Match">Free Match</option>
             </select>
-
             <input type="text" id="resWinner" placeholder="Winner Name (Ex: Fahim, Percy)">
             <input type="text" id="resKillCount" placeholder="Kill Counts (Ex: 5, 2)">
             <input type="text" id="resWinAmt" placeholder="Winning Amounts (Ex: 100, 50)">
@@ -168,6 +173,8 @@
                 matchNo: document.getElementById('mNo').value,
                 name: document.getElementById('mTitle').value,
                 mode: document.getElementById('mType').value,
+                maxSlots: document.getElementById('mMaxSlots').value || 48,
+                joinedCount: 0,
                 entry: document.getElementById('mEntry').value,
                 perKill: document.getElementById('mKill').value,
                 prize: document.getElementById('mPrize').value,
@@ -175,12 +182,10 @@
                 startTime: document.getElementById('mTime').value,
                 roomId: "Pending", roomPass: "Pending"
             };
-            if(!m.matchNo || !m.name) return toast("Error", "সব তথ্য দিন", "error");
+            if(!m.matchNo || !m.name || !m.startTime) return toast("Error", "সব তথ্য দিন", "error");
             db.ref('matches').push(m).then(() => {
                 toast("Published!", "ম্যাচ তৈরি হয়েছে! ✅", "success");
-                document.getElementById('mNo').value = ""; 
-                document.getElementById('mTitle').value = "";
-                document.getElementById('mRules').value = "";
+                document.getElementById('mNo').value = ""; document.getElementById('mTitle').value = "";
             });
         }
 
@@ -188,22 +193,63 @@
             let h = "";
             s.forEach(c => {
                 let m = c.val();
+                let matchId = c.key;
+                let status = m.joinedCount >= m.maxSlots ? "FULL" : "Available";
+                
                 h += `<div class="item">
-                    <button class="del-btn" onclick="db.ref('matches/${c.key}').remove()">DELETE</button>
-                    <b style="color:var(--p);">#${m.matchNo} ${m.name}</b><br>
-                    <small>${m.startTime} | ${m.mode}</small><br>
-                    <small style="color:#888;">Rules: ${m.rules}</small>
+                    <button class="del-btn" onclick="db.ref('matches/${matchId}').remove()">DELETE</button>
+                    <b style="color:var(--p);">#${m.matchNo} ${m.name}</b> 
+                    <span class="slot-tag">${m.joinedCount}/${m.maxSlots} ${status}</span><br>
+                    <small>${m.startTime} | ${m.mode}</small>
+                    
+                    <span id="timer_${matchId}" class="timer">Calculating...</span>
+
+                    <button class="btn" style="background:#222; color:var(--p); margin-top:8px; border:1px solid var(--p);" onclick="togglePlayers('${matchId}')">VIEW JOINED PLAYERS (UID)</button>
+                    <div id="pBox_${matchId}" class="player-list-box">Loading...</div>
+
                     <div class="room-box">
-                        <span class="room-label">Room ID</span>
-                        <input type="text" id="rid_${c.key}" value="${m.roomId}">
-                        <span class="room-label">Room Pass</span>
-                        <input type="text" id="rps_${c.key}" value="${m.roomPass}">
-                        <button class="btn" style="background:var(--blue); height:35px;" onclick="pushRoom('${c.key}')">UPDATE ID/PASS</button>
+                        <span class="room-label">Room ID / Pass Update</span>
+                        <input type="text" id="rid_${matchId}" value="${m.roomId}" placeholder="Room ID">
+                        <input type="text" id="rps_${matchId}" value="${m.roomPass}" placeholder="Room Password">
+                        <button class="btn" style="background:var(--blue); height:35px;" onclick="pushRoom('${matchId}')">UPDATE ID/PASS</button>
                     </div>
                 </div>`;
+                startTimer(m.startTime, `timer_${matchId}`);
             });
             document.getElementById('mList').innerHTML = h || "No Active Matches.";
         });
+
+        function startTimer(time, elId) {
+            setInterval(() => {
+                let dest = new Date(time).getTime();
+                let now = new Date().getTime();
+                let diff = dest - now;
+                let el = document.getElementById(elId);
+                if(!el) return;
+                if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "var(--red)"; }
+                else {
+                    let h = Math.floor(diff/(1000*60*60));
+                    let m = Math.floor((diff%(1000*60*60))/(1000*60));
+                    let s = Math.floor((diff%(1000*60))/1000);
+                    el.innerHTML = `Starts In: ${h}h ${m}m ${s}s`;
+                }
+            }, 1000);
+        }
+
+        function togglePlayers(mid) {
+            let box = document.getElementById(`pBox_${mid}`);
+            if(box.style.display === "block") { box.style.display = "none"; return; }
+            box.style.display = "block";
+            db.ref('participants/' + mid).on('value', snap => {
+                let list = "";
+                if(!snap.exists()) list = "<div style='font-size:10px; color:#666;'>No players joined yet.</div>";
+                snap.forEach(p => {
+                    let d = p.val();
+                    list += `<div class="p-row"><span>${d.ign}</span> <span style="color:var(--blue)">UID: ${d.uid}</span></div>`;
+                });
+                box.innerHTML = list;
+            });
+        }
 
         function pushRoom(id) {
             db.ref('matches/' + id).update({
@@ -212,27 +258,16 @@
             }).then(() => toast("Sent!", "ID/Pass আপডেট হয়েছে! ✅", "success"));
         }
 
+        // --- Result & User Management (Same as previous, updated with Mode) ---
         function setResult() {
             let no = document.getElementById('resMNo').value;
             let mode = document.getElementById('resMode').value;
             let win = document.getElementById('resWinner').value;
             let kill = document.getElementById('resKillCount').value;
             let amt = document.getElementById('resWinAmt').value;
-            
-            if(!no || !win || !kill || !amt) return toast("Warning!", "সবগুলো ঘর পূরণ করুন", "warning");
-
-            db.ref('results').push({ 
-                matchNo: no, 
-                mode: mode,
-                winner: win, 
-                kills: kill, 
-                amount: amt 
-            }).then(() => {
+            if(!no || !win) return toast("Warning!", "সবগুলো ঘর পূরণ করুন", "warning");
+            db.ref('results').push({ matchNo: no, mode: mode, winner: win, kills: kill, amount: amt }).then(() => {
                 toast("Published!", "রেজাল্ট পাবলিশ হয়েছে! ✅", "success");
-                document.getElementById('resMNo').value = ""; 
-                document.getElementById('resWinner').value = "";
-                document.getElementById('resKillCount').value = "";
-                document.getElementById('resWinAmt').value = "";
             });
         }
 
@@ -242,20 +277,20 @@
                 let r = c.val();
                 h += `<div class="item" style="border-left-color: gold;">
                     <button class="del-btn" onclick="db.ref('results/${c.key}').remove()">DELETE</button>
-                    <b>Match #${r.matchNo} [${r.mode || 'N/A'}] Result</b><br>
-                    <small style="color:gold;">Winners: ${r.winner}</small><br>
-                    <small>Kills: ${r.kills} | Prize: ${r.amount} Tk</small>
+                    <b>Match #${r.matchNo} [${r.mode}] Result</b><br>
+                    <small style="color:gold;">Winners: ${r.winner}</small>
                 </div>`;
             });
             document.getElementById('rList').innerHTML = h || "No Results.";
         });
 
-        // User and Payment logic stays exactly same
-        let usersData = {};
-        db.ref('users').on('value', snap => {
-            usersData = snap.val() || {};
-            renderUsers(usersData);
-        });
+        // Search & User Edit
+        function searchUser() {
+            let q = document.getElementById('uSearch').value.toLowerCase();
+            document.querySelectorAll('.u-item').forEach(i => {
+                i.style.display = i.getAttribute('data-name').includes(q) ? "flex" : "none";
+            });
+        }
 
         function renderUsers(users) {
             let h = "";
@@ -267,13 +302,6 @@
                 </div>`;
             }
             document.getElementById('uList').innerHTML = h || "No Users.";
-        }
-
-        function searchUser() {
-            let q = document.getElementById('uSearch').value.toLowerCase();
-            document.querySelectorAll('.u-item').forEach(i => {
-                i.style.display = i.getAttribute('data-name').includes(q) ? "flex" : "none";
-            });
         }
 
         function editUser(uid) {
