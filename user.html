@@ -9,6 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -44,6 +46,9 @@
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
         .room-box { background: #003300; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed var(--p); font-size: 13px; }
+        
+        /* Match Type Badge Style */
+        .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; }
     </style>
 </head>
 <body>
@@ -109,7 +114,6 @@
     </div>
 
     <script>
-        // আপনার Firebase Config
         const firebaseConfig = { 
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
             authDomain: "teot-a3046.firebaseapp.com",
@@ -124,6 +128,10 @@
         const auth = firebase.auth(), db = firebase.database();
         let isLogin = true;
 
+        function toast(t, m, i) {
+            Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
+        }
+
         function toggleAuth() {
             isLogin = !isLogin;
             document.getElementById('at-title').innerText = isLogin ? "TESLA LOGIN" : "CREATE ACCOUNT";
@@ -132,11 +140,16 @@
 
         function handleAuth() {
             const e = document.getElementById('em').value, p = document.getElementById('ps').value;
-            if(!e || !p) return alert("Fill fields");
-            if(isLogin) auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
-            else auth.createUserWithEmailAndPassword(e, p).then(r => {
-                db.ref('users/' + r.user.uid).set({ winning: 0, ign: "Player", pic: "", played: 0 });
-            }).catch(err => alert(err.message));
+            if(!e || !p) return toast("Empty!", "দয়া করে ইমেইল ও পাসওয়ার্ড দিন", "warning");
+            
+            if(isLogin) {
+                auth.signInWithEmailAndPassword(e, p).catch(err => toast("Error!", "ভুল ইমেইল বা পাসওয়ার্ড", "error"));
+            } else {
+                auth.createUserWithEmailAndPassword(e, p).then(r => {
+                    db.ref('users/' + r.user.uid).set({ winning: 0, ign: "Player", pic: "", played: 0 });
+                    toast("Success!", "অ্যাকাউন্ট তৈরি হয়েছে", "success");
+                }).catch(err => toast("Error!", err.message, "error"));
+            }
         }
 
         auth.onAuthStateChanged(user => {
@@ -169,10 +182,22 @@
                     let m = c.val(), id = c.key;
                     let joined = m.joined ? Object.keys(m.joined).length : 0;
                     let isJoined = m.joined && m.joined[uid];
-                    let card = `<div class="card"><span style="color:var(--p)">#${m.matchNo} ${m.name}</span>
-                        <div class="grid"><div class="g-box">PRIZE<b>${m.prize}</b></div><div class="g-box">KILL<b>${m.perKill}</b></div><div class="g-box">ENTRY<b>${m.entry}</b></div></div>
+                    
+                    // আপডেট করা কার্ড ডিজাইন (Match Mode সহ)
+                    let card = `<div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="color:var(--p); font-weight:bold;">#${m.matchNo} ${m.name}</span>
+                            <span class="m-badge">${m.mode || 'Classic'}</span>
+                        </div>
+                        <div class="grid">
+                            <div class="g-box">PRIZE<b>${m.prize}</b></div>
+                            <div class="g-box">KILL<b>${m.perKill}</b></div>
+                            <div class="g-box">ENTRY<b>${m.entry}</b></div>
+                        </div>
                         ${isJoined ? `<div class="room-box">ID: ${m.roomId || 'Wait...'} <br> PASS: ${m.roomPass || 'Wait...'}</div>` : 
-                        `<button class="btn" onclick="joinM('${id}', ${m.entry}, ${joined}, ${m.totalSlots})">JOIN NOW (${joined}/${m.totalSlots})</button>`}</div>`;
+                        `<button class="btn" onclick="joinM('${id}', ${m.entry}, ${joined}, ${m.totalSlots || 100})">JOIN NOW (${joined}/${m.totalSlots || 100})</button>`}
+                    </div>`;
+                    
                     hPlay += card;
                     if(isJoined) hMy += card;
                 });
@@ -182,14 +207,15 @@
         }
 
         function joinM(id, fee, now, total) {
-            if(now >= total) return alert("Slot Full!");
+            if(now >= total) return toast("Full!", "সব স্লট পূরণ হয়ে গেছে!", "error");
             const uid = auth.currentUser.uid;
             db.ref('users/' + uid).once('value', s => {
                 let bal = s.val().winning || 0;
-                if(bal < fee) return alert("Insufficient Balance!");
+                if(bal < fee) return toast("Insufficient Balance!", "ম্যাচে জয়েন করার পর্যাপ্ত টাকা নেই।", "error");
+                
                 db.ref('users/' + uid).update({ winning: bal - fee, played: (s.val().played || 0) + 1 });
                 db.ref('matches/' + id + '/joined/' + uid).set(true);
-                alert("Joined Match!");
+                toast("Success!", "আপনি সফলভাবে জয়েন করেছেন!", "success");
             });
         }
 
@@ -198,8 +224,9 @@
             const up = {};
             if(ign) up.ign = ign;
             if(pic) up.pic = pic;
-            db.ref('users/' + auth.currentUser.uid).update(up);
-            alert("Profile Updated!");
+            db.ref('users/' + auth.currentUser.uid).update(up).then(() => {
+                toast("Updated!", "আপনার প্রোফাইল আপডেট হয়েছে", "success");
+            });
         }
 
         function loadResults() {
