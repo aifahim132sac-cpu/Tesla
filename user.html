@@ -32,9 +32,14 @@
 
         .card { background: var(--c); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; position: relative; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0; }
-        .g-box { background: #1a1a1a; padding: 8px; border-radius: 8px; text-align: center; font-size: 10px; border: 1px solid #333; }
-        .g-box b { color: var(--p); display: block; font-size: 14px; }
+        .g-box { background: #1a1a1a; padding: 8px; border-radius: 8px; text-align: center; font-size: 9px; border: 1px solid #333; color: #888; }
+        .g-box b { color: var(--p); display: block; font-size: 13px; }
         
+        /* New Button Styles */
+        .m-actions { display: flex; gap: 10px; margin-top: 12px; margin-bottom: 5px; }
+        .action-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
+        .action-btn i { color: var(--p); font-size: 14px; }
+
         .p-img-box { width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--p); margin: 0 auto 10px; overflow: hidden; background: #222;}
         .p-img { width: 100%; height: 100%; object-fit: cover; }
         .w-card { background: linear-gradient(135deg, #0a0a0a, #1a1a1a); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #333; }
@@ -45,12 +50,10 @@
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
-        .room-box { background: #003300; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed var(--p); font-size: 13px; }
+        .room-box { background: rgba(0, 255, 0, 0.05); padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid var(--p); font-size: 12px; text-align: center; color: var(--p); }
         
         .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; }
-        
-        /* Countdown Style */
-        .timer { font-size: 12px; color: #ffcc00; font-weight: bold; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid #ffcc0044; }
+        .timer { font-size: 11px; color: #ffcc00; font-weight: bold; background: rgba(255, 204, 0, 0.1); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(255, 204, 0, 0.2); }
     </style>
 </head>
 <body>
@@ -129,7 +132,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
         let isLogin = true;
-        let countdowns = {}; // টাইমারগুলো ট্র্যাক করার জন্য
+        let countdowns = {};
 
         function toast(t, m, i) {
             Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
@@ -181,14 +184,13 @@
         function loadMatches(uid) {
             db.ref('matches').on('value', snap => {
                 let hPlay = "", hMy = "";
-                countdowns = {}; // রিসেট
+                countdowns = {};
                 
                 snap.forEach(c => {
                     let m = c.val(), id = c.key;
                     let joined = m.joined ? Object.keys(m.joined).length : 0;
                     let isJoined = m.joined && m.joined[uid];
                     
-                    // ম্যাচ টাইম স্টোর করা টাইমারের জন্য
                     if(m.startTime) countdowns[id] = m.startTime;
 
                     let card = `<div class="card">
@@ -200,11 +202,23 @@
                         <div class="timer" id="timer_${id}"><i class="fas fa-clock"></i> Calculating...</div>
 
                         <div class="grid">
-                            <div class="g-box">PRIZE<b>${m.prize}</b></div>
-                            <div class="g-box">KILL<b>${m.perKill}</b></div>
-                            <div class="g-box">ENTRY<b>${m.entry}</b></div>
+                            <div class="g-box">TOTAL PRIZE<b>${m.prize} TK</b></div>
+                            <div class="g-box">PER KILL<b>${m.perKill} TK</b></div>
+                            <div class="g-box">ENTRY FEE<b>${m.entry} TK</b></div>
                         </div>
-                        ${isJoined ? `<div class="room-box">ID: ${m.roomId || 'Wait...'} <br> PASS: ${m.roomPass || 'Wait...'}</div>` : 
+
+                        <div class="m-actions">
+                            <button class="action-btn" onclick="showRules(\`${m.rules ? m.rules.replace(/\n/g, '<br>') : 'No rules provided.'}\`)">
+                                <i class="fas fa-file-alt"></i> Rules
+                            </button>
+                            ${isJoined ? `
+                            <button class="action-btn" onclick="showRoomInfo('${m.roomId}', '${m.roomPass}')">
+                                <i class="fas fa-key"></i> ID & Pass
+                            </button>
+                            ` : ''}
+                        </div>
+
+                        ${isJoined ? `<div class="room-box"><i class="fas fa-check-circle"></i> আপনি এই ম্যাচে জয়েন করেছেন</div>` : 
                         `<button class="btn" onclick="joinM('${id}', ${m.entry}, ${joined}, ${m.totalSlots || 100})">JOIN NOW (${joined}/${m.totalSlots || 100})</button>`}
                     </div>`;
                     
@@ -216,23 +230,38 @@
             });
         }
 
-        // টাইমার আপডেট ফাংশন
+        function showRules(rules) {
+            Swal.fire({
+                title: 'Match Rules',
+                html: `<div style="text-align:left; font-size:14px; line-height:1.5;">${rules}</div>`,
+                background: '#111', color: '#fff', confirmButtonColor: '#00ff00'
+            });
+        }
+
+        function showRoomInfo(id, pass) {
+            let msg = "";
+            if(!id || id === "Pending" || id === "Wait...") {
+                msg = "ম্যাচ শুরু হওয়ার ৫ মিনিট আগে আইডি আর পাসওয়ার্ড দেওয়া হবে।";
+            } else {
+                msg = `<b>Room ID:</b> ${id}<br><b>Password:</b> ${pass}`;
+            }
+            Swal.fire({
+                title: 'Room Details',
+                html: `<div style="padding:10px; border:1px solid var(--p); border-radius:10px; background:#1a1a1a;">${msg}</div>`,
+                background: '#111', color: '#fff', confirmButtonColor: '#00ff00'
+            });
+        }
+
         setInterval(() => {
             Object.keys(countdowns).forEach(id => {
                 const el = document.getElementById('timer_' + id);
                 if (!el) return;
-
-                const target = new Date(countdowns[id]).getTime();
-                const now = new Date().getTime();
-                const diff = target - now;
-
+                const diff = new Date(countdowns[id]).getTime() - new Date().getTime();
                 if (diff <= 0) {
                     el.innerHTML = `<i class="fas fa-play-circle"></i> Match Started!`;
                     el.style.color = "var(--p)";
                 } else {
-                    const h = Math.floor(diff / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
                     el.innerHTML = `<i class="fas fa-clock"></i> Starts in: ${h}h ${m}m ${s}s`;
                 }
             });
@@ -244,7 +273,6 @@
             db.ref('users/' + uid).once('value', s => {
                 let bal = s.val().winning || 0;
                 if(bal < fee) return toast("Insufficient Balance!", "ম্যাচে জয়েন করার পর্যাপ্ত টাকা নেই।", "error");
-                
                 db.ref('users/' + uid).update({ winning: bal - fee, played: (s.val().played || 0) + 1 });
                 db.ref('matches/' + id + '/joined/' + uid).set(true);
                 toast("Success!", "আপনি সফলভাবে জয়েন করেছেন!", "success");
@@ -253,12 +281,8 @@
 
         function updatePro() {
             const ign = document.getElementById('newIgn').value, pic = document.getElementById('newPic').value;
-            const up = {};
-            if(ign) up.ign = ign;
-            if(pic) up.pic = pic;
-            db.ref('users/' + auth.currentUser.uid).update(up).then(() => {
-                toast("Updated!", "আপনার প্রোফাইল আপডেট হয়েছে", "success");
-            });
+            const up = {}; if(ign) up.ign = ign; if(pic) up.pic = pic;
+            db.ref('users/' + auth.currentUser.uid).update(up).then(() => toast("Updated!", "আপনার প্রোফাইল আপডেট হয়েছে", "success"));
         }
 
         function loadResults() {
@@ -275,8 +299,7 @@
         function nav(id, el) {
             document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.n-i').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            el.classList.add('active');
+            document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
     </script>
 </body>
