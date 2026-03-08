@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Master Admin</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --p: #00ff00; --b: #080808; --card: #121212; --input: #1a1a1a; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; padding: 15px; margin: 0; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: white; font-family: 'Orbitron'; margin-bottom: 20px; }
+        h3 { color: #fff; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; font-size: 14px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: var(--input); color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--p); }
+        .btn { background: var(--p); color: #000; width: 100%; padding: 14px; font-weight: bold; border: none; cursor: pointer; border-radius: 10px; text-transform: uppercase; transition: 0.3s; font-family: 'Orbitron'; font-size: 13px; }
+        .btn:active { transform: scale(0.98); }
+        .item { background: var(--input); padding: 12px; border-radius: 10px; margin-top: 10px; border-left: 4px solid cyan; font-size: 13px; color: #eee; position: relative; }
+        .id-copy { color: cyan; cursor: pointer; background: #222; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+        .badge { background: var(--p); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>TESLA <span style="color:var(--p);">MASTER ADMIN</span></h2>
+
+    <div class="card" style="border-top: 4px solid cyan;">
+        <h3>🎨 Theme & Branding</h3>
+        <p style="font-size: 12px; color: #888;">Change User App Global Accent Color</p>
+        <input type="color" id="appTheme" value="#00ff00">
+        <button class="btn" style="background:cyan" onclick="saveTheme()">Apply New Theme</button>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #ff4444;">
+        <h3>🚀 Post New Tournament</h3>
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="mNo" placeholder="Match No (01)">
+            <input type="text" id="mTitle" placeholder="Match Name">
+        </div>
+        <select id="mType">
+            <option>Free Fire BR Solo</option>
+            <option>Free Fire BR Duo</option>
+            <option>Free Fire BR Squad</option>
+            <option>Clash Squad 4vs4</option>
+        </select>
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="mEntry" placeholder="Entry Fee">
+            <input type="number" id="mKill" placeholder="Per Kill">
+            <input type="number" id="mPrize" placeholder="Prize Pool">
+        </div>
+        <input type="number" id="mSlots" placeholder="Total Slots (e.g. 48)">
+        <label style="font-size:12px; color:var(--p);">Scheduled Start Time:</label>
+        <input type="datetime-local" id="mStartTime">
+        <textarea id="mRules" rows="3" placeholder="Match Specific Rules & Details..."></textarea>
+        <button class="btn" onclick="postMatch()">Go Live on User App</button>
+    </div>
+
+    <div class="card" style="border-top: 4px solid gold;">
+        <h3>🔑 Room ID & Password</h3>
+        <input type="text" id="targetId" placeholder="Paste Match ID here">
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="rId" placeholder="Room ID">
+            <input type="text" id="rPass" placeholder="Room Password">
+        </div>
+        <button class="btn" style="background:gold" onclick="updateMatch()">Update Credentials</button>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #a832ad;">
+        <h3>💰 Pending Deposits & Withdrawals</h3>
+        <div id="paymentList" style="max-height: 300px; overflow-y: auto;">Loading...</div>
+    </div>
+
+    <div class="card" style="border-top: 4px solid #00c2ff;">
+        <h3>👤 User Management</h3>
+        <input type="text" id="userUid" placeholder="Paste User UID (from User App)">
+        <input type="number" id="userBal" placeholder="Set Main Balance (TK)">
+        <button class="btn" style="background:#00c2ff" onclick="forceUpdateUser()">Manual Update</button>
+    </div>
+
+    <div class="card">
+        <h3>📋 Active Matches (Copy ID)</h3>
+        <div id="mIdList"></div>
+    </div>
+
+    <script>
+        // আপনার সঠিক Firebase Config
+        const firebaseConfig = { 
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // থিম সেভ
+        function saveTheme() {
+            db.ref('settings/theme').set({ color: document.getElementById('appTheme').value });
+            alert("Theme Color Synchronized!");
+        }
+
+        // টুর্নামেন্ট পাবলিশ
+        function postMatch() {
+            const data = {
+                matchNo: document.getElementById('mNo').value,
+                name: document.getElementById('mTitle').value,
+                mode: document.getElementById('mType').value,
+                entry: document.getElementById('mEntry').value,
+                perKill: document.getElementById('mKill').value,
+                prize: document.getElementById('mPrize').value,
+                totalSlots: document.getElementById('mSlots').value,
+                startTime: document.getElementById('mStartTime').value,
+                rules: document.getElementById('mRules').value,
+                roomId: "", roomPass: "", joined: 0
+            };
+            db.ref('matches').push(data);
+            alert("Tournament is now visible to users!");
+        }
+
+        // রুম আপডেট
+        function updateMatch() {
+            const id = document.getElementById('targetId').value;
+            if(!id) return alert("Select a Match ID first!");
+            db.ref('matches/' + id).update({
+                roomId: document.getElementById('rId').value,
+                roomPass: document.getElementById('rPass').value
+            });
+            alert("Room Credentials Updated!");
+        }
+
+        // পেমেন্ট হ্যান্ডলিং
+        db.ref('payments').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                let p = c.val();
+                h += `<div class="item">
+                    <span class="badge">${p.type}</span> <b>${p.amount} TK</b><br>
+                    <small>UID: ${p.uid}</small><br>
+                    <small>Phone: ${p.number}</small>
+                    <div style="margin-top:8px; display:flex; gap:5px;">
+                        <button class="btn" style="padding:5px; font-size:10px; background:cyan;" onclick="approvePay('${p.uid}', ${p.amount}, '${p.type}', '${c.key}')">Approve</button>
+                        <button class="btn" style="padding:5px; font-size:10px; background:#ff4444; color:white;" onclick="db.ref('payments/${c.key}').remove()">Reject</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('paymentList').innerHTML = h || "No pending requests.";
+        });
+
+        function approvePay(uid, amount, type, pId) {
+            db.ref('users/' + uid).once('value', s => {
+                let cur = parseInt(s.val().winning || 0);
+                let total = (type == 'Deposit') ? (cur + amount) : (cur - amount);
+                db.ref('users/' + uid).update({ winning: total });
+                db.ref('payments/' + pId).remove();
+                alert("Transaction Approved & Balance Updated!");
+            });
+        }
+
+        // ম্যানুয়াল ব্যালেন্স আপডেট
+        function forceUpdateUser() {
+            const uid = document.getElementById('userUid').value;
+            const bal = document.getElementById('userBal').value;
+            if(!uid || !bal) return alert("Enter UID and Balance");
+            db.ref('users/' + uid).update({ winning: parseInt(bal) });
+            alert("User balance manually set to " + bal + " TK");
+        }
+
+        // আইডি লিস্ট আপডেট
+        db.ref('matches').on('value', s => {
+            let h = ""; 
+            s.forEach(c => { 
+                h += `<div class="item">#${c.val().matchNo} | <b class="id-copy" onclick="document.getElementById('targetId').value='${c.key}'">${c.key}</b> (Click to copy)</div>`; 
+            });
+            document.getElementById('mIdList').innerHTML = h;
+        });
+    </script>
+</body>
+</html>
