@@ -13,38 +13,53 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; --red: #ff3333; --gold: #ffcc00; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --red: #ff3333; --gold: #ffcc00; --blue: #00c2ff; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
         
-        /* Header & Notification Icon Position */
+        /* Header Style */
         .header { padding: 25px 20px; background: #000; text-align: center; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: center; position: relative; }
-        .bell-container { position: absolute; left: 20px; top: 30px; cursor: pointer; }
+        .bell-container { position: absolute; left: 20px; cursor: pointer; }
         .bell-icon { color: var(--p); font-size: 24px; text-shadow: 0 0 10px var(--p); }
         .notif-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 50%; display: none; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); margin: 0; font-size: 22px; text-shadow: 0 0 15px var(--p); letter-spacing: 2px; }
-        
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); margin: 0; font-size: 20px; text-shadow: 0 0 15px var(--p); letter-spacing: 1px; }
+
         /* Notification Modal */
         .notif-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .notif-content { background: #111; width: 90%; max-width: 400px; border-radius: 20px; border: 1px solid #333; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
         .notif-header { padding: 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
         .notif-body { padding: 15px; overflow-y: auto; flex: 1; }
-        .notif-item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid var(--p); position: relative; }
-        .del-btn { position: absolute; top: 10px; right: 10px; color: #555; cursor: pointer; }
+        .notif-item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid var(--p); }
 
-        /* Match Cards */
-        .card { background: var(--c); border-radius: 20px; padding: 20px; margin: 15px; border: 1px solid #1f1f1f; }
-        .m-name { font-size: 18px; font-weight: 500; margin-bottom: 12px; color: #fff; }
-        .timer-btn { width: 100%; padding: 12px; background: #2a2a10; color: var(--red); border: 1px solid #443311; border-radius: 12px; font-weight: bold; margin-bottom: 12px; font-size: 13px; text-transform: uppercase; }
-        .id-pass-btn { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #000; padding: 6px 15px; border-radius: 8px; font-size: 12px; font-weight: bold; border: none; margin-bottom: 12px; cursor: pointer; }
-        .join-status-btn { width: 100%; padding: 15px; background: #1a1a1a; color: var(--p); border: none; border-radius: 15px; font-weight: bold; font-size: 16px; text-transform: uppercase; cursor: pointer; }
+        /* Match Cards - Pro Design */
+        .card { background: var(--c); border-radius: 20px; padding: 18px; margin: 15px; border: 1px solid #1f1f1f; position: relative; }
+        .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 13px; }
+        .m-mode { border: 1px solid var(--blue); color: var(--blue); font-size: 9px; padding: 2px 8px; border-radius: 5px; text-transform: uppercase; }
+        .m-name { font-size: 17px; font-weight: 500; margin-bottom: 15px; color: #fff; }
 
-        /* Nav Bar */
+        /* Stats Grid (Prize, Kill, Entry) */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; text-align: center; }
+        .stat-box { background: #1a1a1a; padding: 10px 5px; border-radius: 12px; border: 1px solid #222; }
+        .stat-box small { display: block; font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-box b { font-size: 12px; display: block; }
+        .prize-txt { color: var(--gold); }
+        .kill-txt { color: #fff; }
+        .entry-txt { color: var(--p); }
+
+        /* Timer and Buttons */
+        .timer-box { width: 100%; padding: 10px; background: #000; color: #ff9900; border: 1px dotted #333; border-radius: 10px; font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: center; box-sizing: border-box; }
+        .btn-row { display: flex; gap: 10px; }
+        .id-pass-btn { flex: 1; background: #fff; color: #000; padding: 12px; border-radius: 12px; font-size: 11px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
+        .join-btn { flex: 2; background: var(--p); color: #000; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
+        .join-btn.joined { background: #1a1a1a; color: var(--p); border: 1px solid var(--p); }
+
+        /* Navigation */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 15px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; cursor: pointer; text-decoration: none; }
+        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
 
-        /* Auth Overlay */
+        /* Login Box */
         #authBox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .auth-card { background: var(--c); padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; border: 1px solid var(--p); text-align: center; }
         .auth-card input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; outline: none; box-sizing: border-box; }
@@ -54,22 +69,17 @@
 
     <div id="authBox">
         <div class="auth-card">
-            <h3 style="color:var(--p); font-family:'Orbitron';">WELCOME</h3>
-            <p style="font-size:12px; color:#888;">Please login to continue</p>
+            <h3 style="color:var(--p); font-family:'Orbitron';">LOGIN</h3>
             <input type="email" id="email" placeholder="Email Address">
             <input type="password" id="pass" placeholder="Password">
-            <button class="join-status-btn" onclick="handleAuth()">LOGIN / REGISTER</button>
+            <button class="join-btn" onclick="handleAuth()" style="width: 100%; margin-top: 10px;">LOGIN / SIGNUP</button>
         </div>
     </div>
 
     <div id="notifModal" class="notif-modal">
         <div class="notif-content">
-            <div class="notif-header">
-                <h3>NOTICES</h3>
-                <i class="fas fa-times" onclick="closeNotif()" style="cursor:pointer;"></i>
-            </div>
-            <div id="notifList" class="notif-body">
-                </div>
+            <div class="notif-header"><h3>NOTICES</h3><i class="fas fa-times" onclick="closeNotif()"></i></div>
+            <div id="notifList" class="notif-body"></div>
         </div>
     </div>
 
@@ -81,8 +91,9 @@
         <h2 class="title">TESLA ESPORTS</h2>
     </div>
 
-    <div id="mList">
-        </div>
+    <div id="mList" style="padding-bottom: 20px;">
+        <p style="text-align:center; margin-top:50px; color:#555;">Loading Matches...</p>
+    </div>
 
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i><div>Play</div></a>
@@ -92,7 +103,6 @@
     </div>
 
     <script>
-        // Firebase Configuration
         const firebaseConfig = { 
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
             authDomain: "teot-a3046.firebaseapp.com",
@@ -105,10 +115,9 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
-        // 1. Authentication
         auth.onAuthStateChanged(user => {
             if (!user) { document.getElementById('authBox').style.display = 'flex'; }
-            else { document.getElementById('authBox').style.display = 'none'; loadAppData(user.uid); }
+            else { document.getElementById('authBox').style.display = 'none'; loadData(user.uid); }
         });
 
         async function handleAuth() {
@@ -118,9 +127,8 @@
             catch { await auth.createUserWithEmailAndPassword(e, p); }
         }
 
-        // 2. Load Matches & Notifications
-        function loadAppData(uid) {
-            // Load Matches
+        function loadData(uid) {
+            // Load Matches (Admins data keys applied)
             db.ref('matches').on('value', snap => {
                 let html = "";
                 snap.forEach(c => {
@@ -128,52 +136,60 @@
                     let joined = m.joined && m.joined[uid];
                     html += `
                     <div class="card">
-                        <div class="m-name">#${m.matchNo} ${m.name}</div>
-                        <button id="timer_${id}" class="timer-btn">Calculating...</button>
-                        <button class="id-pass-btn" onclick="checkIdPass('${id}')"><i class="fas fa-key"></i> ID & Pass</button>
-                        <button class="join-status-btn" onclick="handleJoin('${id}')">${joined ? 'JOINED' : 'JOIN NOW'}</button>
+                        <div class="m-top">
+                            <span class="m-no">MATCH #${m.matchNo}</span>
+                            <span class="m-mode">${m.mode}</span>
+                        </div>
+                        <div class="m-name">${m.name}</div>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-box"><small>Prize Pool</small><b class="prize-txt">${m.prize} TK</b></div>
+                            <div class="stat-box"><small>Per Kill</small><b class="kill-txt">${m.perKill} TK</b></div>
+                            <div class="stat-box"><small>Entry Fee</small><b class="entry-txt">${m.entry} TK</b></div>
+                        </div>
+
+                        <div id="timer_${id}" class="timer-box">Calculating...</div>
+
+                        <div class="btn-row">
+                            <button class="id-pass-btn" onclick="checkIdPass('${id}')"><i class="fas fa-key"></i> ID & PASS</button>
+                            <button class="join-btn ${joined ? 'joined' : ''}" onclick="handleJoin('${id}')">
+                                ${joined ? 'JOINED' : 'JOIN NOW'}
+                            </button>
+                        </div>
                     </div>`;
                     startCountdown(m.startTime, id);
                 });
-                document.getElementById('mList').innerHTML = html || "<p style='text-align:center;'>No matches available.</p>";
+                document.getElementById('mList').innerHTML = html || "<p style='text-align:center;'>No matches found.</p>";
             });
 
-            // Load Notifications (Latest First)
+            // Load Global Notice from Admin
             db.ref('notifications').on('value', snap => {
-                let list = document.getElementById('notifList');
-                let badge = document.getElementById('notifBadge');
-                let html = ""; let count = 0; let items = [];
-                snap.forEach(c => { items.push({id: c.key, ...c.val()}); });
-                items.reverse(); 
-                items.forEach(n => {
-                    html += `<div class="notif-item" id="n_${n.id}"><i class="fas fa-trash del-btn" onclick="delN('${n.id}')"></i><h4>${n.title}</h4><p>${n.msg}</p></div>`;
-                    count++;
-                });
-                list.innerHTML = html || "<p style='color:#555; text-align:center;'>No notices</p>";
-                if(count > 0) { badge.innerText = count; badge.style.display = 'block'; }
-            });
-        }
-
-        // 3. ID/Pass Logic (5 Minute Rule)
-        function checkIdPass(id) {
-            db.ref('matches/'+id).once('value', s => {
-                let m = s.val();
-                if(!m.joined || !m.joined[auth.currentUser.uid]) return Swal.fire('Error','আগে জয়েন করুন!','error');
-                if(!m.roomId || m.roomId == "Pending") {
-                    Swal.fire('ID & Pass', 'Match shuru hobar 5 minute age ID Pass dewa hobe।', 'info');
-                } else {
-                    Swal.fire({ title: 'Room Details', html: `ID: ${m.roomId}<br>Pass: ${m.roomPass}`, icon: 'success' });
+                let n = snap.val();
+                if(n) {
+                    document.getElementById('notifBadge').style.display = 'block';
+                    document.getElementById('notifList').innerHTML = `<div class="notif-item"><p style="font-size:13px;">${n.message}</p></div>`;
                 }
             });
         }
 
-        // 4. Timer & UI Logic
+        function checkIdPass(id) {
+            db.ref('matches/'+id).once('value', s => {
+                let m = s.val();
+                if(!m.joined || !m.joined[auth.currentUser.uid]) return Swal.fire('Oops','আগে জয়েন করুন!','warning');
+                if(!m.roomId || m.roomId == "Pending") {
+                    Swal.fire('ID & Pass', 'ম্যাচ শুরু হবার ৫ মিনিট আগে এখানে পাবেন।', 'info');
+                } else {
+                    Swal.fire({ title: 'ROOM DETAILS', html: `<b>ID:</b> ${m.roomId}<br><b>PASS:</b> ${m.roomPass}`, icon: 'success' });
+                }
+            });
+        }
+
         function startCountdown(time, id) {
             setInterval(() => {
                 let diff = new Date(time).getTime() - new Date().getTime();
                 let el = document.getElementById(`timer_${id}`);
                 if(el) {
-                    if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "#ff3333"; }
+                    if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "red"; }
                     else {
                         let h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
                         el.innerHTML = `Starts In: ${h}h ${m}m ${s}s`;
@@ -182,9 +198,8 @@
             }, 1000);
         }
 
-        function openNotif() { document.getElementById('notifModal').style.display = 'flex'; document.getElementById('notifBadge').style.display = 'none'; }
-        function closeNotif() { document.getElementById('notifModal').style.display = 'none'; }
-        function delN(id) { document.getElementById('n_'+id).style.display = 'none'; }
+        function openNotif() { document.getElementById('notifModal').style.display = 'flex'; }
+        function closeNotif() { document.getElementById('notifModal').style.display = 'none'; document.getElementById('notifBadge').style.display = 'none'; }
     </script>
 </body>
 </html>
