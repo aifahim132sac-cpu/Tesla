@@ -47,8 +47,10 @@
 
         .room-box { background: #003300; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed var(--p); font-size: 13px; }
         
-        /* Match Type Badge Style */
         .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; }
+        
+        /* Countdown Style */
+        .timer { font-size: 12px; color: #ffcc00; font-weight: bold; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid #ffcc0044; }
     </style>
 </head>
 <body>
@@ -127,6 +129,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
         let isLogin = true;
+        let countdowns = {}; // টাইমারগুলো ট্র্যাক করার জন্য
 
         function toast(t, m, i) {
             Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
@@ -178,17 +181,24 @@
         function loadMatches(uid) {
             db.ref('matches').on('value', snap => {
                 let hPlay = "", hMy = "";
+                countdowns = {}; // রিসেট
+                
                 snap.forEach(c => {
                     let m = c.val(), id = c.key;
                     let joined = m.joined ? Object.keys(m.joined).length : 0;
                     let isJoined = m.joined && m.joined[uid];
                     
-                    // আপডেট করা কার্ড ডিজাইন (Match Mode সহ)
+                    // ম্যাচ টাইম স্টোর করা টাইমারের জন্য
+                    if(m.startTime) countdowns[id] = m.startTime;
+
                     let card = `<div class="card">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                             <span style="color:var(--p); font-weight:bold;">#${m.matchNo} ${m.name}</span>
                             <span class="m-badge">${m.mode || 'Classic'}</span>
                         </div>
+                        
+                        <div class="timer" id="timer_${id}"><i class="fas fa-clock"></i> Calculating...</div>
+
                         <div class="grid">
                             <div class="g-box">PRIZE<b>${m.prize}</b></div>
                             <div class="g-box">KILL<b>${m.perKill}</b></div>
@@ -205,6 +215,28 @@
                 document.getElementById('myMList').innerHTML = hMy || "Not joined any match.";
             });
         }
+
+        // টাইমার আপডেট ফাংশন
+        setInterval(() => {
+            Object.keys(countdowns).forEach(id => {
+                const el = document.getElementById('timer_' + id);
+                if (!el) return;
+
+                const target = new Date(countdowns[id]).getTime();
+                const now = new Date().getTime();
+                const diff = target - now;
+
+                if (diff <= 0) {
+                    el.innerHTML = `<i class="fas fa-play-circle"></i> Match Started!`;
+                    el.style.color = "var(--p)";
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    el.innerHTML = `<i class="fas fa-clock"></i> Starts in: ${h}h ${m}m ${s}s`;
+                }
+            });
+        }, 1000);
 
         function joinM(id, fee, now, total) {
             if(now >= total) return toast("Full!", "সব স্লট পূরণ হয়ে গেছে!", "error");
