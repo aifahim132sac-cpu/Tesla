@@ -65,8 +65,18 @@
     </div>
 
     <script>
-        const conf = { databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app" };
-        firebase.initializeApp(conf);
+        // আপনার অরিজিনাল Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com",
+            messagingSenderId: "305101036814",
+            appId: "1:305101036814:web:658c16053f3e790f1352ac"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         function saveTheme() {
@@ -93,9 +103,20 @@
                 prize: document.getElementById('mPrize').value,
                 startTime: document.getElementById('mTime').value,
                 rules: document.getElementById('mRules').value,
-                roomId: "Pending", roomPass: "Pending"
+                roomId: "Pending", 
+                roomPass: "Pending",
+                joined: 0
             };
-            db.ref('matches').push(data).then(() => { alert("Match Published! ✅"); location.reload(); });
+
+            if(!data.matchNo || !data.name) return alert("তথ্য পূরণ করুন!");
+
+            db.ref('matches').push(data)
+            .then(() => { 
+                alert("Match Published! ✅"); 
+                document.getElementById('mNo').value = "";
+                document.getElementById('mTitle').value = "";
+            })
+            .catch(e => alert("Error: " + e.message));
         }
 
         function updateRoom(id) {
