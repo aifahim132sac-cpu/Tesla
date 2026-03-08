@@ -3,86 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Master Admin</title>
+    <title>Tesla Master Admin - Notification Pro</title>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <style>
-        :root { --p: #00ff00; --b: #080808; --c: #121212; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; padding: 15px; margin: 0; }
-        .card { background: var(--c); padding: 18px; border-radius: 15px; border: 1px solid #333; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        h3 { color: var(--p); font-family: 'Orbitron'; font-size: 14px; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #222; padding-bottom: 5px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; outline: none; }
-        .btn { background: var(--p); color: #000; width: 100%; padding: 14px; font-weight: bold; border: none; cursor: pointer; border-radius: 8px; text-transform: uppercase; font-family: 'Orbitron'; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .btn:active { transform: scale(0.95); }
-        .item { background: #1a1a1a; padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 5px solid var(--p); position: relative; }
-        .del-btn { background: #ff3333; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; float: right; font-size: 11px; }
-        .room-area { background: #222; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .m-type-label { font-size: 12px; color: cyan; margin-top: 5px; display: block; }
-        .pay-actions { display: flex; gap: 8px; margin-top: 12px; }
-        .view-btn { background: #00ffff; color: #000; flex: 1; padding: 10px; border-radius: 8px; font-size: 11px; text-decoration: none; text-align: center; font-weight: bold; }
+        :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; --blue: #00c2ff; --yellow: #ffcc00; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
+        
+        .header { padding: 15px; text-align: center; background: #000; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 1000; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 18px; }
+        
+        .sec { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .sec.active { display: block; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+
+        .card { background: var(--c); border-radius: 15px; padding: 18px; margin-bottom: 15px; border: 1px solid #222; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h3 { color: var(--p); font-family: 'Orbitron'; font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; box-sizing: border-box; }
+        
+        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:active { transform: scale(0.98); }
+        
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; transition: 0.3s; }
+        .n-i.active { color: var(--p); }
+        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
+
+        .item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--p); position: relative; }
+        .u-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding: 12px 0; }
+        .u-info b { color: var(--p); font-size: 14px; }
+        .u-info p { margin: 2px 0; font-size: 11px; color: #888; }
+        
+        .search-box { position: sticky; top: 60px; z-index: 900; background: var(--b); padding: 10px 0; }
+        .del-btn { background: var(--red); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; }
+        .view-btn { background: var(--blue); color: #000; padding: 8px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; text-align: center; flex: 1; }
     </style>
 </head>
 <body>
-    <h2 style="text-align:center; font-family: 'Orbitron';">TESLA <span style="color:var(--p);">MASTER</span></h2>
 
-    <div class="card" style="border-top: 3px solid cyan;">
-        <h3>🎨 App Theme Color</h3>
-        <input type="color" id="appTheme" value="#00ff00">
-        <button class="btn" style="background:cyan" onclick="saveTheme()">Apply Theme</button>
-    </div>
+    <div class="header"><div class="title">TESLA MASTER ADMIN</div></div>
 
-    <div class="card" style="border-top: 3px solid #00c2ff;">
-        <h3>👤 User Management (Balance/Played/Winning)</h3>
-        <input type="text" id="uUid" placeholder="Paste User UID">
-        <input type="number" id="uBal" placeholder="Main Balance (TK)">
-        <input type="number" id="uPlayed" placeholder="Matches Played Count">
-        <input type="number" id="uWinning" placeholder="Total Winning Prize (TK)">
-        <button class="btn" style="background:#00c2ff" onclick="updateUser()">Update Account</button>
-    </div>
-
-    <div class="card" style="border-top: 3px solid #ff4444;">
-        <h3>🚀 Create Tournament</h3>
-        <input type="number" id="mNo" placeholder="Match Number (Ex: 01)">
-        <input type="text" id="mTitle" placeholder="Match Name (Ex: Daily Scrims)">
-        
-        <label class="m-type-label">Select Match Mode:</label>
-        <select id="mType">
-            <option value="BR Solo">BR Solo</option>
-            <option value="BR Duo">BR Duo</option>
-            <option value="BR Squad">BR Squad</option>
-            <option value="Clash Squad">Clash Squad</option>
-            <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-            <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
-            <option value="Free Match">Free Match</option>
-        </select>
-
-        <div style="display:flex; gap:10px;">
-            <input type="number" id="mEntry" placeholder="Entry (TK)">
-            <input type="number" id="mKill" placeholder="Per Kill (TK)">
-            <input type="number" id="mPrize" placeholder="Total Prize (TK)">
+    <div id="matches" class="sec active">
+        <div class="card" style="border-top: 3px solid var(--yellow);">
+            <h3><i class="fas fa-bullhorn" style="color:var(--yellow);"></i> Send Notification</h3>
+            <textarea id="notifMsg" placeholder="ইউজারদের জন্য কোনো জরুরি ঘোষণা লিখুন..."></textarea>
+            <button class="btn" style="background:var(--yellow);" onclick="sendNotif()"><i class="fas fa-paper-plane"></i> Send Notification</button>
         </div>
-        
-        <input type="number" id="mSlots" placeholder="Total Slots (Ex: 100)" value="100">
 
-        <label style="font-size:12px; color:var(--p);">Match Start Time:</label>
-        <input type="datetime-local" id="mTime">
-        <textarea id="mRules" rows="3" placeholder="Match Specific Rules..."></textarea>
-        <button class="btn" onclick="postMatch()">Go Live</button>
+        <div class="card">
+            <h3><i class="fas fa-plus-circle"></i> Create Tournament</h3>
+            <input type="number" id="mNo" placeholder="Match No (Ex: 01)">
+            <input type="text" id="mTitle" placeholder="Match Name">
+            <select id="mType">
+                <option value="BR Solo">BR Solo</option>
+                <option value="BR Duo">BR Duo</option>
+                <option value="BR Squad">BR Squad</option>
+                <option value="Clash Squad">Clash Squad</option>
+            </select>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="mEntry" placeholder="Entry Tk">
+                <input type="number" id="mKill" placeholder="Kill Tk">
+                <input type="number" id="mPrize" placeholder="Prize Tk">
+            </div>
+            <input type="datetime-local" id="mTime">
+            <button class="btn" onclick="postMatch()"><i class="fas fa-gamepad"></i> Publish Match</button>
+        </div>
+
+        <h3><i class="fas fa-tasks"></i> Live Matches</h3>
+        <div id="mList">Loading...</div>
     </div>
 
-    <div class="card" style="border-top: 3px solid #a832ad;">
-        <h3>💰 Payment Requests</h3>
+    <div id="payments" class="sec">
+        <h3><i class="fas fa-wallet"></i> Deposit Requests</h3>
         <div id="pList">Loading Requests...</div>
     </div>
 
-    <div class="card">
-        <h3>📋 Live Matches & Room Info</h3>
-        <div id="mList">Loading Matches...</div>
+    <div id="results" class="sec">
+        <div class="card">
+            <h3><i class="fas fa-trophy"></i> Set Winner</h3>
+            <input type="number" id="resMNo" placeholder="Match No">
+            <input type="text" id="resWinner" placeholder="Winner Name">
+            <button class="btn" style="background:gold;" onclick="setResult()">Declare Result</button>
+        </div>
+        <div id="rList"></div>
+    </div>
+
+    <div id="users" class="sec">
+        <div class="search-box">
+            <input type="text" id="uSearch" placeholder="🔍 Search User Name..." onkeyup="searchUser()">
+        </div>
+        <h3><i class="fas fa-user-shield"></i> User Control</h3>
+        <div id="uList">Loading Users...</div>
+    </div>
+
+    <div class="nav">
+        <div class="n-i active" onclick="nav('matches', this)"><i class="fas fa-gamepad"></i>Matches</div>
+        <div class="n-i" onclick="nav('payments', this)"><i class="fas fa-money-bill-wave"></i>Payments</div>
+        <div class="n-i" onclick="nav('results', this)"><i class="fas fa-poll"></i>Results</div>
+        <div class="n-i" onclick="nav('users', this)"><i class="fas fa-users"></i>Users</div>
     </div>
 
     <script>
@@ -95,121 +120,102 @@
             messagingSenderId: "305101036814",
             appId: "1:305101036814:web:658c16053f3e790f1352ac"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function toast(t, m, i) {
-            Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
+        function nav(id, el) {
+            document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.n-i').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
-        function saveTheme() {
-            db.ref('settings/theme').set({ color: document.getElementById('appTheme').value });
-            toast("Theme Sync!", "App theme has been updated.", "success");
-        }
+        function toast(t, m, i) { Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff' }); }
 
-        function updateUser() {
-            let uid = document.getElementById('uUid').value;
-            let bal = document.getElementById('uBal').value;
-            let played = document.getElementById('uPlayed').value;
-            let winning = document.getElementById('uWinning').value;
-
-            if(!uid) return toast("Error!", "দয়া করে ইউজারের UID দিন!", "error");
+        // --- NEW: Send Notification ---
+        function sendNotif() {
+            let msg = document.getElementById('notifMsg').value;
+            if(!msg) return toast("Oops!", "মেসেজ না লিখে পাঠানো যাবে না!", "warning");
             
-            db.ref('users/' + uid).update({ 
-                winning: parseInt(bal) || 0, 
-                played: parseInt(played) || 0,
-                winningPrize: parseInt(winning) || 0 
-            })
-            .then(() => {
-                toast("Updated!", "User Stats Updated successfully!", "success");
-                document.getElementById('uUid').value = "";
-                document.getElementById('uBal').value = "";
-                document.getElementById('uPlayed').value = "";
-                document.getElementById('uWinning').value = "";
-            })
-            .catch(e => toast("Error!", e.message, "error"));
+            db.ref('notifications').set({
+                message: msg,
+                date: new Date().toLocaleString(),
+                timestamp: Date.now()
+            }).then(() => {
+                toast("Success!", "সব ইউজারকে জানানো হয়েছে!", "success");
+                document.getElementById('notifMsg').value = "";
+            });
         }
 
+        // --- User Logic ---
+        let usersData = {};
+        db.ref('users').on('value', snap => {
+            usersData = snap.val() || {};
+            renderUsers(usersData);
+        });
+
+        function renderUsers(users) {
+            let h = "";
+            for (let uid in users) {
+                let u = users[uid];
+                h += `<div class="u-item" data-name="${u.ign ? u.ign.toLowerCase() : ''}">
+                    <div class="u-info">
+                        <b>${u.ign || 'No Name'}</b>
+                        <p>Total Bal: ${u.winning || 0} Tk | Win: ${u.winningPrize || 0} Tk</p>
+                        <p>Played: ${u.played || 0} | UID: ${uid}</p>
+                    </div>
+                    <button class="btn" style="width:70px; font-size:10px; padding:8px;" onclick="editUser('${uid}')">EDIT</button>
+                </div>`;
+            }
+            document.getElementById('uList').innerHTML = h;
+        }
+
+        function searchUser() {
+            let q = document.getElementById('uSearch').value.toLowerCase();
+            document.querySelectorAll('.u-item').forEach(i => {
+                i.style.display = i.getAttribute('data-name').includes(q) ? "flex" : "none";
+            });
+        }
+
+        function editUser(uid) {
+            let u = usersData[uid];
+            Swal.fire({
+                title: `Manage: ${u.ign}`,
+                html: `
+                    <div style="text-align:left; font-size:12px; margin-bottom:5px;">Main Balance (Tk)</div>
+                    <input id="sw-bal" type="number" value="${u.winning || 0}">
+                    <div style="text-align:left; font-size:12px; margin-bottom:5px;">Winning Balance (Tk)</div>
+                    <input id="sw-prize" type="number" value="${u.winningPrize || 0}">
+                    <div style="text-align:left; font-size:12px; margin-bottom:5px;">Match Played</div>
+                    <input id="sw-played" type="number" value="${u.played || 0}">
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Update'
+            }).then(res => {
+                if(res.isConfirmed) {
+                    db.ref('users/' + uid).update({
+                        winning: parseInt(document.getElementById('sw-bal').value),
+                        winningPrize: parseInt(document.getElementById('sw-prize').value),
+                        played: parseInt(document.getElementById('sw-played').value)
+                    });
+                    toast("Updated!", "User data has been changed.", "success");
+                }
+            });
+        }
+
+        // --- Match & Room Info ---
         function postMatch() {
-            const data = {
+            const m = {
                 matchNo: document.getElementById('mNo').value,
                 name: document.getElementById('mTitle').value,
                 mode: document.getElementById('mType').value,
                 entry: document.getElementById('mEntry').value,
                 perKill: document.getElementById('mKill').value,
                 prize: document.getElementById('mPrize').value,
-                totalSlots: document.getElementById('mSlots').value,
                 startTime: document.getElementById('mTime').value,
-                rules: document.getElementById('mRules').value,
-                roomId: "Pending", 
-                roomPass: "Pending",
-                joined: 0
+                roomId: "Pending", roomPass: "Pending"
             };
-
-            if(!data.matchNo || !data.name) return toast("Empty!", "সব তথ্য পূরণ করুন!", "warning");
-
-            db.ref('matches').push(data)
-            .then(() => { 
-                toast("Published!", "Match Live! ✅", "success"); 
-                document.getElementById('mNo').value = "";
-                document.getElementById('mTitle').value = "";
-            })
-            .catch(e => toast("Error!", e.message, "error"));
-        }
-
-        function updateRoom(id) {
-            db.ref('matches/' + id).update({
-                roomId: document.getElementById('rid_'+id).value,
-                roomPass: document.getElementById('rps_'+id).value
-            }).then(() => toast("Success!", "Room ID/Pass Pushed!", "success"));
-        }
-
-        // পেমেন্ট রিকোয়েস্ট লিসেনার (স্ক্রিনশট ভিউ সহ)
-        db.ref('payments').on('value', s => {
-            let h = "";
-            s.forEach(c => {
-                let p = c.val();
-                let pid = c.key;
-                
-                // শুধুমাত্র Pending রিকোয়েস্টগুলো দেখাবে
-                if(p.status === "Pending" || !p.status) {
-                    h += `<div class="item">
-                        <button class="del-btn" onclick="db.ref('payments/${pid}').remove()">Reject</button>
-                        <b style="color:var(--p);">${p.type}</b>: ${p.amount}TK <br>
-                        <small style="color:#888;">UID: ${p.uid}</small>
-                        
-                        <div class="pay-actions">
-                            <a href="${p.ssUrl}" target="_blank" class="view-btn">
-                                <i class="fas fa-image"></i> VIEW SS
-                            </a>
-                            
-                            <button class="btn" style="flex:1; font-size:11px; padding:10px;" onclick="approvePay('${p.uid}', ${p.amount}, '${pid}')">
-                                APPROVE
-                            </button>
-                        </div>
-                    </div>`;
-                }
-            });
-            document.getElementById('pList').innerHTML = h || "No requests found.";
-        });
-
-        function approvePay(uid, amount, pid) {
-            db.ref('users/' + uid).once('value', s => {
-                if(!s.exists()) return toast("Error!", "ইউজার খুঁজে পাওয়া যায়নি!", "error");
-                
-                let current = parseInt(s.val().winning || 0);
-                let total = current + parseInt(amount);
-                
-                db.ref('users/' + uid).update({ winning: total })
-                .then(() => {
-                    return db.ref('payments/' + pid).remove();
-                })
-                .then(() => {
-                    toast("Success!", "Payment Approved & Balance Added!", "success");
-                })
-                .catch(e => toast("Error!", e.message, "error"));
-            });
+            if(!m.matchNo || !m.name) return toast("Empty!", "সব তথ্য দিন", "error");
+            db.ref('matches').push(m).then(() => toast("Live!", "ম্যাচ পাবলিশ হয়েছে", "success"));
         }
 
         db.ref('matches').on('value', s => {
@@ -217,33 +223,57 @@
             s.forEach(c => {
                 let m = c.val();
                 h += `<div class="item">
-                    <button class="del-btn" onclick="deleteMatch('${c.key}')">DELETE</button>
-                    <b>#${m.matchNo} ${m.name} [${m.mode}]</b><br><small>${m.startTime}</small>
-                    <div class="room-area">
-                        <input type="text" id="rid_${c.key}" placeholder="Room ID" value="${m.roomId}">
-                        <input type="text" id="rps_${c.key}" placeholder="Room Pass" value="${m.roomPass}">
-                        <button class="btn" style="background:gold; font-size:11px; padding:8px;" onclick="updateRoom('${c.key}')">Push ID/PASS</button>
+                    <button class="del-btn" onclick="db.ref('matches/${c.key}').remove()">DELETE</button>
+                    <b>#${m.matchNo} ${m.name}</b><br>
+                    <small>${m.startTime} | ${m.mode}</small>
+                    <div style="display:flex; gap:5px; margin-top:10px;">
+                        <input type="text" id="rid_${c.key}" placeholder="Room ID" value="${m.roomId}" style="margin:0; padding:8px;">
+                        <input type="text" id="rps_${c.key}" placeholder="Pass" value="${m.roomPass}" style="margin:0; padding:8px;">
+                        <button class="btn" style="width:70px; font-size:10px; background:cyan;" onclick="pushRoom('${c.key}')">PUSH</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('mList').innerHTML = h || "No active matches.";
+            document.getElementById('mList').innerHTML = h;
         });
 
-        function deleteMatch(id) { 
-            Swal.fire({
-                title: 'ডিলিট করবেন?',
-                text: "এই ম্যাচটি চিরতরে মুছে যাবে!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ff3333',
-                cancelButtonColor: '#333',
-                confirmButtonText: 'হ্যাঁ, ডিলিট দিন!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    db.ref('matches/' + id).remove();
-                    toast("Deleted!", "Match Removed.", "success");
-                }
-            })
+        function pushRoom(id) {
+            db.ref('matches/' + id).update({
+                roomId: document.getElementById('rid_'+id).value,
+                roomPass: document.getElementById('rps_'+id).value
+            }).then(() => toast("Sent!", "Room ID/Pass updated", "success"));
+        }
+
+        // --- Payment & Results ---
+        db.ref('payments').on('value', s => {
+            let h = "";
+            s.forEach(c => {
+                let p = c.val();
+                h += `<div class="item">
+                    <b style="color:var(--p);">Request: ${p.amount} Tk</b><br>
+                    <small>User UID: ${p.uid}</small>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <a href="${p.ssUrl}" target="_blank" class="view-btn">VIEW SS</a>
+                        <button class="btn" style="flex:1; font-size:11px; padding:10px;" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('pList').innerHTML = h || "No requests.";
+        });
+
+        function approvePay(uid, amt, pid) {
+            db.ref('users/' + uid).once('value', s => {
+                let current = parseInt(s.val().winning || 0);
+                db.ref('users/' + uid).update({ winning: current + parseInt(amt) });
+                db.ref('payments/' + pid).remove();
+                toast("Approved!", "ব্যালেন্স অ্যাড করা হয়েছে।", "success");
+            });
+        }
+
+        function setResult() {
+            let no = document.getElementById('resMNo').value;
+            let win = document.getElementById('resWinner').value;
+            db.ref('results').push({ matchNo: no, winner: win });
+            toast("Success!", "উইনার ঘোষণা করা হয়েছে", "success");
         }
     </script>
 </body>
