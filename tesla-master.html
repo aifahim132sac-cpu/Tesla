@@ -41,8 +41,6 @@
         
         .room-box { background: #000; padding: 12px; border-radius: 10px; margin-top: 10px; border: 1px dashed #444; }
         .room-label { font-size: 11px; color: var(--blue); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        .view-btn { background: var(--blue); color: #000; padding: 8px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; text-align: center; flex: 1; display: block; }
-        
         .u-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding: 12px 0; }
         .u-info b { color: var(--p); font-size: 14px; }
         .u-info p { margin: 2px 0; font-size: 11px; color: #888; }
@@ -79,6 +77,9 @@
                 <input type="number" id="mKill" placeholder="Kill Tk">
                 <input type="number" id="mPrize" placeholder="Prize Tk">
             </div>
+
+            <textarea id="mRules" placeholder="Match Rules (যেমন: No Hack, No Grenade...)" rows="2"></textarea>
+
             <input type="datetime-local" id="mTime">
             <button class="btn" onclick="postMatch()"><i class="fas fa-check-circle"></i> Publish Match</button>
         </div>
@@ -97,6 +98,17 @@
             <h3><i class="fas fa-trophy"></i> Declare Result</h3>
             <p style="font-size: 10px; color: #888; margin-top: -10px;">একাধিক প্লেয়ার হলে কমা (,) ব্যবহার করুন।</p>
             <input type="number" id="resMNo" placeholder="Match No">
+
+            <select id="resMode">
+                <option value="BR Solo">BR Solo</option>
+                <option value="BR Duo">BR Duo</option>
+                <option value="BR Squad">BR Squad</option>
+                <option value="Clash Squad">Clash Squad</option>
+                <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
+                <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
+                <option value="Free Match">Free Match</option>
+            </select>
+
             <input type="text" id="resWinner" placeholder="Winner Name (Ex: Fahim, Percy)">
             <input type="text" id="resKillCount" placeholder="Kill Counts (Ex: 5, 2)">
             <input type="text" id="resWinAmt" placeholder="Winning Amounts (Ex: 100, 50)">
@@ -142,7 +154,6 @@
 
         function toast(t, m, i) { Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff' }); }
 
-        // --- Notification ---
         function sendNotif() {
             let msg = document.getElementById('notifMsg').value;
             if(!msg) return toast("Oops!", "মেসেজ লিখুন!", "warning");
@@ -152,7 +163,6 @@
             });
         }
 
-        // --- Match Management ---
         function postMatch() {
             const m = {
                 matchNo: document.getElementById('mNo').value,
@@ -161,13 +171,16 @@
                 entry: document.getElementById('mEntry').value,
                 perKill: document.getElementById('mKill').value,
                 prize: document.getElementById('mPrize').value,
+                rules: document.getElementById('mRules').value || "Default Rules",
                 startTime: document.getElementById('mTime').value,
                 roomId: "Pending", roomPass: "Pending"
             };
             if(!m.matchNo || !m.name) return toast("Error", "সব তথ্য দিন", "error");
             db.ref('matches').push(m).then(() => {
                 toast("Published!", "ম্যাচ তৈরি হয়েছে! ✅", "success");
-                document.getElementById('mNo').value = ""; document.getElementById('mTitle').value = "";
+                document.getElementById('mNo').value = ""; 
+                document.getElementById('mTitle').value = "";
+                document.getElementById('mRules').value = "";
             });
         }
 
@@ -178,7 +191,8 @@
                 h += `<div class="item">
                     <button class="del-btn" onclick="db.ref('matches/${c.key}').remove()">DELETE</button>
                     <b style="color:var(--p);">#${m.matchNo} ${m.name}</b><br>
-                    <small>${m.startTime} | ${m.mode}</small>
+                    <small>${m.startTime} | ${m.mode}</small><br>
+                    <small style="color:#888;">Rules: ${m.rules}</small>
                     <div class="room-box">
                         <span class="room-label">Room ID</span>
                         <input type="text" id="rid_${c.key}" value="${m.roomId}">
@@ -198,9 +212,9 @@
             }).then(() => toast("Sent!", "ID/Pass আপডেট হয়েছে! ✅", "success"));
         }
 
-        // --- Multi-Player Result Logic (FINAL) ---
         function setResult() {
             let no = document.getElementById('resMNo').value;
+            let mode = document.getElementById('resMode').value;
             let win = document.getElementById('resWinner').value;
             let kill = document.getElementById('resKillCount').value;
             let amt = document.getElementById('resWinAmt').value;
@@ -209,6 +223,7 @@
 
             db.ref('results').push({ 
                 matchNo: no, 
+                mode: mode,
                 winner: win, 
                 kills: kill, 
                 amount: amt 
@@ -227,7 +242,7 @@
                 let r = c.val();
                 h += `<div class="item" style="border-left-color: gold;">
                     <button class="del-btn" onclick="db.ref('results/${c.key}').remove()">DELETE</button>
-                    <b>Match #${r.matchNo} Result</b><br>
+                    <b>Match #${r.matchNo} [${r.mode || 'N/A'}] Result</b><br>
                     <small style="color:gold;">Winners: ${r.winner}</small><br>
                     <small>Kills: ${r.kills} | Prize: ${r.amount} Tk</small>
                 </div>`;
@@ -235,7 +250,7 @@
             document.getElementById('rList').innerHTML = h || "No Results.";
         });
 
-        // --- User Management ---
+        // User and Payment logic stays exactly same
         let usersData = {};
         db.ref('users').on('value', snap => {
             usersData = snap.val() || {};
@@ -247,10 +262,7 @@
             for (let uid in users) {
                 let u = users[uid];
                 h += `<div class="u-item" data-name="${u.ign ? u.ign.toLowerCase() : ''}">
-                    <div class="u-info">
-                        <b>${u.ign || 'No Name'}</b>
-                        <p>Bal: ${u.winning || 0} Tk | Played: ${u.played || 0}</p>
-                    </div>
+                    <div class="u-info"><b>${u.ign || 'No Name'}</b><p>Bal: ${u.winning || 0} Tk</p></div>
                     <button class="btn" style="width:70px; font-size:10px; padding:8px;" onclick="editUser('${uid}')">EDIT</button>
                 </div>`;
             }
@@ -268,34 +280,22 @@
             let u = usersData[uid];
             Swal.fire({
                 title: `Edit ${u.ign}`,
-                html: `
-                    <input id="sw-bal" type="number" placeholder="Main Balance" value="${u.winning || 0}">
-                    <input id="sw-played" type="number" placeholder="Played Count" value="${u.played || 0}">
-                `,
+                html: `<input id="sw-bal" type="number" value="${u.winning || 0}">`,
                 confirmButtonText: 'Update'
             }).then(res => {
-                if(res.isConfirmed) {
-                    db.ref('users/' + uid).update({
-                        winning: parseInt(document.getElementById('sw-bal').value),
-                        played: parseInt(document.getElementById('sw-played').value)
-                    });
-                }
+                if(res.isConfirmed) db.ref('users/' + uid).update({ winning: parseInt(document.getElementById('sw-bal').value) });
             });
         }
 
-        // --- Payments ---
         db.ref('payments').on('value', s => {
             let h = "";
             s.forEach(c => {
                 let p = c.val();
-                h += `<div class="item">
-                    <b>Amount: ${p.amount} Tk</b><br>
-                    <small>User: ${p.uid}</small>
+                h += `<div class="item"><b>Amount: ${p.amount} Tk</b><br><small>User: ${p.uid}</small>
                     <div style="display:flex; gap:10px; margin-top:10px;">
-                        <a href="${p.ssUrl}" target="_blank" class="view-btn">VIEW SS</a>
+                        <a href="${p.ssUrl}" target="_blank" style="background:var(--blue); color:#000; padding:8px; border-radius:8px; font-size:11px; text-decoration:none; font-weight:bold; flex:1; text-align:center;">VIEW SS</a>
                         <button class="btn" style="flex:1;" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
-                    </div>
-                </div>`;
+                    </div></div>`;
             });
             document.getElementById('pList').innerHTML = h || "No Requests.";
         });
