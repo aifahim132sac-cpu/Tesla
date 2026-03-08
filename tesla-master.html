@@ -37,12 +37,11 @@
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
         .item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--p); position: relative; }
+        .del-btn { background: var(--red); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; position: absolute; right: 10px; top: 10px; }
         
         .room-box { background: #000; padding: 12px; border-radius: 10px; margin-top: 10px; border: 1px dashed #444; }
         .room-label { font-size: 11px; color: var(--blue); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        
-        .del-btn { background: var(--red); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; position: absolute; right: 10px; top: 10px; }
-        .view-btn { background: var(--blue); color: #000; padding: 8px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; text-align: center; flex: 1; }
+        .view-btn { background: var(--blue); color: #000; padding: 8px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; text-align: center; flex: 1; display: block; }
         
         .u-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding: 12px 0; }
         .u-info b { color: var(--p); font-size: 14px; }
@@ -96,10 +95,11 @@
     <div id="results" class="sec">
         <div class="card">
             <h3><i class="fas fa-trophy"></i> Declare Result</h3>
+            <p style="font-size: 10px; color: #888; margin-top: -10px;">একাধিক প্লেয়ার হলে কমা (,) ব্যবহার করুন।</p>
             <input type="number" id="resMNo" placeholder="Match No">
-            <input type="text" id="resWinner" placeholder="Winner Name">
-            <input type="number" id="resKillCount" placeholder="Kills Count">
-            <input type="number" id="resWinAmt" placeholder="Total Winning Amount (Tk)">
+            <input type="text" id="resWinner" placeholder="Winner Name (Ex: Fahim, Percy)">
+            <input type="text" id="resKillCount" placeholder="Kill Counts (Ex: 5, 2)">
+            <input type="text" id="resWinAmt" placeholder="Winning Amounts (Ex: 100, 50)">
             <button class="btn" style="background:gold;" onclick="setResult()">Submit Result</button>
         </div>
         <h3><i class="fas fa-history"></i> Published Results</h3>
@@ -122,7 +122,6 @@
     </div>
 
     <script>
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
             authDomain: "teot-a3046.firebaseapp.com",
@@ -143,21 +142,17 @@
 
         function toast(t, m, i) { Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff' }); }
 
-        // --- Notification Logic (Fixed) ---
+        // --- Notification ---
         function sendNotif() {
             let msg = document.getElementById('notifMsg').value;
             if(!msg) return toast("Oops!", "মেসেজ লিখুন!", "warning");
-            
-            db.ref('notifications').set({
-                message: msg,
-                timestamp: Date.now()
-            }).then(() => {
-                toast("Successful!", "সব ইউজারকে জানানো হয়েছে! ✅", "success");
+            db.ref('notifications').set({ message: msg, timestamp: Date.now() }).then(() => {
+                toast("Successful!", "ঘোষণা পাঠানো হয়েছে! ✅", "success");
                 document.getElementById('notifMsg').value = "";
-            }).catch(e => toast("Error", "ফায়ারবেস রুলস চেক করুন!", "error"));
+            });
         }
 
-        // --- Match Logic ---
+        // --- Match Management ---
         function postMatch() {
             const m = {
                 matchNo: document.getElementById('mNo').value,
@@ -171,7 +166,7 @@
             };
             if(!m.matchNo || !m.name) return toast("Error", "সব তথ্য দিন", "error");
             db.ref('matches').push(m).then(() => {
-                toast("Published!", "ম্যাচ লাইভ হয়েছে! ✅", "success");
+                toast("Published!", "ম্যাচ তৈরি হয়েছে! ✅", "success");
                 document.getElementById('mNo').value = ""; document.getElementById('mTitle').value = "";
             });
         }
@@ -184,47 +179,46 @@
                     <button class="del-btn" onclick="db.ref('matches/${c.key}').remove()">DELETE</button>
                     <b style="color:var(--p);">#${m.matchNo} ${m.name}</b><br>
                     <small>${m.startTime} | ${m.mode}</small>
-                    
                     <div class="room-box">
-                        <span class="room-label"><i class="fas fa-id-card"></i> Room ID</span>
-                        <input type="text" id="rid_${c.key}" value="${m.roomId}" placeholder="Enter ID">
-                        <span class="room-label"><i class="fas fa-key"></i> Room Password</span>
-                        <input type="text" id="rps_${c.key}" value="${m.roomPass}" placeholder="Enter Password">
-                        <button class="btn" style="background:var(--blue); margin-top:5px; height:35px;" onclick="pushRoom('${c.key}')">PUSH ID/PASS</button>
+                        <span class="room-label">Room ID</span>
+                        <input type="text" id="rid_${c.key}" value="${m.roomId}">
+                        <span class="room-label">Room Pass</span>
+                        <input type="text" id="rps_${c.key}" value="${m.roomPass}">
+                        <button class="btn" style="background:var(--blue); height:35px;" onclick="pushRoom('${c.key}')">UPDATE ID/PASS</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('mList').innerHTML = h || "No Matches Created.";
+            document.getElementById('mList').innerHTML = h || "No Active Matches.";
         });
 
         function pushRoom(id) {
             db.ref('matches/' + id).update({
                 roomId: document.getElementById('rid_'+id).value,
                 roomPass: document.getElementById('rps_'+id).value
-            }).then(() => toast("Sent!", "ID/Pass সফলভাবে আপডেট হয়েছে! ✅", "success"));
+            }).then(() => toast("Sent!", "ID/Pass আপডেট হয়েছে! ✅", "success"));
         }
 
-        // --- Result Logic (Fixed) ---
+        // --- Multi-Player Result Logic (FINAL) ---
         function setResult() {
             let no = document.getElementById('resMNo').value;
             let win = document.getElementById('resWinner').value;
             let kill = document.getElementById('resKillCount').value;
             let amt = document.getElementById('resWinAmt').value;
             
-            if(!no || !win) return toast("Empty!", "সব ঘর পূরণ করুন", "warning");
+            if(!no || !win || !kill || !amt) return toast("Warning!", "সবগুলো ঘর পূরণ করুন", "warning");
 
             db.ref('results').push({ 
                 matchNo: no, 
                 winner: win, 
-                kills: kill || 0, 
-                amount: amt || 0 
+                kills: kill, 
+                amount: amt 
             }).then(() => {
-                toast("Declared!", "ফলাফল পাবলিশ করা হয়েছে! ✅", "success");
+                toast("Published!", "রেজাল্ট পাবলিশ হয়েছে! ✅", "success");
                 document.getElementById('resMNo').value = ""; 
                 document.getElementById('resWinner').value = "";
                 document.getElementById('resKillCount').value = "";
                 document.getElementById('resWinAmt').value = "";
-            }).catch(e => toast("Error", "ডাটা সেভ হয়নি!", "error"));
+            });
         }
 
         db.ref('results').on('value', s => {
@@ -234,14 +228,14 @@
                 h += `<div class="item" style="border-left-color: gold;">
                     <button class="del-btn" onclick="db.ref('results/${c.key}').remove()">DELETE</button>
                     <b>Match #${r.matchNo} Result</b><br>
-                    <small>Winner: <span style="color:gold;">${r.winner}</span></small><br>
-                    <small>Kills: ${r.kills} | Win Amount: ${r.amount} Tk</small>
+                    <small style="color:gold;">Winners: ${r.winner}</small><br>
+                    <small>Kills: ${r.kills} | Prize: ${r.amount} Tk</small>
                 </div>`;
             });
-            document.getElementById('rList').innerHTML = h || "No results found.";
+            document.getElementById('rList').innerHTML = h || "No Results.";
         });
 
-        // --- User Logic ---
+        // --- User Management ---
         let usersData = {};
         db.ref('users').on('value', snap => {
             usersData = snap.val() || {};
@@ -255,13 +249,12 @@
                 h += `<div class="u-item" data-name="${u.ign ? u.ign.toLowerCase() : ''}">
                     <div class="u-info">
                         <b>${u.ign || 'No Name'}</b>
-                        <p>Total Bal: ${u.winning || 0} Tk | Win: ${u.winningPrize || 0} Tk</p>
-                        <p>Played: ${u.played || 0} | UID: ${uid}</p>
+                        <p>Bal: ${u.winning || 0} Tk | Played: ${u.played || 0}</p>
                     </div>
                     <button class="btn" style="width:70px; font-size:10px; padding:8px;" onclick="editUser('${uid}')">EDIT</button>
                 </div>`;
             }
-            document.getElementById('uList').innerHTML = h || "No users registered.";
+            document.getElementById('uList').innerHTML = h || "No Users.";
         }
 
         function searchUser() {
@@ -274,52 +267,45 @@
         function editUser(uid) {
             let u = usersData[uid];
             Swal.fire({
-                title: `Manage: ${u.ign}`,
+                title: `Edit ${u.ign}`,
                 html: `
-                    <div style="text-align:left; font-size:12px; margin-bottom:5px;">Main Balance (Tk)</div>
-                    <input id="sw-bal" type="number" value="${u.winning || 0}">
-                    <div style="text-align:left; font-size:12px; margin-bottom:5px;">Winning Balance (Tk)</div>
-                    <input id="sw-prize" type="number" value="${u.winningPrize || 0}">
-                    <div style="text-align:left; font-size:12px; margin-bottom:5px;">Match Played</div>
-                    <input id="sw-played" type="number" value="${u.played || 0}">
+                    <input id="sw-bal" type="number" placeholder="Main Balance" value="${u.winning || 0}">
+                    <input id="sw-played" type="number" placeholder="Played Count" value="${u.played || 0}">
                 `,
-                showCancelButton: true,
                 confirmButtonText: 'Update'
             }).then(res => {
                 if(res.isConfirmed) {
                     db.ref('users/' + uid).update({
                         winning: parseInt(document.getElementById('sw-bal').value),
-                        winningPrize: parseInt(document.getElementById('sw-prize').value),
                         played: parseInt(document.getElementById('sw-played').value)
                     });
-                    toast("Updated!", "User data has been changed.", "success");
                 }
             });
         }
 
-        // --- Payment Logic ---
+        // --- Payments ---
         db.ref('payments').on('value', s => {
             let h = "";
             s.forEach(c => {
                 let p = c.val();
                 h += `<div class="item">
-                    <b style="color:var(--p);">Request: ${p.amount} Tk</b><br>
-                    <small>User UID: ${p.uid}</small>
+                    <b>Amount: ${p.amount} Tk</b><br>
+                    <small>User: ${p.uid}</small>
                     <div style="display:flex; gap:10px; margin-top:10px;">
                         <a href="${p.ssUrl}" target="_blank" class="view-btn">VIEW SS</a>
-                        <button class="btn" style="flex:1; font-size:11px; padding:10px;" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
+                        <button class="btn" style="flex:1;" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('pList').innerHTML = h || "No requests.";
+            document.getElementById('pList').innerHTML = h || "No Requests.";
         });
 
         function approvePay(uid, amt, pid) {
             db.ref('users/' + uid).once('value', s => {
-                let current = parseInt(s.val().winning || 0);
-                db.ref('users/' + uid).update({ winning: current + parseInt(amt) });
+                let cur = parseInt(s.val().winning || 0);
+                db.ref('users/' + uid).update({ winning: cur + parseInt(amt) });
                 db.ref('payments/' + pid).remove();
-                toast("Approved!", "ব্যালেন্স অ্যাড করা হয়েছে।", "success");
+                toast("Success", "Balance added!", "success");
             });
         }
     </script>
