@@ -3,166 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Esports</title>
+    <title>Tesla Esports - Pro App</title>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #111; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 75px; }
-        .header { padding: 20px; text-align: center; border-bottom: 1px solid #222; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 22px; }
-        .sec { display: none; padding: 12px; } .sec.active { display: block; }
+        :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
         
-        /* Match Card Styles */
-        .card { background: var(--c); border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 1px solid #222; border-left: 6px solid var(--p); position: relative; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .g-box { background: #1a1a1a; padding: 10px; border-radius: 10px; text-align: center; font-size: 10px; border: 1px solid #333; }
-        .g-box b { color: var(--p); display: block; font-size: 14px; margin-top: 2px; }
-
-        /* Slot Bar */
-        .slot-bg { width: 100%; height: 10px; background: #222; border-radius: 10px; margin: 12px 0; overflow: hidden; }
-        .slot-bar { height: 100%; background: var(--p); transition: 0.5s; box-shadow: 0 0 10px var(--p); }
-
-        /* Locked Room */
-        .room-box { background: #001f00; border: 1px dashed var(--p); padding: 15px; border-radius: 12px; margin-top: 15px; color: var(--p); display: none; text-align: center; font-weight: bold; }
+        #auth-s { position: fixed; inset: 0; background: var(--b); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .auth-card { width: 85%; background: #111; padding: 30px; border-radius: 20px; border: 2px solid var(--p); text-align:center; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 20px; }
         
-        .btn { background: var(--p); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; font-family: 'Poppins'; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; }
+        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        
+        .header { padding: 15px; text-align: center; background: #000; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #222; }
+        .sec { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .sec.active { display: block; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
-        /* Navigation */
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 11px; transition: 0.3s; }
+        .card { background: var(--c); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; position: relative; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .g-box { background: #1a1a1a; padding: 8px; border-radius: 8px; text-align: center; font-size: 10px; border: 1px solid #333; }
+        .g-box b { color: var(--p); display: block; font-size: 14px; }
+        
+        .p-img-box { width: 85px; height: 85px; border-radius: 50%; border: 3px solid var(--p); margin: 0 auto 10px; overflow: hidden; background: #222;}
+        .p-img { width: 100%; height: 100%; object-fit: cover; }
+        .w-card { background: linear-gradient(135deg, #0a0a0a, #1a1a1a); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #333; }
+        .stats { display: flex; justify-content: space-around; margin: 15px 0; border-top: 1px solid #222; padding-top: 15px; }
+
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; transition: 0.3s; }
         .n-i.active { color: var(--p); }
-        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
+        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
-        #auth-s { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--b); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .room-box { background: #003300; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed var(--p); font-size: 13px; }
     </style>
 </head>
 <body>
 
     <div id="auth-s">
-        <div style="width: 85%; background: #111; padding: 35px; border-radius: 25px; border: 1px solid var(--p); text-align:center;">
-            <h2 class="title">TESLA LOGIN</h2>
-            <input type="email" id="em" placeholder="Your Email">
+        <div class="auth-card">
+            <h2 class="title" id="at-title">TESLA LOGIN</h2>
+            <input type="email" id="em" placeholder="Email">
             <input type="password" id="ps" placeholder="Password">
-            <button class="btn" onclick="hAuth()">LOG IN</button>
-            <p onclick="tAuth()" id="at" style="margin-top:20px; font-size:12px; color:var(--p);">New User? Create Account</p>
+            <button class="btn" id="m-btn" onclick="handleAuth()">LOG IN</button>
+            <p style="font-size: 12px; color: var(--p); cursor:pointer;" onclick="toggleAuth()" id="t-text">New User? Create Account</p>
         </div>
     </div>
 
     <div class="header"><div class="title">TESLA ESPORTS</div></div>
 
     <div id="play" class="sec active">
-        <div id="mList">Loading Tournaments...</div>
+        <div id="mList" style="text-align: center; color: #666; margin-top: 30px;">Loading Matches...</div>
     </div>
 
-    <div id="wallet" class="sec">
-        <div class="card" style="text-align:center;"><h2 id="w_bal" style="color:var(--p); margin:0;">0 TK</h2><small>Available Balance</small></div>
-        <div class="card">
-            <h3>💳 Wallet Center</h3>
-            <select id="p_type"><option value="Deposit">Deposit (Cash In)</option><option value="Withdraw">Withdraw (Cash Out)</option></select>
-            <input type="number" id="p_amount" placeholder="Amount (TK)">
-            <input type="text" id="p_number" placeholder="Bkash/Nagad Number">
-            <button class="btn" onclick="sendReq()">Submit to Admin</button>
-        </div>
+    <div id="result" class="sec">
+        <h3 style="color: var(--p);"><i class="fas fa-poll-h"></i> Match Results</h3>
+        <div id="rList"></div>
+    </div>
+
+    <div id="myMatches" class="sec">
+        <h3 style="color: var(--p);"><i class="fas fa-crosshairs"></i> My Matches</h3>
+        <div id="myMList"></div>
     </div>
 
     <div id="pro" class="sec">
-        <div class="card" style="text-align:center;">
-            <div style="background:#1a1a1a; padding:10px; border-radius:25px; color:var(--p); margin-bottom:15px; border:1px solid #333;" id="uIgn">IGN: Loading...</div>
-            <p style="font-size:11px; color:#666;" id="myUid">UID: ...</p>
-            <input type="text" id="ignIn" placeholder="Update In-Game Name">
-            <button class="btn" style="width:auto; padding:8px 30px;" onclick="upIgn()">SAVE IGN</button>
+        <div class="w-card">
+            <div class="p-img-box">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="uPic" class="p-img">
+            </div>
+            <h3 id="uIgn" style="margin:5px 0;">Player Name</h3>
+            <p id="myUid" style="font-size: 10px; color: #666;">UID: ...</p>
+            
+            <div class="stats">
+                <div>Match Played<b id="st_p" style="display:block; color:var(--p);">0</b></div>
+                <div>Winning<b id="st_w" style="display:block; color:var(--p);">0 TK</b></div>
+            </div>
+
+            <p style="font-size: 12px; color: #888; margin-bottom: 0;">Main Balance</p>
+            <h2 id="w_bal" style="color:var(--p); margin:5px 0; font-family: 'Orbitron';">0 TK</h2>
         </div>
-        <button class="btn" style="background:#ff3333; color:white; margin-top:20px;" onclick="auth.signOut()">Logout Session</button>
+
+        <div class="card">
+            <h4 style="margin:0 0 10px 0; color:var(--p);">Edit Profile</h4>
+            <input type="text" id="newIgn" placeholder="New In-Game Name">
+            <input type="text" id="newPic" placeholder="Profile Photo URL">
+            <button class="btn" onclick="updatePro()">UPDATE DETAILS</button>
+        </div>
+
+        <button class="btn" style="background:var(--red); color:white;" onclick="firebase.auth().signOut()">LOGOUT</button>
     </div>
 
     <div class="nav">
         <div class="n-i active" onclick="nav('play', this)"><i class="fas fa-gamepad"></i>Play</div>
-        <div class="n-i" onclick="nav('wallet', this)"><i class="fas fa-wallet"></i>Wallet</div>
-        <div class="n-i" onclick="nav('pro', this)"><i class="fas fa-user-shield"></i>Profile</div>
+        <div class="n-i" onclick="nav('result', this)"><i class="fas fa-poll"></i>Result</div>
+        <div class="n-i" onclick="nav('myMatches', this)"><i class="fas fa-trophy"></i>My Match</div>
+        <div class="n-i" onclick="nav('pro', this)"><i class="fas fa-user-circle"></i>Profile</div>
     </div>
 
     <script>
-        const conf = { databaseURL: "const conf = { databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app" };
-" };
-        firebase.initializeApp(conf);
-        const auth = firebase.auth(); const db = firebase.database();
-        let isL = true;
+        // আপনার Firebase Config
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com",
+            messagingSenderId: "742786792386", 
+            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+        let isLogin = true;
 
-        // Sync Theme
-        db.ref('settings/theme').on('value', s => { if(s.val()) document.documentElement.style.setProperty('--p', s.val().color); });
-
-        // Auth Logic
-        function tAuth() { isL = !isL; document.getElementById('at').innerText = isL?"Need Account? Register":"Back to Login"; }
-        function hAuth() {
-            let e = document.getElementById('em').value, p = document.getElementById('ps').value;
-            if(isL) auth.signInWithEmailAndPassword(e,p).catch(a => alert(a.message));
-            else auth.createUserWithEmailAndPassword(e,p).then(r => db.ref('users/'+r.user.uid).set({played:0, winning:0, ign: "Player"})).catch(a => alert(a.message));
+        function toggleAuth() {
+            isLogin = !isLogin;
+            document.getElementById('at-title').innerText = isLogin ? "TESLA LOGIN" : "CREATE ACCOUNT";
+            document.getElementById('m-btn').innerText = isLogin ? "LOG IN" : "REGISTER";
         }
 
-        auth.onAuthStateChanged(u => {
-            if(u){ document.getElementById('auth-s').style.display='none'; document.getElementById('myUid').innerText = "UID: "+u.uid; loadUser(u.uid); }
-            else { document.getElementById('auth-s').style.display='flex'; }
+        function handleAuth() {
+            const e = document.getElementById('em').value, p = document.getElementById('ps').value;
+            if(!e || !p) return alert("Fill fields");
+            if(isLogin) auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+            else auth.createUserWithEmailAndPassword(e, p).then(r => {
+                db.ref('users/' + r.user.uid).set({ winning: 0, ign: "Player", pic: "", played: 0 });
+            }).catch(err => alert(err.message));
+        }
+
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById('auth-s').style.display = 'none';
+                document.getElementById('myUid').innerText = "UID: " + user.uid;
+                loadApp(user.uid);
+            } else document.getElementById('auth-s').style.display = 'flex';
         });
 
-        function loadUser(uid) {
-            db.ref('users/'+uid).on('value', s => { if(s.val()){ document.getElementById('uIgn').innerText = "IGN: " + s.val().ign; document.getElementById('w_bal').innerText = s.val().winning + " TK"; }});
+        function loadApp(uid) {
+            db.ref('users/' + uid).on('value', s => {
+                const d = s.val();
+                if(d) {
+                    document.getElementById('uIgn').innerText = d.ign || "Player";
+                    document.getElementById('w_bal').innerText = (d.winning || 0) + " TK";
+                    document.getElementById('st_w').innerText = (d.winning || 0) + " TK";
+                    document.getElementById('st_p').innerText = d.played || 0;
+                    if(d.pic) document.getElementById('uPic').src = d.pic;
+                }
+            });
+            loadMatches(uid);
+            loadResults();
         }
 
-        function upIgn() { db.ref('users/'+auth.currentUser.uid).update({ign: document.getElementById('ignIn').value}); alert("IGN Saved!"); }
-
-        function sendReq() {
-            db.ref('payments').push({ uid: auth.currentUser.uid, type: document.getElementById('p_type').value, amount: parseInt(document.getElementById('p_amount').value), number: document.getElementById('p_number').value });
-            alert("Request sent to Admin. Wait for approval!");
+        function loadMatches(uid) {
+            db.ref('matches').on('value', snap => {
+                let hPlay = "", hMy = "";
+                snap.forEach(c => {
+                    let m = c.val(), id = c.key;
+                    let joined = m.joined ? Object.keys(m.joined).length : 0;
+                    let isJoined = m.joined && m.joined[uid];
+                    let card = `<div class="card"><span style="color:var(--p)">#${m.matchNo} ${m.name}</span>
+                        <div class="grid"><div class="g-box">PRIZE<b>${m.prize}</b></div><div class="g-box">KILL<b>${m.perKill}</b></div><div class="g-box">ENTRY<b>${m.entry}</b></div></div>
+                        ${isJoined ? `<div class="room-box">ID: ${m.roomId || 'Wait...'} <br> PASS: ${m.roomPass || 'Wait...'}</div>` : 
+                        `<button class="btn" onclick="joinM('${id}', ${m.entry}, ${joined}, ${m.totalSlots})">JOIN NOW (${joined}/${m.totalSlots})</button>`}</div>`;
+                    hPlay += card;
+                    if(isJoined) hMy += card;
+                });
+                document.getElementById('mList').innerHTML = hPlay || "No Live Matches.";
+                document.getElementById('myMList').innerHTML = hMy || "Not joined any match.";
+            });
         }
 
-        function nav(id, el) { 
+        function joinM(id, fee, now, total) {
+            if(now >= total) return alert("Slot Full!");
+            const uid = auth.currentUser.uid;
+            db.ref('users/' + uid).once('value', s => {
+                let bal = s.val().winning || 0;
+                if(bal < fee) return alert("Insufficient Balance!");
+                db.ref('users/' + uid).update({ winning: bal - fee, played: (s.val().played || 0) + 1 });
+                db.ref('matches/' + id + '/joined/' + uid).set(true);
+                alert("Joined Match!");
+            });
+        }
+
+        function updatePro() {
+            const ign = document.getElementById('newIgn').value, pic = document.getElementById('newPic').value;
+            const up = {};
+            if(ign) up.ign = ign;
+            if(pic) up.pic = pic;
+            db.ref('users/' + auth.currentUser.uid).update(up);
+            alert("Profile Updated!");
+        }
+
+        function loadResults() {
+            db.ref('results').on('value', snap => {
+                let h = "";
+                snap.forEach(c => {
+                    let r = c.val();
+                    h += `<div class="card"><b>#${r.matchNo} ${r.name}</b><br>Winner: ${r.winner}</div>`;
+                });
+                document.getElementById('rList').innerHTML = h || "No Results.";
+            });
+        }
+
+        function nav(id, el) {
             document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.n-i').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); el.classList.add('active');
-        }
-
-        // Live Matches Logic
-        db.ref('matches').on('value', snap => {
-            let h = ""; snap.forEach(c => {
-                let m = c.val(), mId = c.key;
-                let joined = m.joined ? Object.keys(m.joined).length : 0;
-                let isJoined = m.joined && m.joined[auth.currentUser.uid];
-                h += `<div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b>#${m.matchNo} ${m.name}</b>
-                        <small id="t_${mId}" style="color:gold; font-weight:bold;">--:--</small>
-                    </div>
-                    <div style="font-size:11px; color:#666;">Category: ${m.mode}</div>
-                    <div class="grid">
-                        <div class="g-box">PRIZE<b>${m.prize}</b></div><div class="g-box">KILL<b>${m.perKill}</b></div><div class="g-box">ENTRY<b>${m.entry}</b></div>
-                    </div>
-                    <div class="slot-bg"><div class="slot-bar" style="width:${(joined/m.totalSlots)*100}%"></div></div>
-                    <div style="font-size:10px; color:#888; margin-bottom:12px;">Slot Status: ${joined}/${m.totalSlots} Players</div>
-                    <div class="room-box" style="display: ${isJoined ? 'block' : 'none'}">
-                        Room ID: ${m.roomId || 'Wait'} | Pass: ${m.roomPass || 'Wait'}
-                    </div>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button class="btn" onclick="db.ref('matches/${mId}/joined/${auth.currentUser.uid}').set(true)">${joined>=m.totalSlots?'FULL':'JOIN NOW'}</button>
-                        <button class="btn" style="background:#222; color:white; width:45%;" onclick="alert('Rules: ${m.rules}')">RULES</button>
-                    </div>
-                </div>`;
-                startTimer(m.startTime, `t_${mId}`);
-            });
-            document.getElementById('mList').innerHTML = h || "No tournaments currently available.";
-        });
-
-        function startTimer(time, id) {
-            setInterval(() => {
-                let d = new Date(time).getTime() - new Date().getTime();
-                if(d < 0) { document.getElementById(id).innerText = "LIVE NOW"; return; }
-                let m = Math.floor(d / 60000), s = Math.floor((d % 60000) / 1000);
-                document.getElementById(id).innerText = m + "m " + s + "s";
-            }, 1000);
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
         }
     </script>
 </body>
