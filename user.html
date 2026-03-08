@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Esports - Pro App Edition</title>
+    <title>Tesla Esports - Stable Pro Edition</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -18,93 +18,75 @@
         :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
         
-        /* Auth Screen */
+        /* Auth */
         #auth-s { position: fixed; inset: 0; background: var(--b); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .auth-card { width: 85%; background: #111; padding: 30px; border-radius: 20px; border: 2px solid var(--p); text-align:center; }
         
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 20px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; box-sizing: border-box; }
-        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
-        .btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
 
         .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #000; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #222; }
         .sec { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .sec.active { display: block; }
         
-        /* Profile Image Styles */
-        .profile-container { position: relative; width: 100px; height: 100px; margin: 0 auto 15px; }
-        #userImg { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--p); background: #222; }
-        .plus-icon { position: absolute; bottom: 5px; right: 5px; background: var(--p); color: #000; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #000; cursor: pointer; font-size: 14px; }
-
+        /* Match Card Style [As per screenshot 1000069256.jpg] */
         .card { background: var(--c); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+        .m-title { color: var(--p); font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+        .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; float: right; }
+        .status-tag { color: #ffcc00; font-size: 11px; font-weight: bold; background: rgba(255, 204, 0, 0.1); padding: 4px 10px; border-radius: 20px; display: inline-block; margin: 5px 0; }
         .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0; }
         .g-box { background: #1a1a1a; padding: 8px; border-radius: 8px; text-align: center; font-size: 9px; border: 1px solid #333; color: #888; }
         .g-box b { color: var(--p); display: block; font-size: 13px; }
-        
-        /* Deposit Section Style */
-        .deposit-area { background: #151515; border: 1px dashed #444; padding: 15px; border-radius: 12px; margin-top: 20px; }
-        .deposit-area h4 { color: var(--p); margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #222; padding-bottom: 5px; }
-        .instruction { font-size: 11px; color: #ccc; margin-bottom: 15px; line-height: 1.5; }
+        .m-actions { display: flex; gap: 10px; margin: 10px 0; }
+        .action-btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #fff; background: #fff; color: #000; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: bold; }
+
+        /* Profile Style */
+        .profile-container { position: relative; width: 100px; height: 100px; margin: 0 auto 15px; }
+        #userImg { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--p); background: #222; }
+        .plus-icon { position: absolute; bottom: 5px; right: 5px; background: var(--p); color: #000; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #000; cursor: pointer; }
+        .dep-area { background: #151515; border: 1px dashed #444; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: left; }
 
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; transition: 0.3s; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
-        
-        .timer { font-size: 11px; color: #ffcc00; font-weight: bold; background: rgba(255, 204, 0, 0.1); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(255, 204, 0, 0.2); }
-        .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; }
     </style>
 </head>
 <body>
 
-    <div id="auth-s"><div class="auth-card"><h2 class="title" id="at-title">TESLA LOGIN</h2><input type="email" id="em" placeholder="Email"><input type="password" id="ps" placeholder="Password"><button class="btn" onclick="handleAuth()">LOG IN</button><p onclick="toggleAuth()" id="t-text" style="color:var(--p); font-size:12px; margin-top:15px;">New User? Create Account</p></div></div>
+    <div id="auth-s"><div class="auth-card"><h2 class="title">TESLA LOGIN</h2><input type="email" id="em" placeholder="Email"><input type="password" id="ps" placeholder="Password"><button class="btn" onclick="handleAuth()">LOG IN</button><p onclick="toggleAuth()" style="color:var(--p); font-size:12px; margin-top:15px;">New User? Create Account</p></div></div>
 
     <div class="header">
-        <div onclick="openNotif()" style="position: relative;"><i class="fas fa-bell" style="color: var(--p); font-size: 22px;"></i><span id="notifBadge" style="display:none; position:absolute; top:0; right:0; background:red; width:8px; height:8px; border-radius:50%;"></span></div>
+        <div onclick="openNotif()" style="position: relative;"><i class="fas fa-bell" style="color: var(--p); font-size: 22px;"></i></div>
         <div class="title">TESLA ESPORTS</div>
         <div style="width:22px;"></div>
     </div>
 
-    <div id="play" class="sec active"><div id="mList">Loading...</div></div>
-    
+    <div id="play" class="sec active"><div id="mList">Loading Matches...</div></div>
     <div id="result" class="sec"><div id="rList">Loading Results...</div></div>
-
-    <div id="myMatches" class="sec"><div id="myMList"></div></div>
+    <div id="myMatches" class="sec"><div id="myMList">Loading...</div></div>
 
     <div id="pro" class="sec">
         <div class="card" style="text-align:center;">
-            
             <div class="profile-container">
-                <img id="userImg" src="https://via.placeholder.com/100" alt="Profile">
-                <label for="imgUpload" class="plus-icon"><i class="fas fa-plus"></i></label>
-                <input type="file" id="imgUpload" hidden accept="image/*" onchange="uploadProfilePic(this)">
+                <img id="userImg" src="https://via.placeholder.com/100">
+                <label for="imgUp" class="plus-icon"><i class="fas fa-plus"></i></label>
+                <input type="file" id="imgUp" hidden accept="image/*" onchange="uploadProfilePic(this)">
             </div>
-
-            <h3 id="uIgn" style="margin: 0;">Player Name</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 20px;">
+            <h3 id="uIgn">Player Name</h3>
+            <div class="grid" style="grid-template-columns: 1fr 1fr;">
                 <div class="g-box">MAIN BALANCE <b id="main_bal">0 TK</b></div>
                 <div class="g-box">PLAYED MATCH <b id="p_match">0</b></div>
-                <div class="g-box">WINNING <b id="w_bal_pro">0 TK</b></div>
             </div>
-
-            <div class="deposit-area">
-                <h4><i class="fas fa-wallet"></i> DEPOSIT</h4>
-                <p class="instruction">
-                    অ্যাকাউন্টে টাকা অ্যাড করতে চাইলে <b>01774774830</b> এই নম্বরে নগদ/বিকাশ এ <b>Send Money</b> করুন।
-                </p>
-                
-                <input type="number" id="depAmount" placeholder="Amount (কত টাকা পাঠিয়েছেন?)">
-                
-                <div style="text-align: left; margin: 10px 0;">
-                    <label style="font-size: 11px; color: #888;">পেমেন্ট স্ক্রিনশট সিলেক্ট করুন:</label>
-                    <input type="file" id="depProof" accept="image/*">
-                </div>
-
+            <div class="dep-area">
+                <h4 style="color:var(--p); margin:0;">DEPOSIT</h4>
+                <p style="font-size:10px; color:#aaa;">অ্যাকাউন্টে টাকা অ্যাড করতে চাইলে 01774774830 এই নম্বরে নগদ/বিকাশে Send Money করুন।</p>
+                <input type="number" id="depAmt" placeholder="Amount">
+                <input type="file" id="depPrf" accept="image/*">
                 <button class="btn" onclick="submitDeposit()">SUBMIT REQUEST</button>
             </div>
-
-            <button class="btn" style="background:var(--red); color:#fff; margin-top: 25px;" onclick="firebase.auth().signOut()">LOGOUT</button>
+            <button class="btn" style="background:var(--red); color:#fff; margin-top:20px;" onclick="firebase.auth().signOut()">LOGOUT</button>
         </div>
     </div>
 
@@ -128,21 +110,19 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
 
-        // ১. লোড ম্যাচ ফাংশন (পুরো রেডি আপডেট)
+        // ১. মেইন ম্যাচ লোডিং ফাংশন (Rules, ID/Pass ঠিক করা হয়েছে)
         function loadMatches(uid) {
             db.ref('matches').on('value', snap => {
-                let hPlay = "", hMy = "";
+                let hPlay = "", hMy = "", hRes = "";
                 snap.forEach(c => {
                     let m = c.val(), id = c.key;
                     let joined = m.joinedCount || 0;
                     let isJoined = m.joined && m.joined[uid];
                     
-                    let card = `<div class="card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span style="color:var(--p); font-weight:bold;">#${m.matchNo} ${m.name}</span>
-                            <span class="m-badge">${m.mode}</span>
-                        </div>
-                        <div id="timer_${id}" class="timer">Calculating...</div>
+                    let matchHTML = `<div class="card">
+                        <span class="m-badge">${m.mode}</span>
+                        <div class="m-title">#${m.matchNo} ${m.name}</div>
+                        <div id="timer_${id}" class="status-tag">Calculating...</div>
                         <div class="grid">
                             <div class="g-box">PRIZE<b>${m.prize} TK</b></div>
                             <div class="g-box">KILL<b>${m.perKill} TK</b></div>
@@ -156,100 +136,102 @@
                         `<button class="btn" onclick="joinMatch('${id}', ${m.entry}, ${joined}, ${m.maxSlots})">JOIN (${joined}/${m.maxSlots})</button>`}
                     </div>`;
                     
-                    hPlay += card; 
-                    if(isJoined) hMy += card;
+                    hPlay += matchHTML;
+                    if(isJoined) hMy += matchHTML;
                     startTimer(m.startTime, `timer_${id}`);
                 });
                 document.getElementById('mList').innerHTML = hPlay || "No Live Matches.";
                 document.getElementById('myMList').innerHTML = hMy || "You haven't joined any matches.";
             });
+
+            // রেজাল্ট লোডিং
+            db.ref('results').on('value', s => {
+                let h = "";
+                s.forEach(c => {
+                    let r = c.val();
+                    h += `<div class="card">
+                        <div class="m-title">#${r.matchNo} Result</div>
+                        <p style="color:#ffcc00; font-size:12px;">Winners: ${r.winners}</p>
+                        <p style="font-size:11px;">Kills: ${r.kills} | Prize: ${r.prize} Tk</p>
+                    </div>`;
+                });
+                document.getElementById('rList').innerHTML = h || "Results will be published soon.";
+            });
         }
 
-        // ২. প্রোফাইল পিকচার আপলোড
+        // ২. টাইমার ফাংশন (Calculating সমস্যা সমাধান)
+        function startTimer(time, elId) {
+            const timerInterval = setInterval(() => {
+                let dest = new Date(time).getTime();
+                let now = new Date().getTime();
+                let diff = dest - now;
+                let el = document.getElementById(elId);
+                if(!el) { clearInterval(timerInterval); return; }
+                if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "#ff3333"; clearInterval(timerInterval); }
+                else {
+                    let h = Math.floor(diff/(1000*60*60)), m = Math.floor((diff%(1000*60*60))/(1000*60)), s = Math.floor((diff%(1000*60))/1000);
+                    el.innerHTML = `<i class="fas fa-clock"></i> Starts In: ${h}h ${m}m ${s}s`;
+                }
+            }, 1000);
+        }
+
+        // ৩. Rules এবং ID/Pass ফাংশন
+        function showRules(id) {
+            db.ref('matches/' + id).once('value', s => {
+                Swal.fire({ title: 'Rules', text: s.val().rules || "No rules set.", background: '#111', color: '#fff' });
+            });
+        }
+
+        function showIdPass(id) {
+            db.ref('matches/' + id).once('value', s => {
+                let m = s.val();
+                if(!m.joined || !m.joined[auth.currentUser.uid]) return Swal.fire('Error', 'ম্যাচে জয়েন করলেই কেবল আইডি পাস পাবেন।', 'error');
+                if(!m.roomId || m.roomId == "Pending") Swal.fire('Wait', 'ম্যাচ শুরু হওয়ার ৫-১০ মিনিট আগে আইডি পাস দেওয়া হবে।', 'info');
+                else Swal.fire({ title: 'Match Info', html: `Room ID: ${m.roomId}<br>Pass: ${m.roomPass}`, icon: 'success' });
+            });
+        }
+
+        // ৪. প্রোফাইল ও ডিপোজিট (নতুন ফিচার)
         function uploadProfilePic(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const uid = auth.currentUser.uid;
-            const ref = storage.ref('profiles/' + uid);
-            
+            let file = input.files[0]; if(!file) return;
+            let ref = storage.ref('profiles/' + auth.currentUser.uid);
             Swal.showLoading();
-            ref.put(file).then(() => {
-                ref.getDownloadURL().then(url => {
-                    db.ref('users/' + uid).update({ profilePic: url });
-                    Swal.fire('Success', 'Profile Picture Updated!', 'success');
-                });
-            });
+            ref.put(file).then(() => ref.getDownloadURL().then(url => {
+                db.ref('users/' + auth.currentUser.uid).update({ profilePic: url });
+                document.getElementById('userImg').src = url; Swal.close();
+            }));
         }
 
-        // ৩. ডিপোজিট রিকোয়েস্ট সাবমিট
         function submitDeposit() {
-            const amount = document.getElementById('depAmount').value;
-            const file = document.getElementById('depProof').files[0];
-
-            if (!amount || !file) {
-                return Swal.fire('Error', 'টাকার পরিমাণ এবং স্ক্রিনশট দিন।', 'error');
-            }
-
-            const uid = auth.currentUser.uid;
-            const depId = Date.now();
-            const ref = storage.ref('deposits/' + uid + '/' + depId);
-
-            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            ref.put(file).then(() => {
-                ref.getDownloadURL().then(url => {
-                    db.ref('deposit_requests/' + depId).set({
-                        uid: uid,
-                        amount: amount,
-                        screenshot: url,
-                        status: 'Pending',
-                        time: new Date().toLocaleString(),
-                        ign: document.getElementById('uIgn').innerText
-                    }).then(() => {
-                        Swal.fire('Successfully', 'আপনার পেমেন্ট রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে।', 'success');
-                        document.getElementById('depAmount').value = "";
-                        document.getElementById('depProof').value = "";
-                    });
-                });
-            });
+            let amt = document.getElementById('depAmt').value;
+            let file = document.getElementById('depPrf').files[0];
+            if(!amt || !file) return Swal.fire('Error', 'সব তথ্য দিন।', 'error');
+            let depId = Date.now();
+            Swal.showLoading();
+            storage.ref('deposits/'+depId).put(file).then(() => storage.ref('deposits/'+depId).getDownloadURL().then(url => {
+                db.ref('deposit_requests/'+depId).set({ uid: auth.currentUser.uid, amount: amt, screenshot: url, status: 'Pending' });
+                Swal.fire('Successfully', 'আপনার রিকোয়েস্ট পাঠানো হয়েছে।', 'success');
+            }));
         }
 
-        // ৪. ইউজার ডাটা লোড
+        // ৫. অ্যাপ ইনিশিয়ালাইজেশন
+        auth.onAuthStateChanged(user => {
+            if(user) { document.getElementById('auth-s').style.display='none'; loadApp(user.uid); }
+            else { document.getElementById('auth-s').style.display='flex'; }
+        });
+
         function loadApp(uid) {
             db.ref('users/' + uid).on('value', s => {
                 let d = s.val();
                 if(d) {
                     document.getElementById('uIgn').innerText = d.ign || "Player";
                     document.getElementById('main_bal').innerText = (d.mainBalance || 0) + " TK";
-                    document.getElementById('w_bal_pro').innerText = (d.winning || 0) + " TK";
                     document.getElementById('p_match').innerText = d.playedMatches || 0;
                     if(d.profilePic) document.getElementById('userImg').src = d.profilePic;
                 }
             });
             loadMatches(uid);
         }
-
-        // বাকি সিস্টেম ফাংশনসমূহ
-        function startTimer(time, elId) {
-            setInterval(() => {
-                let dest = new Date(time).getTime();
-                let now = new Date().getTime();
-                let diff = dest - now;
-                let el = document.getElementById(elId);
-                if(!el) return;
-                if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "#ff3333"; }
-                else {
-                    let h = Math.floor(diff/(1000*60*60)), m = Math.floor((diff%(1000*60*60))/(1000*60)), s = Math.floor((diff%(1000*60))/1000);
-                    el.innerHTML = `<i class="fas fa-clock"></i> ${h}h ${m}m ${s}s`;
-                }
-            }, 1000);
-        }
-
-        auth.onAuthStateChanged(user => { 
-            if(user) { document.getElementById('auth-s').style.display = 'none'; loadApp(user.uid); } 
-            else { document.getElementById('auth-s').style.display = 'flex'; }
-        });
 
         function nav(id, el) {
             document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
@@ -258,14 +240,13 @@
         }
 
         function joinMatch(mid, fee, current, max) {
-            if(current >= max) return Swal.fire('Full!', 'Match is full.', 'warning');
+            if(current >= max) return Swal.fire('Full!', 'স্লট শেষ।', 'warning');
             db.ref('users/' + auth.currentUser.uid).once('value', s => {
                 let bal = s.val().mainBalance || 0;
-                if(bal < fee) return Swal.fire('Low Balance!', 'অ্যাকাউন্টে পর্যাপ্ত টাকা নেই।', 'error');
+                if(bal < fee) return Swal.fire('Error', 'ব্যালেন্স নেই।', 'error');
                 db.ref('users/' + auth.currentUser.uid).update({ mainBalance: bal - fee });
                 db.ref('matches/' + mid + '/joined/' + auth.currentUser.uid).set({ ign: s.val().ign, uid: auth.currentUser.uid });
                 db.ref('matches/' + mid).update({ joinedCount: current + 1 });
-                Swal.fire('Success', 'Joined Successfully!', 'success');
             });
         }
     </script>
