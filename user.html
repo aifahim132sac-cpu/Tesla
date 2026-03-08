@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
@@ -22,8 +23,9 @@
         .auth-card { width: 85%; background: #111; padding: 30px; border-radius: 20px; border: 2px solid var(--p); text-align:center; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 20px; }
         
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; }
-        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; box-sizing: border-box; }
+        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
+        .btn:disabled { background: #444; color: #888; }
         
         .header { padding: 15px; text-align: center; background: #000; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #222; }
         .sec { display: none; padding: 15px; animation: fadeIn 0.3s; }
@@ -35,7 +37,6 @@
         .g-box { background: #1a1a1a; padding: 8px; border-radius: 8px; text-align: center; font-size: 9px; border: 1px solid #333; color: #888; }
         .g-box b { color: var(--p); display: block; font-size: 13px; }
         
-        /* New Button Styles */
         .m-actions { display: flex; gap: 10px; margin-top: 12px; margin-bottom: 5px; }
         .action-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .action-btn i { color: var(--p); font-size: 14px; }
@@ -50,10 +51,16 @@
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
-        .room-box { background: rgba(0, 255, 0, 0.05); padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid var(--p); font-size: 12px; text-align: center; color: var(--p); }
-        
-        .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; }
+        /* Deposit Styles */
+        .dep-card { background: #111; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; }
+        .dep-title { color: var(--p); font-size: 16px; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: 'Orbitron'; }
+        .dep-msg { font-size: 12px; color: #bbb; line-height: 1.6; margin-bottom: 12px; border-left: 3px solid var(--p); padding-left: 10px; }
+        .file-label { display: block; background: #1a1a1a; padding: 12px; border-radius: 10px; border: 1px dashed #444; text-align: center; color: #888; font-size: 12px; cursor: pointer; margin: 10px 0; }
+        .file-label i { display: block; font-size: 20px; margin-bottom: 5px; color: var(--p); }
+
         .timer { font-size: 11px; color: #ffcc00; font-weight: bold; background: rgba(255, 204, 0, 0.1); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(255, 204, 0, 0.2); }
+        .room-box { background: rgba(0, 255, 0, 0.05); padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid var(--p); font-size: 12px; text-align: center; color: var(--p); }
+        .m-badge { background: #1a1a1a; color: #00ffff; padding: 2px 8px; border-radius: 6px; font-size: 10px; border: 1px solid #00ffff; font-family: 'Orbitron'; }
     </style>
 </head>
 <body>
@@ -101,6 +108,22 @@
             <h2 id="w_bal" style="color:var(--p); margin:5px 0; font-family: 'Orbitron';">0 TK</h2>
         </div>
 
+        <div class="dep-card">
+            <div class="dep-title"><i class="fas fa-wallet"></i> DEPOSIT</div>
+            <p class="dep-msg">
+                টাকা ডিপোজিট করতে চাইলে <b>01774774830</b> এই নম্বর এ নগদ / bKash এ টাকা পাঠিয়ে screenshot পাঠান নিচের অপশন দিয়ে।
+            </p>
+            <input type="number" id="depAmount" placeholder="টাকার পরিমাণ (Amount)">
+            
+            <label for="depFile" class="file-label" id="fileLabel">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span id="fileName">Select Payment Screenshot</span>
+            </label>
+            <input type="file" id="depFile" style="display:none;" accept="image/*" onchange="updateFileName()">
+            
+            <button class="btn" id="depBtn" onclick="uploadDeposit()">SEND SCREENSHOT</button>
+        </div>
+
         <div class="card">
             <h4 style="margin:0 0 10px 0; color:var(--p);">Edit Profile</h4>
             <input type="text" id="newIgn" placeholder="New In-Game Name">
@@ -130,12 +153,54 @@
         };
         
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.database();
+        const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
         let isLogin = true;
         let countdowns = {};
 
         function toast(t, m, i) {
             Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
+        }
+
+        // Deposit Helpers
+        function updateFileName() {
+            const file = document.getElementById('depFile').files[0];
+            if(file) document.getElementById('fileName').innerText = "Selected: " + file.name;
+        }
+
+        function uploadDeposit() {
+            const amount = document.getElementById('depAmount').value;
+            const file = document.getElementById('depFile').files[0];
+            const btn = document.getElementById('depBtn');
+
+            if(!amount || !file) return toast("Empty!", "টাকার পরিমাণ এবং স্ক্রিনশট দিন", "warning");
+
+            btn.disabled = true;
+            btn.innerText = "UPLOADING...";
+
+            const path = 'deposits/' + auth.currentUser.uid + '_' + Date.now() + '.jpg';
+            const ref = storage.ref(path);
+
+            ref.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
+                return db.ref('payments').push({
+                    uid: auth.currentUser.uid,
+                    amount: parseInt(amount),
+                    type: "Deposit",
+                    ssUrl: url,
+                    time: Date.now(),
+                    status: "Pending"
+                });
+            }).then(() => {
+                toast("Success!", "আপনার পেমেন্ট রিকোয়েস্ট পাঠানো হয়েছে!", "success");
+                document.getElementById('depAmount').value = "";
+                document.getElementById('depFile').value = "";
+                document.getElementById('fileName').innerText = "Select Payment Screenshot";
+                btn.disabled = false;
+                btn.innerText = "SEND SCREENSHOT";
+            }).catch(e => {
+                toast("Error!", e.message, "error");
+                btn.disabled = false;
+                btn.innerText = "SEND SCREENSHOT";
+            });
         }
 
         function toggleAuth() {
@@ -172,7 +237,7 @@
                 if(d) {
                     document.getElementById('uIgn').innerText = d.ign || "Player";
                     document.getElementById('w_bal').innerText = (d.winning || 0) + " TK";
-                    document.getElementById('st_w').innerText = (d.winning || 0) + " TK";
+                    document.getElementById('st_w').innerText = (d.winningPrize || d.winning || 0) + " TK";
                     document.getElementById('st_p').innerText = d.played || 0;
                     if(d.pic) document.getElementById('uPic').src = d.pic;
                 }
