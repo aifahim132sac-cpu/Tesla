@@ -34,10 +34,11 @@
     </div>
 
     <div class="card" style="border-top: 3px solid #00c2ff;">
-        <h3>👤 User Balance & Played</h3>
+        <h3>👤 User Management (Balance/Played/Winning)</h3>
         <input type="text" id="uUid" placeholder="Paste User UID">
         <input type="number" id="uBal" placeholder="Main Balance (TK)">
         <input type="number" id="uPlayed" placeholder="Matches Played Count">
+        <input type="number" id="uWinning" placeholder="Total Winning Prize (TK)">
         <button class="btn" style="background:#00c2ff" onclick="updateUser()">Update Account</button>
     </div>
 
@@ -95,7 +96,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Helper for Stylish Alerts
         function toast(t, m, i) {
             Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff', confirmButtonColor: '#00ff00' });
         }
@@ -105,20 +105,37 @@
             toast("Theme Sync!", "App theme has been updated.", "success");
         }
 
+        // আপডেট করা ফাংশন: ৩টি অপশনই ডাটাবেসে সেভ হবে
         function updateUser() {
             let uid = document.getElementById('uUid').value;
             let bal = document.getElementById('uBal').value;
             let played = document.getElementById('uPlayed').value;
-            if(!uid) return toast("Error!", "UID দিন!", "error");
-            db.ref('users/' + uid).update({ winning: parseInt(bal), played: parseInt(played) })
-            .then(() => toast("Updated!", "User Stats Updated!", "success"));
+            let winning = document.getElementById('uWinning').value;
+
+            if(!uid) return toast("Error!", "দয়া করে ইউজারের UID দিন!", "error");
+            
+            // ডাটাবেস আপডেট (winning ফিল্ডে ব্যালেন্স এবং winningPrize ফিল্ডে জেতা টাকা)
+            db.ref('users/' + uid).update({ 
+                winning: parseInt(bal) || 0, 
+                played: parseInt(played) || 0,
+                winningPrize: parseInt(winning) || 0 
+            })
+            .then(() => {
+                toast("Updated!", "User Stats Updated successfully!", "success");
+                // ইনপুট বক্স খালি করা (ঐচ্ছিক)
+                document.getElementById('uUid').value = "";
+                document.getElementById('uBal').value = "";
+                document.getElementById('uPlayed').value = "";
+                document.getElementById('uWinning').value = "";
+            })
+            .catch(e => toast("Error!", e.message, "error"));
         }
 
         function postMatch() {
             const data = {
                 matchNo: document.getElementById('mNo').value,
                 name: document.getElementById('mTitle').value,
-                mode: document.getElementById('mType').value, // এখানে ৭টি মোড কাজ করবে
+                mode: document.getElementById('mType').value,
                 entry: document.getElementById('mEntry').value,
                 perKill: document.getElementById('mKill').value,
                 prize: document.getElementById('mPrize').value,
@@ -130,7 +147,7 @@
                 joined: 0
             };
 
-            if(!data.matchNo || !data.name) return toast("Empty!", "তথ্য পূরণ করুন!", "warning");
+            if(!data.matchNo || !data.name) return toast("Empty!", "সব তথ্য পূরণ করুন!", "warning");
 
             db.ref('matches').push(data)
             .then(() => { 
