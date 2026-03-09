@@ -118,7 +118,13 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
+        // আপনার নতুন আপডেট করা কনফিগ এখানে বসানো হয়েছে
+        const firebaseConfig = {
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -170,7 +176,6 @@
                     <button class="btn-del" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
                     <div id="plist-${c.key}" style="margin-top:10px;"></div>
                 </div>`;
-                // জয়ন করা প্লেয়ারদের লিস্ট (User App এর match_joins পাথ অনুযায়ী)
                 db.ref('match_joins/'+c.key).on('value', ps => {
                     let ph = ""; ps.forEach(pc => {
                         let players = pc.val().players || [];
@@ -189,7 +194,7 @@
                 html: `<input id="rid" class="swal2-input" placeholder="Room ID"><input id="rpass" class="swal2-input" placeholder="Password">`,
                 preConfirm: () => [document.getElementById('rid').value, document.getElementById('rpass').value]
             }).then(r => {
-                if(r.value[0]) db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] });
+                if(r.value && r.value[0]) db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] });
             });
         }
 
@@ -202,13 +207,11 @@
 
             if(!mNo || !wUid || !wPrize) return Swal.fire("Error", "Fill Winner Info", "error");
 
-            // Winner Payment
             const wSnap = await db.ref('users/'+wUid).once('value');
             if(wSnap.exists()){
                 let userData = wSnap.val();
                 await db.ref('users/'+wUid).update({ deposit: (userData.deposit || 0) + wPrize, winning: (userData.winning || 0) + wPrize });
                 
-                // Runner Up Payment (If UID exists)
                 if(rUid && rPrize > 0){
                     const rSnap = await db.ref('users/'+rUid).once('value');
                     if(rSnap.exists()){
@@ -217,7 +220,6 @@
                     }
                 }
 
-                // Save to Results Path
                 db.ref('results').push({ matchNo: mNo, name: mName, mode: mMode, winner: userData.name, winPrize: wPrize, runnerUp: rUid ? "Player Found" : "N/A", runnerPrize: rPrize, totalKills: kills });
                 Swal.fire("Success", "Result Posted & Payment Sent", "success");
             } else {
@@ -243,7 +245,7 @@
 
         function approveDep(key, uid, amt) {
             db.ref('users/'+uid).once('value', s => {
-                let current = s.val().deposit || 0;
+                let current = (s.val() && s.val().deposit) || 0;
                 db.ref('users/'+uid).update({ deposit: current + parseInt(amt) });
                 db.ref('payments/'+key).update({ status: "Approved" });
                 Swal.fire("Approved", "Balance Added", "success");
