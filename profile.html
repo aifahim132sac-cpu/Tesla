@@ -13,16 +13,17 @@
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 100px; }
-        .header { padding: 20px; text-align: center; border-bottom: 2px solid var(--p); background: #000; }
+        .header { padding: 20px; text-align: center; border-bottom: 2px solid var(--p); background: #000; position: relative; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
+        .logout-btn { position: absolute; right: 20px; top: 22px; color: #ff4444; font-size: 20px; cursor: pointer; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 20px; }
         .s-box { background: var(--c); padding: 15px 5px; border-radius: 15px; border: 1px solid #222; text-align: center; }
         .s-box label { font-size: 9px; color: #777; display: block; }
         .val-p { color: var(--p); font-weight: 700; font-family: 'Orbitron'; font-size: 12px; }
         .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px 15px; display: none; border: 1px solid #222; }
         .form-sec.active { display: block; }
-        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 10px; }
-        .submit-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 10px; box-sizing: border-box; }
+        .submit-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; font-family: 'Orbitron'; }
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -30,66 +31,114 @@
     </style>
 </head>
 <body>
-    <div class="header"><div class="title">PROFILE</div></div>
+    <div class="header">
+        <div class="title">PROFILE</div>
+        <i class="fas fa-sign-out-alt logout-btn" onclick="handleLogout()"></i>
+    </div>
+
     <div style="text-align:center; padding:20px;">
         <h3 id="displayName">Loading...</h3>
         <p id="displayUid" style="color:#444; font-size:10px;">UID: ---</p>
     </div>
+
     <div class="stats-grid">
         <div class="s-box"><label>Main Balance</label><b class="val-p" id="uDep">0 TK</b></div>
         <div class="s-box"><label>Winning</label><b class="val-p" id="uBal" style="color:#ffcc00;">0 TK</b></div>
         <div class="s-box"><label>Played</label><b id="uPlayed">0</b></div>
     </div>
+
     <div style="padding:0 15px; display:flex; gap:10px;">
         <button style="flex:1" onclick="toggleTab('dep')" class="submit-btn">DEPOSIT</button>
         <button style="flex:1; background:#222; color:#fff;" onclick="toggleTab('wit')" class="submit-btn">WITHDRAW</button>
     </div>
+
     <div id="depSec" class="form-sec">
-        <input type="number" id="depAmt" placeholder="Amount">
+        <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">বিকাশ/নগদ এ টাকা পাঠিয়ে ট্রানজেকশন স্ক্রিনশটের লিঙ্ক দিন।</p>
+        <input type="number" id="depAmt" placeholder="Amount (TK)">
         <input type="text" id="depSS" placeholder="Imgbb SS Link">
-        <button class="submit-btn" onclick="handleDeposit()">SUBMIT</button>
+        <button class="submit-btn" onclick="handleDeposit()">SUBMIT DEPOSIT</button>
     </div>
+
     <div id="witSec" class="form-sec">
-        <input type="number" id="wAmt" placeholder="Amount">
-        <input type="text" id="wNum" placeholder="Number">
-        <button class="submit-btn" style="background:#ffcc00;" onclick="sendWitRequest()">WITHDRAW</button>
+        <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">মিনিমাম উইথড্র ১০০ টাকা।</p>
+        <input type="number" id="wAmt" placeholder="Amount (TK)">
+        <input type="text" id="wNum" placeholder="Phone Number">
+        <button class="submit-btn" style="background:#ffcc00;" onclick="sendWitRequest()">SUBMIT WITHDRAW</button>
     </div>
+
     <div class="nav">
         <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
         <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i>My Match</a>
         <a href="profile.html" class="n-i active"><i class="fas fa-user-circle"></i>Profile</a>
     </div>
+
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
+        
         let currentDep = 0;
+
+        // চেক করা ইউজার লগইন আছে কি না
         auth.onAuthStateChanged(user => {
             if (user) { 
                 db.ref('users/' + user.uid).on('value', s => {
-                    let u = s.val() || {}; currentDep = u.deposit || 0;
+                    let u = s.val() || {}; 
+                    currentDep = u.deposit || 0;
                     document.getElementById('displayName').innerText = u.name || "Player";
                     document.getElementById('displayUid').innerText = "UID: " + user.uid.substring(0,8).toUpperCase();
                     document.getElementById('uDep').innerText = currentDep + " TK";
                     document.getElementById('uBal').innerText = (u.winning || 0) + " TK";
                     document.getElementById('uPlayed').innerText = u.playedCount || 0;
                 });
-            } else { window.location.href = "index.html"; }
+            } else { 
+                // লগইন না থাকলে সরাসরি auth.html এ পাঠিয়ে দিবে
+                window.location.href = "auth.html"; 
+            }
         });
-        function toggleTab(t) { document.getElementById('depSec').style.display = t==='dep'?'block':'none'; document.getElementById('witSec').style.display = t==='wit'?'block':'none'; }
+
+        function toggleTab(t) { 
+            const d = document.getElementById('depSec'), w = document.getElementById('witSec');
+            d.style.display = t==='dep' && d.style.display !== 'block' ? 'block' : 'none';
+            w.style.display = t==='wit' && w.style.display !== 'block' ? 'block' : 'none';
+        }
+
         function handleDeposit() {
             const amt = document.getElementById('depAmt').value, ss = document.getElementById('depSS').value;
-            if(!amt || !ss) return Swal.fire("Error", "Fill all", "error");
-            db.ref('payments').push({ uid: auth.currentUser.uid, amount: amt, ssUrl: ss, status: "Pending" });
-            Swal.fire("Success", "Request Sent", "success"); toggleTab('');
+            if(!amt || !ss) return Swal.fire("Error", "সবগুলো ঘর পূরণ করুন", "error");
+            db.ref('payments').push({ uid: auth.currentUser.uid, amount: amt, ssUrl: ss, status: "Pending", time: Date.now() });
+            Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে!", "success"); 
+            toggleTab('');
         }
+
         function sendWitRequest() {
             const amt = parseInt(document.getElementById('wAmt').value), num = document.getElementById('wNum').value;
-            if(amt > currentDep) return Swal.fire("Low Balance", "Not enough money", "error");
-            db.ref('withdrawRequests').push({ uid: auth.currentUser.uid, amount: amt, number: num, status: "Pending" });
+            if(!amt || !num) return Swal.fire("Error", "সঠিক তথ্য দিন", "error");
+            if(amt < 100) return Swal.fire("Error", "মিনিমাম ১০০ টাকা উইথড্র করুন", "error");
+            if(amt > currentDep) return Swal.fire("Low Balance", "আপনার অ্যাকাউন্টে পর্যাপ্ত টাকা নেই", "error");
+
+            db.ref('withdrawRequests').push({ uid: auth.currentUser.uid, amount: amt, number: num, status: "Pending", time: Date.now() });
             db.ref('users/' + auth.currentUser.uid).update({ deposit: currentDep - amt });
-            Swal.fire("Success", "Withdraw Sent", "success"); toggleTab('');
+            Swal.fire("Success", "উইথড্র রিকোয়েস্ট সফল হয়েছে!", "success"); 
+            toggleTab('');
+        }
+
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout?',
+                text: "আপনি কি লগআউট করতে চান?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#00ff00',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    auth.signOut().then(() => { window.location.href = "index.html"; });
+                }
+            });
         }
     </script>
 </body>
