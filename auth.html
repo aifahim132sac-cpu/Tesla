@@ -12,18 +12,39 @@
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .auth-box { background: var(--c); padding: 30px; border-radius: 20px; border: 1px solid #222; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .auth-box { 
+            background: var(--c); padding: 35px 25px; border-radius: 20px; 
+            border: 1px solid #222; width: 90%; max-width: 400px; 
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative; /* ক্রস বাটনের পজিশন ঠিক রাখার জন্য */
+        }
+
+        /* Cross Button Style */
+        .close-btn { 
+            position: absolute; top: 15px; right: 20px; 
+            font-size: 28px; color: #555; cursor: pointer; 
+            transition: 0.3s; line-height: 1;
+        }
+        .close-btn:hover { color: #ff4444; }
+
         .tab-btn { background: none; border: none; color: #555; font-family: 'Orbitron'; cursor: pointer; padding: 10px; font-size: 14px; transition: 0.3s; }
         .tab-btn.active { color: var(--p); border-bottom: 2px solid var(--p); }
+        
         input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 15px; box-sizing: border-box; outline: none; transition: 0.3s; }
         input:focus { border-color: var(--p); }
+        
         .main-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; font-family: 'Orbitron'; margin-top: 20px; cursor: pointer; transition: 0.3s; }
         .main-btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
+
     <div class="auth-box">
+        <span class="close-btn" onclick="goHome()">&times;</span>
+
         <h2 style="font-family: 'Orbitron'; color: var(--p); letter-spacing: 2px;">TESLA AUTH</h2>
+        
         <div style="margin-bottom: 20px;">
             <button id="loginTab" class="tab-btn active" onclick="toggleAuth('login')">LOGIN</button>
             <button id="regTab" class="tab-btn" onclick="toggleAuth('reg')">REGISTER</button>
@@ -47,6 +68,11 @@
         const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
+
+        // Home Redirect Function
+        function goHome() {
+            window.location.href = "index.html";
+        }
 
         function toggleAuth(type) {
             document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
