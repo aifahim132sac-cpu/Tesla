@@ -77,6 +77,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
 
+        // রিয়েল-টাইম স্লাইডার ও নোটিশ
         db.ref('settings/sliders').on('value', snap => {
             let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
             document.getElementById('sliderTrack').innerHTML = h || `<img src="https://via.placeholder.com/800x400?text=Tesla+Esports" class="slide">`;
@@ -89,6 +90,7 @@
             document.getElementById('noticeMsg').innerText = m || "";
         });
 
+        // ম্যাচ লিস্ট লোড করা
         db.ref('matches').on('value', snap => {
             let h = "";
             snap.forEach(c => {
@@ -120,76 +122,88 @@
             startCountdowns();
         });
 
-        // ফিক্সড জয়েন লজিক: এটি এখন প্রোফাইল লগইন স্ট্যাটাস চেক করবে
+        // ফিক্সড জয়েন লজিক (সেশন সিঙ্কিং সহ)
         async function handleJoin(id, mode, fee, joined, total) {
-            const user = auth.currentUser; // রিয়েল টাইম ইউজার সেশন চেক
-            
-            if (!user) {
-                return Swal.fire({
-                    title: "লগইন নেই!",
-                    text: "দয়া করে প্রোফাইল থেকে আগে লগইন করুন।",
-                    icon: "warning",
-                    confirmButtonText: "ওকে"
-                });
-            }
-            
-            if(joined >= total) return Swal.fire("ফুল!", "দুঃখিত, এই ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
+            // ১. প্রথমেই ইউজারের লগইন স্ট্যাটাস চেক করবে
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (!user) {
+                    return Swal.fire({
+                        title: "লগইন নেই!",
+                        text: "দয়া করে প্রোফাইল থেকে আগে লগইন করুন।",
+                        icon: "warning",
+                        confirmButtonText: "ওকে"
+                    });
+                }
+                
+                if(joined >= total) return Swal.fire("ফুল!", "দুঃখিত, এই ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
 
-            let boxCount = 1;
-            let mLow = mode.toLowerCase();
-            if(mLow.includes('duo')) boxCount = 2;
-            else if(mLow.includes('squad')) boxCount = 4;
+                let boxCount = 1;
+                let mLow = mode.toLowerCase();
+                if(mLow.includes('duo')) boxCount = 2;
+                else if(mLow.includes('squad')) boxCount = 4;
 
-            let inputsHtml = `<p style="color:#aaa; font-size:13px; margin-bottom:10px;">সঠিকভাবে <b>Game UID</b> প্রদান করুন।</p>`;
-            for(let i=1; i<=boxCount; i++) {
-                inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="Player ${i} Game UID">`;
-            }
+                let inputsHtml = `<p style="color:#aaa; font-size:13px; margin-bottom:10px;">সঠিকভাবে <b>Game UID</b> প্রদান করুন।</p>`;
+                for(let i=1; i<=boxCount; i++) {
+                    inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="Player ${i} Game UID">`;
+                }
 
-            const { value: gameUids } = await Swal.fire({
-                title: `${mode} Join`,
-                html: inputsHtml,
-                showCancelButton: true,
-                cancelButtonText: 'বাতিল',
-                confirmButtonText: 'নিশ্চিত করুন',
-                confirmButtonColor: '#00ff00',
-                preConfirm: () => {
-                    let uids = [];
-                    for(let i=1; i<=boxCount; i++) {
-                        let val = document.getElementById(`gameUid${i}`).value;
-                        if(!val) { Swal.showValidationMessage(`প্লেয়ার ${i} এর UID প্রয়োজন`); return false; }
-                        uids.push(val);
+                const { value: gameUids } = await Swal.fire({
+                    title: `${mode} Join`,
+                    html: inputsHtml,
+                    showCancelButton: true,
+                    cancelButtonText: 'বাতিল',
+                    confirmButtonText: 'নিশ্চিত করুন',
+                    confirmButtonColor: '#00ff00',
+                    preConfirm: () => {
+                        let uids = [];
+                        for(let i=1; i<=boxCount; i++) {
+                            let val = document.getElementById(`gameUid${i}`).value;
+                            if(!val) { Swal.showValidationMessage(`প্লেয়ার ${i} এর UID প্রয়োজন`); return false; }
+                            uids.push(val);
+                        }
+                        return uids;
                     }
-                    return uids;
+                });
+
+                if (gameUids) {
+                    const userRef = db.ref('users/' + user.uid);
+                    userRef.once('value', s => {
+                        const userData = s.val() || {};
+                        const mainBalance = userData.deposit || 0; 
+                        
+                        if(mainBalance < fee) {
+                            return Swal.fire("ব্যালেন্স নেই!", "আপনার মেইন ব্যালেন্স-এ পর্যাপ্ত টাকা নেই।", "error");
+                        }
+                        
+                        // ব্যালেন্স ও স্লট আপডেট
+                        userRef.update({ deposit: mainBalance - fee });
+                        db.ref('matches/' + id).update({ joinedCount: joined + 1 });
+                        
+                        // ম্যাচ জয়েন লিস্টে ডাটা পাঠানো
+                        db.ref('match_joins/' + id).push({
+                            mainUid: user.uid,
+                            userName: userData.name || "User",
+                            gameUids: gameUids,
+                            joinedAt: Date.now()
+                        });
+
+                        // ইউজারের প্রোফাইলে এই ম্যাচটি সেভ করা
+                        db.ref('user_matches/' + user.uid + '/' + id).set(true);
+
+                        Swal.fire("অভিনন্দন!", "আপনি সফলভাবে ম্যাচে জয়েন করেছেন।", "success");
+                    });
                 }
             });
-
-            if (gameUids) {
-                const userRef = db.ref('users/' + user.uid);
-                userRef.once('value', s => {
-                    const userData = s.val() || {};
-                    const mainBalance = userData.deposit || 0; 
-                    
-                    if(mainBalance < fee) {
-                        return Swal.fire("ব্যালেন্স নেই!", "আপনার মেইন ব্যালেন্স-এ পর্যাপ্ত টাকা নেই।", "error");
-                    }
-                    
-                    userRef.update({ deposit: mainBalance - fee });
-                    db.ref('matches/' + id).update({ joinedCount: joined + 1 });
-                    db.ref('match_joins/' + id).push({
-                        mainUid: user.uid,
-                        userName: userData.name || "User",
-                        gameUids: gameUids,
-                        joinedAt: Date.now()
-                    });
-                    db.ref('user_matches/' + user.uid).push(id);
-                    Swal.fire("অভিনন্দন!", "আপনি সফলভাবে ম্যাচে জয়েন করেছেন।", "success");
-                });
-            }
         }
 
         function showRules(id) {
             db.ref('matches/'+id+'/rules').once('value', s => {
-                Swal.fire({ title: 'Match Rules', text: s.val() || "Rules not set.", icon: 'info', confirmButtonColor: '#00ff00' });
+                Swal.fire({ 
+                    title: 'Match Rules', 
+                    text: s.val() || "Rules not set.", 
+                    icon: 'info', 
+                    confirmButtonColor: '#00ff00' 
+                });
             });
         }
 
@@ -197,7 +211,10 @@
             let i = 0; const t = document.getElementById('sliderTrack');
             setInterval(() => {
                 const s = document.querySelectorAll('.slide');
-                if(s.length > 1) { i = (i + 1) % s.length; t.style.transform = `translateX(-${i * 100}%)`; }
+                if(s.length > 1) { 
+                    i = (i + 1) % s.length; 
+                    t.style.transform = `translateX(-${i * 100}%)`; 
+                }
             }, 5000);
         }
 
