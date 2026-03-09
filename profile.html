@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Esports - Profile</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --blue: #00c2ff; --red: #ff3333; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 100px; }
+        
+        .header { padding: 20px; text-align: center; border-bottom: 1px solid #1a1a1a; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; text-shadow: 0 0 10px var(--p); }
+
+        .p-img-area { position: relative; width: 100px; height: 100px; margin: 20px auto; }
+        .p-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--p); object-fit: cover; background: #222; }
+        .plus-btn { position: absolute; bottom: 5px; right: 5px; background: var(--p); color: #000; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; border: 2px solid #000; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 15px; text-align: center; }
+        .s-box { background: var(--c); padding: 12px 5px; border-radius: 12px; border: 1px solid #222; }
+        .s-box small { display: block; font-size: 8px; color: #888; margin-bottom: 5px; text-transform: uppercase; }
+        .s-box b { font-size: 11px; display: block; }
+        .val-p { color: var(--p); }
+
+        .tab-btns { display: flex; gap: 10px; padding: 0 15px; margin-bottom: 15px; }
+        .t-btn { flex: 1; padding: 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #888; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .t-btn.active { background: var(--p); color: #000; border: none; }
+
+        .form-sec { background: var(--c); padding: 20px; border-radius: 15px; margin: 0 15px; border: 1px solid #222; display: none; }
+        .form-sec.active { display: block; }
+        .instr { font-size: 11px; color: #ccc; margin-bottom: 15px; line-height: 1.6; background: #000; padding: 10px; border-radius: 8px; border-left: 3px solid var(--p); }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; background: #000; border: 1px solid #333; border-radius: 8px; color: #fff; box-sizing: border-box; }
+        .submit-btn { width: 100%; padding: 12px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        .wa-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: #25d366; color: #fff; text-decoration: none; padding: 15px; border-radius: 12px; margin: 20px 15px; font-weight: bold; }
+        .logout { text-align: center; color: var(--red); font-size: 13px; cursor: pointer; margin-bottom: 30px; }
+
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 15px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
+        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; }
+        .n-i.active { color: var(--p); }
+        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header"><div class="title">MY PROFILE</div></div>
+
+    <div class="p-img-area">
+        <img id="uPic" src="https://via.placeholder.com/100" class="p-img">
+        <label for="pUpload" class="plus-btn"><i class="fas fa-plus"></i></label>
+        <input type="file" id="pUpload" style="display:none;" accept="image/*" onchange="uploadToImgBB(this, 'profile')">
+    </div>
+
+    <div class="stats-grid">
+        <div class="s-box"><small>Total Balance</small><b class="val-p" id="uBal">0 TK</b></div>
+        <div class="s-box"><small>Played Match</small><b id="uPlayed">0</b></div>
+        <div class="s-box"><small>Deposit</small><b class="val-p" id="uDep">0 TK</b></div>
+    </div>
+
+    <div class="tab-btns">
+        <button class="t-btn active" id="btnDep" onclick="toggleTab('dep')">DEPOSIT</button>
+        <button class="t-btn" id="btnWit" onclick="toggleTab('wit')">WITHDRAW</button>
+    </div>
+
+    <div id="depSec" class="form-sec active">
+        <div class="instr">ডিপোজিট করতে চাইলে <b>01774774830</b> এই নাম্বারে নগদ/বিকাশ-এ পার্সোনাল-এ যত টাকা ইচ্ছা সেন্ড মানি করে পেমেন্ট এর স্ক্রিনশটটি নিচে দিন।</div>
+        <input type="number" id="depAmt" placeholder="টাকার পরিমাণ লিখুন (TK)">
+        <small style="color:#888; font-size:10px;">Payment Screenshot:</small>
+        <input type="file" id="depSS" accept="image/*">
+        <button class="submit-btn" onclick="handleDeposit()">DEPOSIT REQUEST</button>
+    </div>
+
+    <div id="witSec" class="form-sec">
+        <input type="text" id="wUid" placeholder="গেম UID">
+        <select id="wMethod"><option value="bKash">bKash (Personal)</option><option value="Nagad">Nagad (Personal)</option></select>
+        <input type="number" id="wAmt" placeholder="টাকার পরিমাণ">
+        <input type="number" id="wNum" placeholder="মোবাইল নাম্বার">
+        <button class="submit-btn" onclick="sendWitRequest()">WITHDRAW REQUEST</button>
+    </div>
+
+    <a href="https://wa.me/8801774774830" class="wa-btn"><i class="fab fa-whatsapp"></i> WhatsApp Support</a>
+    <div class="logout" onclick="auth.signOut().then(()=> window.location.href='index.html')">Logout Account</div>
+
+    <div class="nav">
+        <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i><div>Play</div></a>
+        <a href="result.html" class="n-i"><i class="fas fa-chart-bar"></i><div>Result</div></a>
+        <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i><div>My Match</div></a>
+        <a href="profile.html" class="n-i active"><i class="fas fa-user-circle"></i><div>Profile</div></a>
+    </div>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com",
+            messagingSenderId: "742786792386", 
+            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+        const IMGBB_API = "111030140ebf3b0c6284a8c2897091e5";
+
+        auth.onAuthStateChanged(user => {
+            if (user) { loadProfile(user.uid); }
+            else { window.location.href = "index.html"; }
+        });
+
+        function loadProfile(uid) {
+            db.ref('users/' + uid).on('value', s => {
+                let u = s.val() || {};
+                document.getElementById('uBal').innerText = (u.winning || 0) + " TK";
+                document.getElementById('uDep').innerText = (u.deposit || 0) + " TK";
+                document.getElementById('uPlayed').innerText = u.playedCount || 0;
+                if(u.pic) document.getElementById('uPic').src = u.pic;
+            });
+        }
+
+        async function uploadToImgBB(input, type) {
+            const file = input.files[0];
+            if(!file) return;
+            Swal.fire({title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            
+            const fd = new FormData();
+            fd.append("image", file);
+
+            try {
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API}`, {method: "POST", body: fd});
+                const data = await res.json();
+                const url = data.data.url;
+
+                if(type === 'profile') {
+                    db.ref('users/' + auth.currentUser.uid).update({ pic: url });
+                    Swal.fire('Success', 'Profile Updated!', 'success');
+                }
+                return url;
+            } catch { Swal.fire('Error', 'Upload failed', 'error'); }
+        }
+
+        async function handleDeposit() {
+            const amt = document.getElementById('depAmt').value;
+            const ssFile = document.getElementById('depSS');
+            if(!amt || !ssFile.files[0]) return Swal.fire('Error', 'তথ্য পূরণ করুন', 'error');
+            
+            const url = await uploadToImgBB(ssFile, 'deposit');
+            if(url) {
+                db.ref('payments').push({
+                    uid: auth.currentUser.uid,
+                    amount: amt,
+                    ssUrl: url,
+                    status: 'Pending',
+                    time: Date.now()
+                }).then(() => {
+                    Swal.fire('Success', 'অ্যাডমিনকে পাঠানো হয়েছে!', 'success');
+                    document.getElementById('depAmt').value = "";
+                });
+            }
+        }
+
+        function sendWitRequest() {
+            const uid = document.getElementById('wUid').value, amt = document.getElementById('wAmt').value, num = document.getElementById('wNum').value;
+            if(!uid || !amt || !num) return Swal.fire('Error', 'সব ঘর পূরণ করুন', 'error');
+            db.ref('withdrawRequests').push({
+                uid: auth.currentUser.uid, gameUid: uid, method: document.getElementById('wMethod').value, amount: amt, number: num, status: 'Pending'
+            }).then(() => Swal.fire('Success', 'রিকোয়েস্ট পাঠানো হয়েছে!', 'success'));
+        }
+
+        function toggleTab(t) {
+            document.getElementById('depSec').classList.toggle('active', t==='dep');
+            document.getElementById('witSec').classList.toggle('active', t==='wit');
+            document.getElementById('btnDep').classList.toggle('active', t==='dep');
+            document.getElementById('btnWit').classList.toggle('active', t==='wit');
+        }
+    </script>
+</body>
+</html>
