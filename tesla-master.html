@@ -3,35 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Master Admin</title>
+    <title>Tesla Master Admin Pro</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #111; }
+        :root { --p: #00ff00; --b: #050505; --c: #111; --r: #ff4444; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding: 20px; padding-bottom: 100px; }
-        h2 { font-family: 'Orbitron'; text-align: center; color: var(--p); margin-bottom: 25px; font-size: 20px; }
-        
-        /* Sections */
+        h2 { font-family: 'Orbitron'; text-align: center; color: var(--p); margin-bottom: 25px; }
         .sec { background: var(--c); padding: 20px; border-radius: 20px; border: 1px solid #222; display: none; animation: fadeIn 0.3s ease; }
         .sec.active { display: block; }
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-
-        /* Inputs */
         input, select { width: 100%; padding: 14px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 12px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--p); }
         .btn-action { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; }
-
-        /* Bottom Nav */
+        .btn-del { background: var(--r); color: #fff; padding: 8px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; }
         .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; transition: 0.3s; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 4px; }
-
-        /* Request Cards */
-        .r-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; }
+        .r-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; position: relative; }
+        .img-preview { width: 80px; height: 45px; object-fit: cover; border-radius: 5px; margin-right: 10px; border: 1px solid #333; }
+        .player-row { font-size: 12px; background: #1a1a1a; padding: 8px; margin: 5px 0; border-radius: 8px; border-left: 3px solid var(--p); }
+        .tab-btn { background: #222; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; flex: 1; }
     </style>
 </head>
 <body>
@@ -39,13 +34,14 @@
     <h2>TESLA ADMIN</h2>
 
     <div id="slider" class="sec active">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Slider Control</h3>
+        <h3 style="font-family: Orbitron; font-size: 14px;">Slider Management</h3>
         <input type="file" id="slideFile" accept="image/*">
-        <button class="btn-action" id="uploadBtn" onclick="uploadSlider()">UPLOAD TO SLIDER</button>
+        <button class="btn-action" id="uploadBtn" onclick="uploadSlider()">ADD NEW SLIDE</button>
+        <div id="currentSliders" style="margin-top:20px;"></div>
     </div>
 
     <div id="match" class="sec">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Create Match</h3>
+        <h3 style="font-family: Orbitron; font-size: 14px;">Create Tournament</h3>
         <input id="mNo" placeholder="Match No (#01)">
         <input id="mName" placeholder="Match Name">
         <select id="mMode">
@@ -55,42 +51,61 @@
             <option value="Clash Squad">Clash Squad</option>
             <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
             <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
+            <option value="Custom Mode">Custom Mode</option>
         </select>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 5px;">
             <input id="mFee" type="number" placeholder="Entry Fee">
             <input id="mPrize" type="number" placeholder="Total Prize">
         </div>
-        <input id="mTime" placeholder="Date & Time (e.g. 10 PM)">
+        <div style="display: flex; gap: 5px;">
+            <input id="mDate" type="text" placeholder="Date (15 March)">
+            <input id="mTime" type="text" placeholder="Time (09:00 PM)">
+        </div>
+        <input id="mTotalSlots" type="number" placeholder="Total Slots (e.g. 48)">
         <button class="btn-action" onclick="publishMatch()">PUBLISH MATCH</button>
+        <hr style="border: 0.5px solid #222; margin: 20px 0;">
+        <h4>Live Matches & Player List</h4>
+        <div id="liveMatchList"></div>
     </div>
 
     <div id="result" class="sec">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Result & Pay</h3>
+        <h3 style="font-family: Orbitron; font-size: 14px;">Results & Winnings</h3>
+        <select id="resMode">
+            <option value="BR Solo">BR Solo</option>
+            <option value="BR Duo">BR Duo</option>
+            <option value="BR Squad">BR Squad</option>
+            <option value="Clash Squad">Clash Squad</option>
+            <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
+            <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
+            <option value="Custom Mode">Custom Mode</option>
+        </select>
         <input id="resMatchNo" placeholder="Match No">
-        <input id="targetUid" placeholder="Player UID">
+        <input id="targetUid" placeholder="Winner UID">
         <input id="targetKill" type="number" placeholder="Kills">
-        <input id="winAmount" type="number" placeholder="Win TK">
-        <button class="btn-action" style="background: #ffcc00;" onclick="sendResult()">SEND MONEY</button>
+        <input id="winAmount" type="number" placeholder="Winning TK">
+        <button class="btn-action" style="background:#ffcc00" onclick="sendResult()">PAY & POST RESULT</button>
+        <div id="publishedResults" style="margin-top:20px;"></div>
     </div>
 
     <div id="requests" class="sec">
-        <h3 style="font-family: Orbitron; font-size: 14px;">User Requests</h3>
-        <div id="depList">Loading Deposits...</div>
-        <hr style="border-color: #222; margin: 20px 0;">
-        <div id="witList">Loading Withdraws...</div>
+        <h3 style="font-family: Orbitron; font-size: 14px;">Financial Requests</h3>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <button class="tab-btn" onclick="toggleReq('dep')">Deposits</button>
+            <button class="tab-btn" onclick="toggleReq('wit')">Withdraws</button>
+        </div>
+        <div id="depositBox"><h4>Deposit SS List</h4><div id="depList"></div></div>
+        <div id="withdrawBox" style="display:none;"><h4>Withdraw List</h4><div id="witList"></div></div>
     </div>
 
     <div class="nav">
         <div class="n-i active" onclick="showSec('slider', this)"><i class="fas fa-images"></i>Slider</div>
-        <div class="n-i" onclick="showSec('match', this)"><i class="fas fa-gamepad"></i>Match</div>
-        <div class="n-i" onclick="showSec('result', this)"><i class="fas fa-trophy"></i>Result</div>
+        <div class="n-i" onclick="showSec('match', this)"><i class="fas fa-gamepad"></i>Matches</div>
+        <div class="n-i" onclick="showSec('result', this)"><i class="fas fa-trophy"></i>Results</div>
         <div class="n-i" onclick="showSec('requests', this)"><i class="fas fa-wallet"></i>Requests</div>
     </div>
 
     <script>
-        const firebaseConfig = { 
-            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app" 
-        };
+        const firebaseConfig = { databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -101,25 +116,33 @@
             btn.classList.add('active');
         }
 
-        // --- স্লাইডার আপলোড (Imgbb) ---
+        function toggleReq(type) {
+            document.getElementById('depositBox').style.display = type==='dep'?'block':'none';
+            document.getElementById('withdrawBox').style.display = type==='wit'?'block':'none';
+        }
+
         async function uploadSlider() {
             const file = document.getElementById('slideFile').files[0];
-            if(!file) return Swal.fire("Error", "Select Image", "error");
-            const btn = document.getElementById('uploadBtn');
-            btn.innerText = "Uploading...";
-            const formData = new FormData();
-            formData.append('image', file);
-            const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:formData});
+            if(!file) return;
+            const fd = new FormData(); fd.append('image', file);
+            const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:fd});
             const data = await res.json();
             if(data.success) {
-                db.ref('settings/sliders').push(data.data.url).then(() => {
-                    Swal.fire("Success", "Slider Updated", "success");
-                    btn.innerText = "UPLOAD TO SLIDER";
-                });
+                db.ref('settings/sliders').push(data.data.url).then(() => Swal.fire("Success", "Slide Added", "success"));
             }
         }
 
-        // --- ম্যাচ পাবলিশ ---
+        db.ref('settings/sliders').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                h += `<div style="display:flex; align-items:center; margin-bottom:10px; background:#222; padding:10px; border-radius:12px;">
+                    <img src="${c.val()}" class="img-preview">
+                    <button class="btn-del" onclick="db.ref('settings/sliders/${c.key}').remove()">Delete</button>
+                </div>`;
+            });
+            document.getElementById('currentSliders').innerHTML = h;
+        });
+
         function publishMatch() {
             const m = {
                 matchNo: document.getElementById('mNo').value,
@@ -127,54 +150,101 @@
                 mode: document.getElementById('mMode').value,
                 entryFee: document.getElementById('mFee').value,
                 totalPrize: document.getElementById('mPrize').value,
+                date: document.getElementById('mDate').value,
                 startTime: document.getElementById('mTime').value,
-                status: "Open"
+                totalSlots: document.getElementById('mTotalSlots').value,
+                joined: 0, status: "Open", roomId: "Pending", roomPass: "Pending"
             };
-            db.ref('matches').push(m).then(() => {
-                Swal.fire("Success", "Match Live!", "success");
-                document.querySelectorAll('#match input').forEach(i => i.value = "");
+            db.ref('matches').push(m).then(() => Swal.fire("Success", "Match Live", "success"));
+        }
+
+        db.ref('matches').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                let m = c.val();
+                h += `<div class="r-card">
+                    <p><b>${m.matchNo}</b> - ${m.name}</p>
+                    <p style="font-size:10px">${m.date} | ${m.startTime} | Slots: ${m.joined}/${m.totalSlots}</p>
+                    <div style="display:flex; gap:5px; margin-top:10px;">
+                        <button class="btn-action" style="padding:5px; font-size:10px;" onclick="updateRoom('${c.key}')">Room ID/Pass</button>
+                        <button class="btn-del" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
+                    </div>
+                    <div id="pList-${c.key}" style="margin-top:10px;"></div>
+                </div>`;
+                db.ref('joinedPlayers/'+c.key).on('value', pS => {
+                    let pH = "<b style='font-size:11px; color:#00ff00'>Joined:</b>";
+                    pS.forEach(pc => { pH += `<div class="player-row">UID: ${pc.val().uid}</div>`; });
+                    document.getElementById('pList-'+c.key).innerHTML = pH;
+                });
+            });
+            document.getElementById('liveMatchList').innerHTML = h;
+        });
+
+        function updateRoom(key) {
+            Swal.fire({
+                title: 'Room Details',
+                html: `<input id="rid" class="swal2-input" placeholder="Room ID"><input id="rpass" class="swal2-input" placeholder="Pass">`,
+                preConfirm: () => [document.getElementById('rid').value, document.getElementById('rpass').value]
+            }).then(r => {
+                if(r.value) db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] });
             });
         }
 
-        // --- রেজাল্ট ও অটো-পেমেন্ট ---
         function sendResult() {
             const uid = document.getElementById('targetUid').value;
             const amt = parseInt(document.getElementById('winAmount').value);
-            const kill = document.getElementById('targetKill').value;
-            const mNo = document.getElementById('resMatchNo').value;
-
-            db.ref('users/' + uid).once('value', s => {
-                if(!s.exists()) return Swal.fire("Error", "User not found", "error");
+            db.ref('users/'+uid).once('value', s => {
+                if(!s.exists()) return Swal.fire("Error", "User Not Found", "error");
                 const u = s.val();
-                db.ref('users/' + uid).update({
-                    deposit: (u.deposit || 0) + amt,
-                    winning: (u.winning || 0) + amt
-                }).then(() => {
-                    db.ref('results').push({ name: u.name, kills: kill, amount: amt, matchNo: mNo });
-                    Swal.fire("Paid", "Money added & Result posted!", "success");
+                db.ref('users/'+uid).update({ deposit: (u.deposit || 0)+amt, winning: (u.winning || 0)+amt }).then(() => {
+                    db.ref('results').push({ name: u.name, matchNo: document.getElementById('resMatchNo').value, mode: document.getElementById('resMode').value, kills: document.getElementById('targetKill').value, amount: amt });
+                    Swal.fire("Paid", "Result Posted", "success");
                 });
             });
         }
 
-        // --- ডিপোজিট লোড ---
+        db.ref('results').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                let r = c.val();
+                h += `<div class="r-card">
+                    <p><b>${r.name}</b> (${r.matchNo})</p>
+                    <button class="btn-del" style="position:absolute; top:10px; right:10px" onclick="db.ref('results/${c.key}').remove()">X</button>
+                </div>`;
+            });
+            document.getElementById('publishedResults').innerHTML = h;
+        });
+
         db.ref('requests/deposits').on('value', snap => {
-            let h = "<h4 style='color:#00ff00'>Pending Deposits</h4>";
+            let h = "";
             snap.forEach(c => {
                 let d = c.val();
                 h += `<div class="r-card">
-                    <p style="font-size:12px; margin:0">UID: ${d.uid}</p>
-                    <p style="font-size:14px; font-weight:bold; margin:5px 0">TK: ${d.amount} | Num: ${d.phone}</p>
+                    <p>UID: ${d.uid} | TK: ${d.amount}</p>
                     <a href="${d.ss}" target="_blank" style="color:var(--p); font-size:12px">View Screenshot</a><br>
-                    <button class="btn-action" style="padding:8px; font-size:11px" onclick="approveDep('${c.key}', '${d.uid}', ${d.amount})">APPROVE</button>
+                    <button class="btn-action" style="padding:8px;" onclick="approveDep('${c.key}', '${d.uid}', ${d.amount})">APPROVE</button>
                 </div>`;
             });
-            document.getElementById('depList').innerHTML = h || "No pending deposits";
+            document.getElementById('depList').innerHTML = h;
+        });
+
+        db.ref('requests/withdraws').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                let w = c.val();
+                h += `<div class="r-card">
+                    <p>UID: ${w.uid} | TK: ${w.amount}</p>
+                    <p style="font-size:11px">Num: ${w.phone}</p>
+                    <button class="btn-action" style="background:var(--r); color:#fff; padding:8px;" onclick="db.ref('requests/withdraws/${c.key}').remove()">PAID</button>
+                </div>`;
+            });
+            document.getElementById('witList').innerHTML = h;
         });
 
         function approveDep(key, uid, amt) {
             db.ref('users/'+uid+'/deposit').transaction(c => (c||0)+parseInt(amt)).then(() => {
                 db.ref('requests/deposits/'+key).remove();
-                Swal.fire("Done", "Approved!", "success");
+                Swal.fire("Done", "Added", "success");
             });
         }
     </script>
