@@ -27,12 +27,9 @@
         .btn-action:active { transform: scale(0.98); }
         .btn-del { background: var(--r); color: #fff; padding: 8px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; }
 
-        /* Request Cards UI */
         .req-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; position: relative; border-left: 4px solid var(--p); }
-        .req-card.withdraw { border-left-color: var(--r); }
-        .req-info { margin-bottom: 10px; }
+        .req-card.withdraw { border-left-color: var(--y); }
         .req-info p { margin: 3px 0; font-size: 13px; color: #ccc; }
-        .req-info b { color: #fff; }
         .req-amount { font-family: 'Orbitron'; color: var(--p); font-size: 18px; display: block; margin-top: 5px; }
 
         .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
@@ -40,13 +37,10 @@
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 4px; }
 
-        .r-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; position: relative; }
-        .notice-card { background: #1a1a1a; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--y); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .r-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; }
         .player-row { font-size: 11px; background: #1a1a1a; padding: 10px; margin: 8px 0; border-radius: 10px; border-left: 3px solid var(--p); color: #ddd; }
-        .team-tag { background: #222; color: #00ff00; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; margin-bottom: 5px; display: inline-block; border: 0.5px solid #00ff00; }
         .img-preview { width: 80px; height: 45px; object-fit: cover; border-radius: 5px; margin-right: 10px; border: 1px solid #333; }
-        
-        .tab-btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; font-weight: bold; font-family: 'Orbitron'; font-size: 12px; transition: 0.3s; }
+        .tab-btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; font-weight: bold; font-family: 'Orbitron'; font-size: 10px; transition: 0.3s; }
         .tab-btn.active { background: var(--p); color: #000; border-color: var(--p); }
     </style>
 </head>
@@ -58,12 +52,11 @@
         <h3>SLIDER MANAGEMENT</h3>
         <input type="file" id="slideFile" accept="image/*">
         <button class="btn-action" onclick="uploadSlider()">ADD NEW SLIDE</button>
-        <div id="currentSliders" style="margin-top:20px; margin-bottom: 30px;"></div>
+        <div id="currentSliders" style="margin-top:20px;"></div>
 
-        <h3>NOTICE BOARD</h3>
-        <textarea id="noticeText" rows="3" placeholder="Write notice here..."></textarea>
-        <button class="btn-action" style="background: var(--y);" onclick="uploadNotice()">PUBLISH NOTICE</button>
-        <div id="noticeList" style="margin-top:20px;"></div>
+        <h3 style="margin-top:30px;">NOTICE BOARD</h3>
+        <textarea id="noticeText" rows="2" placeholder="Write notice here..."></textarea>
+        <button class="btn-action" style="background: var(--y);" onclick="uploadNotice()">UPDATE NOTICE</button>
     </div>
 
     <div id="match" class="sec">
@@ -71,22 +64,17 @@
         <input id="mNo" placeholder="Match No (#01)">
         <input id="mName" placeholder="Match Name">
         <select id="mMode">
-            <option value="">Select Mode</option>
-            <option value="BR Solo">BR Solo</option>
-            <option value="BR Duo">BR Duo</option>
-            <option value="BR Squad">BR Squad</option>
-            <option value="Clash Squad">Clash Squad</option>
+            <option value="SOLO">SOLO</option>
+            <option value="DUO">DUO</option>
+            <option value="SQUAD">SQUAD</option>
         </select>
         <div style="display: flex; gap: 8px;">
             <input id="mFee" type="number" placeholder="Entry Fee">
             <input id="mPrize" type="number" placeholder="Total Prize">
         </div>
-        <div style="display: flex; gap: 8px;">
-            <input id="mDate" type="text" placeholder="Date (e.g. 15 March)">
-            <input id="mTime" type="text" placeholder="Time (e.g. 09:00 PM)">
-        </div>
+        <input id="mTime" type="datetime-local" placeholder="Match Time">
         <input id="mTotalSlots" type="number" placeholder="Total Slots (48)">
-        <textarea id="mRules" rows="3" placeholder="Tournament Rules..."></textarea>
+        <textarea id="mRules" rows="2" placeholder="Rules..."></textarea>
         <button class="btn-action" onclick="publishMatch()">PUBLISH MATCH</button>
         
         <h4 style="margin-top: 30px; color: var(--p);">LIVE MATCHES</h4>
@@ -94,19 +82,22 @@
     </div>
 
     <div id="result" class="sec">
-        <h3>MATCH RESULTS</h3>
+        <h3>POST MATCH RESULT</h3>
+        <input id="resMatchNo" placeholder="Match No (e.g. 01)">
+        <input id="resName" placeholder="Tournament Name">
         <select id="resMode">
-            <option value="">Select Result Mode</option>
-            <option value="BR Solo">BR Solo</option>
-            <option value="BR Duo">BR Duo</option>
-            <option value="BR Squad">BR Squad</option>
+            <option value="SOLO">SOLO</option>
+            <option value="DUO">DUO</option>
+            <option value="SQUAD">SQUAD</option>
         </select>
-        <input id="resMatchNo" placeholder="Match No">
-        <input id="targetUid" placeholder="Winner UID">
-        <input id="targetKill" type="number" placeholder="Kills">
-        <input id="winAmount" type="number" placeholder="Winning Amount (TK)">
-        <button class="btn-action" style="background:var(--y)" onclick="sendResult()">POST RESULT & PAY</button>
-        <div id="publishedResults" style="margin-top:20px;"></div>
+        <hr border="1" color="#222">
+        <input id="winUid" placeholder="Winner UID">
+        <input id="winPrize" type="number" placeholder="Winner Prize (TK)">
+        <input id="runUid" placeholder="Runner-up UID (Optional)">
+        <input id="runPrize" type="number" placeholder="Runner Prize (TK)">
+        <input id="totalKills" type="number" placeholder="Total Kills">
+        
+        <button class="btn-action" style="background:var(--y)" onclick="sendResult()">PUBLISH & PAY WINNERS</button>
     </div>
 
     <div id="requests" class="sec">
@@ -127,7 +118,7 @@
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app" };
+        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -145,138 +136,134 @@
             document.getElementById('tabWit').classList.toggle('active', type==='wit');
         }
 
-        // --- SLIDER ---
+        // --- SLIDER & NOTICE ---
         async function uploadSlider() {
             const file = document.getElementById('slideFile').files[0];
-            if(!file) return Swal.fire("Empty!", "দয়া করে একটি ছবি সিলেক্ট করুন!", "warning");
+            if(!file) return Swal.fire("Error", "Select Image", "error");
             const fd = new FormData(); fd.append('image', file);
             const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:fd});
             const data = await res.json();
             if(data.success) {
-                db.ref('settings/sliders').push(data.data.url).then(() => Swal.fire("Success!", "স্লাইড সফলভাবে যোগ করা হয়েছে!", "success"));
+                db.ref('settings/sliders').push(data.data.url).then(() => Swal.fire("Success", "Slide Added", "success"));
             }
         }
-
         db.ref('settings/sliders').on('value', snap => {
-            let h = "";
-            snap.forEach(c => { h += `<div style="display:flex; align-items:center; margin-bottom:10px; background:#222; padding:10px; border-radius:12px;"><img src="${c.val()}" class="img-preview"> <button class="btn-del" onclick="db.ref('settings/sliders/${c.key}').remove()">Delete</button></div>`; });
+            let h = ""; snap.forEach(c => { h += `<div style="display:flex; align-items:center; margin-bottom:10px;"><img src="${c.val()}" class="img-preview"> <button class="btn-del" onclick="db.ref('settings/sliders/${c.key}').remove()">X</button></div>`; });
             document.getElementById('currentSliders').innerHTML = h;
         });
-
-        // --- NOTICE ---
         function uploadNotice() {
-            const text = document.getElementById('noticeText').value;
-            if(!text) return Swal.fire("Empty!", "দয়া করে নোটিশটি লিখুন!", "warning");
-            db.ref('settings/notices').push({ text: text, time: Date.now() }).then(() => {
-                Swal.fire("Success!", "নোটিশটি সফলভাবে আপলোড হয়েছে!", "success");
-                document.getElementById('noticeText').value = "";
-            });
+            db.ref('settings/notice').set(document.getElementById('noticeText').value).then(() => Swal.fire("Success", "Notice Updated", "success"));
         }
-
-        db.ref('settings/notices').on('value', snap => {
-            let h = "";
-            snap.forEach(c => { h += `<div class="notice-card"><span>${c.val().text}</span><button class="btn-del" onclick="db.ref('settings/notices/${c.key}').remove()">X</button></div>`; });
-            document.getElementById('noticeList').innerHTML = h || "<p style='color:#444'>No notice found</p>";
-        });
 
         // --- MATCHES ---
         function publishMatch() {
-            const fields = ['mNo', 'mName', 'mMode', 'mFee', 'mPrize', 'mDate', 'mTime', 'mTotalSlots', 'mRules'];
-            for(let f of fields) { if(!document.getElementById(f).value) return Swal.fire("Empty!", "সবগুলো ঘর সঠিকভাবে পূরণ করুন!", "error"); }
-            const m = { matchNo: document.getElementById('mNo').value, name: document.getElementById('mName').value, mode: document.getElementById('mMode').value, entryFee: document.getElementById('mFee').value, totalPrize: document.getElementById('mPrize').value, date: document.getElementById('mDate').value, startTime: document.getElementById('mTime').value, totalSlots: document.getElementById('mTotalSlots').value, rules: document.getElementById('mRules').value, joined: 0, status: "Open" };
-            db.ref('matches').push(m).then(() => { Swal.fire("Success!", "ম্যাচটি সফলভাবে পাবলিশ করা হয়েছে!", "success"); fields.forEach(f => document.getElementById(f).value = ""); });
+            const m = { matchNo: document.getElementById('mNo').value, name: document.getElementById('mName').value, mode: document.getElementById('mMode').value, entryFee: document.getElementById('mFee').value, totalPrize: document.getElementById('mPrize').value, startTime: document.getElementById('mTime').value, totalSlots: document.getElementById('mTotalSlots').value, rules: document.getElementById('mRules').value, joinedCount: 0 };
+            db.ref('matches').push(m).then(() => { Swal.fire("Success", "Match Live", "success"); });
         }
-
         db.ref('matches').on('value', snap => {
             let h = "";
             snap.forEach(c => {
                 let m = c.val();
                 h += `<div class="r-card">
-                    <p><b>${m.matchNo}</b> - ${m.name}</p>
-                    <p style="font-size:10px; color: #888;">${m.date} | ${m.startTime}</p>
-                    <div style="display:flex; gap:5px; margin-top:10px;">
-                        <button class="btn-action" style="padding:5px; font-size:10px;" onclick="updateRoom('${c.key}')">Room Info</button>
-                        <button class="btn-del" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
-                    </div>
-                    <div id="pList-${c.key}" style="margin-top:15px;"></div>
+                    <p><b>#${m.matchNo}</b> - ${m.name}</p>
+                    <button class="btn-action" style="padding:5px; font-size:10px; width:auto;" onclick="updateRoom('${c.key}')">Set Room ID</button>
+                    <button class="btn-del" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
+                    <div id="plist-${c.key}" style="margin-top:10px;"></div>
                 </div>`;
-                db.ref('joinedPlayers/'+c.key).on('value', pS => {
-                    let pH = "<b style='font-size:11px; color:var(--p)'>Players Joined:</b>";
-                    pS.forEach(pc => { 
-                        let data = pc.val();
-                        pH += `<div class="player-row"><span class="team-tag">${data.teamType}</span><br>`;
-                        data.players.forEach((p, idx) => { pH += `${idx+1}. <b>${p.name}</b> | ID: ${p.gameUid}<br>`; });
-                        pH += `</div>`;
+                // জয়ন করা প্লেয়ারদের লিস্ট (User App এর match_joins পাথ অনুযায়ী)
+                db.ref('match_joins/'+c.key).on('value', ps => {
+                    let ph = ""; ps.forEach(pc => {
+                        let players = pc.val().players || [];
+                        players.forEach(p => ph += `<div class="player-row">Name: ${p.name} | UID: ${p.gameUid}</div>`);
                     });
-                    document.getElementById('pList-'+c.key).innerHTML = pH || "No players yet";
+                    document.getElementById('plist-'+c.key).innerHTML = ph || "No players";
                 });
             });
             document.getElementById('liveMatchList').innerHTML = h;
         });
 
-        // --- RESULTS ---
-        function sendResult() {
-            const fields = ['resMode', 'resMatchNo', 'targetUid', 'targetKill', 'winAmount'];
-            for(let f of fields) { if(!document.getElementById(f).value) return Swal.fire("Empty!", "সবগুলো ঘর পূরণ করা বাধ্যতামূলক!", "error"); }
-            const uid = document.getElementById('targetUid').value;
-            const amt = parseInt(document.getElementById('winAmount').value);
-            db.ref('users/'+uid).once('value', s => {
-                if(!s.exists()) return Swal.fire("Error!", "ইউজার আইডিটি খুঁজে পাওয়া যায়নি!", "error");
-                const u = s.val();
-                db.ref('users/'+uid).update({ deposit: (u.deposit || 0)+amt, winning: (u.winning || 0)+amt }).then(() => {
-                    db.ref('results').push({ name: u.name, matchNo: document.getElementById('resMatchNo').value, mode: document.getElementById('resMode').value, kills: document.getElementById('targetKill').value, amount: amt });
-                    Swal.fire("Success!", "টাকা পাঠানো ও রেজাল্ট পাবলিশ সফল হয়েছে!", "success");
-                });
+        // --- ROOM ID UPDATE ---
+        function updateRoom(key) {
+            Swal.fire({
+                title: 'Room Details',
+                html: `<input id="rid" class="swal2-input" placeholder="Room ID"><input id="rpass" class="swal2-input" placeholder="Password">`,
+                preConfirm: () => [document.getElementById('rid').value, document.getElementById('rpass').value]
+            }).then(r => {
+                if(r.value[0]) db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] });
             });
         }
 
-        // --- DEPOSITS & WITHDRAWS ---
-        db.ref('requests/deposits').on('value', snap => {
-            let h = "";
-            snap.forEach(c => {
-                let d = c.val();
-                h += `<div class="req-card">
-                    <div class="req-info">
-                        <p>User ID: <b>${d.uid}</b></p>
-                        <p>Number: <b>${d.number || 'N/A'}</b></p>
-                        <span class="req-amount">TK ${d.amount}</span>
-                    </div>
-                    <a href="${d.ss}" target="_blank" style="color:var(--y); font-size:12px; text-decoration:none;">[ View Screenshot ]</a>
-                    <button class="btn-action" style="padding:10px; margin-top:10px;" onclick="approveDep('${c.key}', '${d.uid}', ${d.amount})">APPROVE DEPOSIT</button>
-                </div>`;
-            });
-            document.getElementById('depList').innerHTML = h || "<p style='color:#444; text-align:center;'>No deposit requests</p>";
-        });
+        // --- RESULTS (PAYMENT INCLUDED) ---
+        async function sendResult() {
+            const mNo = document.getElementById('resMatchNo').value, mName = document.getElementById('resName').value, mMode = document.getElementById('resMode').value;
+            const wUid = document.getElementById('winUid').value, wPrize = parseInt(document.getElementById('winPrize').value);
+            const rUid = document.getElementById('runUid').value, rPrize = parseInt(document.getElementById('runPrize').value || 0);
+            const kills = document.getElementById('totalKills').value;
 
-        db.ref('requests/withdraws').on('value', snap => {
+            if(!mNo || !wUid || !wPrize) return Swal.fire("Error", "Fill Winner Info", "error");
+
+            // Winner Payment
+            const wSnap = await db.ref('users/'+wUid).once('value');
+            if(wSnap.exists()){
+                let userData = wSnap.val();
+                await db.ref('users/'+wUid).update({ deposit: (userData.deposit || 0) + wPrize, winning: (userData.winning || 0) + wPrize });
+                
+                // Runner Up Payment (If UID exists)
+                if(rUid && rPrize > 0){
+                    const rSnap = await db.ref('users/'+rUid).once('value');
+                    if(rSnap.exists()){
+                        let runData = rSnap.val();
+                        await db.ref('users/'+rUid).update({ deposit: (runData.deposit || 0) + rPrize, winning: (runData.winning || 0) + rPrize });
+                    }
+                }
+
+                // Save to Results Path
+                db.ref('results').push({ matchNo: mNo, name: mName, mode: mMode, winner: userData.name, winPrize: wPrize, runnerUp: rUid ? "Player Found" : "N/A", runnerPrize: rPrize, totalKills: kills });
+                Swal.fire("Success", "Result Posted & Payment Sent", "success");
+            } else {
+                Swal.fire("Error", "Winner UID not found", "error");
+            }
+        }
+
+        // --- DEPOSITS ---
+        db.ref('payments').on('value', snap => {
             let h = "";
             snap.forEach(c => {
-                let w = c.val();
-                h += `<div class="req-card withdraw">
-                    <div class="req-info">
-                        <p>User ID: <b>${w.uid}</b></p>
-                        <p>Phone: <b>${w.phone}</b></p>
-                        <p>Method: <b>${w.method || 'Bkash/Nagad'}</b></p>
-                        <span class="req-amount" style="color:var(--r)">TK ${w.amount}</span>
-                    </div>
-                    <button class="btn-action" style="background:var(--r); color:#fff; padding:10px;" onclick="db.ref('requests/withdraws/${c.key}').remove()">MARK AS PAID</button>
-                </div>`;
+                let d = c.val(); if(d.status === "Pending"){
+                    h += `<div class="req-card">
+                        <p>User UID: ${d.uid}</p>
+                        <span class="req-amount">TK ${d.amount}</span>
+                        <a href="${d.ssUrl}" target="_blank" style="color:var(--y)">[View Screenshot]</a>
+                        <button class="btn-action" onclick="approveDep('${c.key}','${d.uid}',${d.amount})">Approve</button>
+                    </div>`;
+                }
             });
-            document.getElementById('witList').innerHTML = h || "<p style='color:#444; text-align:center;'>No withdraw requests</p>";
+            document.getElementById('depList').innerHTML = h || "No pending deposits";
         });
 
         function approveDep(key, uid, amt) {
-            db.ref('users/'+uid+'/deposit').transaction(c => (c||0)+parseInt(amt)).then(() => {
-                db.ref('requests/deposits/'+key).remove();
-                Swal.fire("Success!", "ইউজারের অ্যাকাউন্টে টাকা যোগ করা হয়েছে!", "success");
+            db.ref('users/'+uid).once('value', s => {
+                let current = s.val().deposit || 0;
+                db.ref('users/'+uid).update({ deposit: current + parseInt(amt) });
+                db.ref('payments/'+key).update({ status: "Approved" });
+                Swal.fire("Approved", "Balance Added", "success");
             });
         }
 
-        function updateRoom(key) {
-            Swal.fire({ title: 'Room Info', html: `<input id="rid" class="swal2-input" placeholder="Room ID"><input id="rpass" class="swal2-input" placeholder="Password">`, preConfirm: () => [document.getElementById('rid').value, document.getElementById('rpass').value] }).then(r => {
-                if(r.value[0] && r.value[1]) { db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] }); Swal.fire("Success!", "রুম আইডি ও পাসওয়ার্ড সেভ হয়েছে!", "success"); }
+        // --- WITHDRAWS ---
+        db.ref('withdrawRequests').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                let w = c.val(); if(w.status === "Pending"){
+                    h += `<div class="req-card withdraw">
+                        <p>UID: ${w.uid}</p><p>Number: ${w.number}</p>
+                        <span class="req-amount">TK ${w.amount}</span>
+                        <button class="btn-action" style="background:var(--r); color:#fff;" onclick="db.ref('withdrawRequests/${c.key}').update({status:'Paid'})">Mark Paid</button>
+                    </div>`;
+                }
             });
-        }
+            document.getElementById('witList').innerHTML = h || "No pending withdraws";
+        });
     </script>
 </body>
 </html>
