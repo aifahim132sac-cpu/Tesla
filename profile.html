@@ -19,7 +19,6 @@
         .header { padding: 20px; text-align: center; border-bottom: 1px solid #1a1a1a; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; text-shadow: 0 0 10px var(--p); }
 
-        /* Profile Photo & Name */
         .p-section { text-align: center; padding: 20px 0; }
         .p-img-area { position: relative; width: 100px; height: 100px; margin: 0 auto 10px; }
         .p-img { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--p); object-fit: cover; background: #222; }
@@ -62,7 +61,7 @@
         <div class="p-img-area">
             <img id="uPic" src="https://via.placeholder.com/100" class="p-img">
             <label for="pUpload" class="plus-btn"><i class="fas fa-camera"></i></label>
-            <input type="file" id="pUpload" style="display:none;" accept="image/*" onchange="uploadToImgBB(this, 'profile')">
+            <input type="file" id="pUpload" style="display:none;" accept="image/*" onchange="updateProfilePic(this)">
         </div>
         <div class="u-name-box">
             <span id="displayName">Loading...</span>
@@ -72,7 +71,7 @@
     </div>
 
     <div class="stats-grid">
-        <div class="s-box"><small>Balance</small><b class="val-p" id="uBal">0 TK</b></div>
+        <div class="s-box"><small>Winning</small><b class="val-p" id="uBal">0 TK</b></div>
         <div class="s-box"><small>Played</small><b id="uPlayed">0</b></div>
         <div class="s-box"><small>Deposit</small><b class="val-p" id="uDep">0 TK</b></div>
     </div>
@@ -108,7 +107,6 @@
     </div>
 
     <script>
-        // Firebase Config
         const firebaseConfig = { 
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
             authDomain: "teot-a3046.firebaseapp.com",
@@ -122,6 +120,8 @@
         const auth = firebase.auth(), db = firebase.database();
         const IMGBB_API = "111030140ebf3b0c6284a8c2897091e5";
 
+        let userWinningBalance = 0;
+
         auth.onAuthStateChanged(user => {
             if (user) { 
                 document.getElementById('displayUid').innerText = user.uid.substring(0, 8).toUpperCase(); 
@@ -132,6 +132,7 @@
         function loadProfile(uid) {
             db.ref('users/' + uid).on('value', s => {
                 let u = s.val() || {};
+                userWinningBalance = u.winning || 0;
                 document.getElementById('displayName').innerText = u.name || "User Name";
                 document.getElementById('uBal').innerText = (u.winning || 0) + " TK";
                 document.getElementById('uDep').innerText = (u.deposit || 0) + " TK";
@@ -155,64 +156,73 @@
             });
         }
 
-        async function uploadToImgBB(input, type) {
-            const file = input.files[0];
-            if(!file) return;
-            Swal.fire({title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+        // ইমেজ আপলোড করার মেইন ফাংশন
+        async function uploadToImgBB(file) {
             const fd = new FormData();
             fd.append("image", file);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API}`, {method: "POST", body: fd});
+            const data = await res.json();
+            return data.data.url;
+        }
+
+        // প্রোফাইল পিকচার আপডেট (গ্যালারি থেকে সিলেক্ট করার পর)
+        async function updateProfilePic(input) {
+            const file = input.files[0];
+            if(!file) return;
+            Swal.fire({title: 'Updating Profile...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
             try {
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API}`, {method: "POST", body: fd});
-                const data = await res.json();
-                const url = data.data.url;
-                if(type === 'profile') {
-                    db.ref('users/' + auth.currentUser.uid).update({ pic: url });
-                    Swal.fire('Success', 'Profile Updated!', 'success');
-                }
-                return url;
+                const url = await uploadToImgBB(file);
+                await db.ref('users/' + auth.currentUser.uid).update({ pic: url });
+                Swal.fire('Success', 'Profile Picture Updated!', 'success');
             } catch { Swal.fire('Error', 'Upload failed', 'error'); }
         }
 
-        function handleDeposit() {
+        // ডিপোজিট রিকোয়েস্ট হ্যান্ডেল
+        async function handleDeposit() {
             const amt = document.getElementById('depAmt').value;
-            const ssFile = document.getElementById('depSS');
-            const uid = auth.currentUser.uid;
-            const shortUid = uid.substring(0, 8).toUpperCase();
-
-            if(!amt || !ssFile.files[0]) return Swal.fire('Error', 'টাকা এবং স্ক্রিনশট দিন', 'error');
+            const ssFile = document.getElementById('depSS').files[0];
+            if(!amt || !ssFile) return Swal.fire('Error', 'টাকার পরিমাণ এবং স্ক্রিনশট দিন', 'error');
             
-            uploadToImgBB(ssFile, 'deposit').then(url => {
-                if(url) {
-                    db.ref('payments').push({
-                        uid: uid,
-                        shortUid: shortUid, // অ্যাডমিনের সুবিধার জন্য
-                        amount: amt,
-                        ssUrl: url,
-                        status: 'Pending',
-                        time: Date.now()
-                    }).then(() => {
-                        Swal.fire('Success', 'অনুরোধ পাঠানো হয়েছে!', 'success');
-                        document.getElementById('depAmt').value = "";
-                    });
-                }
-            });
+            Swal.fire({title: 'Sending Request...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            
+            try {
+                const url = await uploadToImgBB(ssFile);
+                await db.ref('payments').push({
+                    uid: auth.currentUser.uid,
+                    shortUid: auth.currentUser.uid.substring(0, 8).toUpperCase(),
+                    amount: Number(amt),
+                    ssUrl: url,
+                    status: 'Pending',
+                    time: Date.now()
+                });
+                Swal.fire('Success', 'অনুরোধ পাঠানো হয়েছে!', 'success');
+                document.getElementById('depAmt').value = "";
+                document.getElementById('depSS').value = "";
+            } catch { Swal.fire('Error', 'Submission failed', 'error'); }
         }
 
+        // উইথড্র রিকোয়েস্ট (ব্যালেন্স চেকসহ)
         function sendWitRequest() {
-            const amt = document.getElementById('wAmt').value, num = document.getElementById('wNum').value;
-            const uid = auth.currentUser.uid;
-            const shortUid = uid.substring(0, 8).toUpperCase();
+            const amt = Number(document.getElementById('wAmt').value);
+            const num = document.getElementById('wNum').value;
 
             if(!amt || !num) return Swal.fire('Error', 'সব ঘর পূরণ করুন', 'error');
+            if(amt > userWinningBalance) return Swal.fire('Error', 'আপনার পর্যাপ্ত উইনিং ব্যালেন্স নেই', 'error');
+            if(amt < 100) return Swal.fire('Error', 'সর্বনিম্ন ১০০ টাকা উইথড্র করা যাবে', 'error');
+
             db.ref('withdrawRequests').push({
-                uid: uid,
-                shortUid: shortUid, // অ্যাডমিনের সুবিধার জন্য
+                uid: auth.currentUser.uid,
+                shortUid: auth.currentUser.uid.substring(0, 8).toUpperCase(),
                 method: document.getElementById('wMethod').value,
                 amount: amt,
                 number: num,
                 status: 'Pending',
                 time: Date.now()
-            }).then(() => Swal.fire('Success', 'অনুরোধ পাঠানো হয়েছে!', 'success'));
+            }).then(() => {
+                Swal.fire('Success', 'উইথড্র রিকোয়েস্ট পাঠানো হয়েছে!', 'success');
+                document.getElementById('wAmt').value = "";
+                document.getElementById('wNum').value = "";
+            });
         }
 
         function toggleTab(t) {
