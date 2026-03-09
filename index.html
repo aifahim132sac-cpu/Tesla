@@ -3,75 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Esports - Home</title>
+    <title>Tesla Esports - Play</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; }
+        :root { --p: #00ff00; --b: #050505; --c: #111; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; overflow-x: hidden; }
         
-        /* Dynamic Slider */
-        .slider-container { width: 100%; height: 190px; overflow: hidden; position: relative; background: #000; }
-        .slider-track { display: flex; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; }
+        /* Slider & Notice */
+        .slider-container { width: 100%; height: 190px; overflow: hidden; position: relative; }
+        .slider-track { display: flex; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; }
         .slide { min-width: 100%; height: 100%; object-fit: cover; }
-
-        /* Notice Bar (Slider এর ঠিক নিচে) */
-        #noticeBar { background: rgba(0, 255, 0, 0.05); color: var(--p); padding: 12px; font-size: 13px; display: none; border-bottom: 1px solid #222; border-top: 1px solid #222; }
+        #noticeBar { background: rgba(0, 255, 0, 0.08); color: var(--p); padding: 12px; font-size: 13px; display: none; border-bottom: 1px solid #222; }
         .marquee { overflow: hidden; white-space: nowrap; }
-        .marquee p { display: inline-block; padding-left: 100%; animation: marquee 12s linear infinite; margin: 0; }
+        .marquee p { display: inline-block; padding-left: 100%; animation: marquee 10s linear infinite; margin: 0; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
         /* Match Card */
-        .match-card { background: var(--c); border-radius: 12px; margin: 15px; border: 1px solid #222; position: relative; }
-        .match-header { padding: 10px 15px; background: #1a1a1a; display: flex; justify-content: space-between; border-radius: 12px 12px 0 0; }
-        .match-mode { font-family: 'Orbitron'; font-size: 10px; color: var(--p); letter-spacing: 1px; }
-        
+        .match-card { background: var(--c); border-radius: 12px; margin: 15px; border: 1px solid #222; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .match-header { padding: 12px 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .match-mode { font-family: 'Orbitron'; font-size: 10px; color: var(--p); text-transform: uppercase; }
         .match-body { padding: 15px; }
-        .m-title { font-size: 17px; font-weight: 600; margin-bottom: 10px; color: #fff; }
-        
-        /* Countdown */
-        .timer-box { background: rgba(255, 204, 0, 0.1); color: #ffcc00; padding: 5px; border-radius: 5px; text-align: center; font-family: 'Orbitron'; font-size: 11px; margin-bottom: 15px; }
+        .timer-box { background: rgba(255, 204, 0, 0.1); color: #ffcc00; padding: 7px; border-radius: 6px; text-align: center; font-family: 'Orbitron'; font-size: 11px; margin-bottom: 15px; border: 1px solid rgba(255, 204, 0, 0.2); }
 
-        .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
         .g-box { background: #000; padding: 10px 5px; border-radius: 8px; text-align: center; border: 1px solid #222; }
-        .g-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 3px; }
-        .g-val { font-size: 12px; font-weight: 600; color: #fff; }
+        .g-label { font-size: 8px; color: #777; text-transform: uppercase; margin-bottom: 3px; }
+        .g-val { font-size: 11px; font-weight: 600; color: #fff; }
 
-        /* Slot Progress */
         .slot-wrap { margin-top: 10px; }
         .s-bar { height: 6px; background: #222; border-radius: 10px; overflow: hidden; }
-        .s-fill { height: 100%; background: var(--p); width: 0%; transition: 0.8s; box-shadow: 0 0 10px var(--p); }
-        .s-info { display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; color: #888; }
+        .s-fill { height: 100%; background: var(--p); width: 0%; transition: 0.8s ease; box-shadow: 0 0 10px var(--p); }
 
-        .join-btn { background: var(--p); color: #000; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; margin-top: 15px; transition: 0.3s; }
-        .join-btn:active { transform: scale(0.95); }
+        /* Buttons */
+        .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; border: none; font-size: 11px; transition: 0.2s; }
+        .btn-rules { background: #222; color: #fff; border: 1px solid #333; }
+        .btn-join { background: var(--p); color: #000; }
+        .btn:active { transform: scale(0.96); }
 
-        /* Bottom Nav */
+        /* Nav */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; transition: 0.3s; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
+
+        .swal2-popup { background: #111 !important; color: #fff !important; border: 1px solid #222 !important; }
+        .swal2-input { background: #000 !important; color: var(--p) !important; border: 1px solid #333 !important; }
     </style>
 </head>
 <body>
 
-    <div class="slider-container">
-        <div class="slider-track" id="sliderTrack"></div>
-    </div>
-
-    <div id="noticeBar">
-        <div class="marquee"><p id="noticeMsg"></p></div>
-    </div>
-
-    <div id="matchList">
-        <p style="text-align:center; color:#444; margin-top:50px;">ম্যাচ লোড হচ্ছে...</p>
-    </div>
+    <div class="slider-container"><div class="slider-track" id="sliderTrack"></div></div>
+    <div id="noticeBar"><div class="marquee"><p id="noticeMsg"></p></div></div>
+    <div id="matchList"><p style="text-align:center; margin-top:50px; color:#444;">Fetching Matches...</p></div>
 
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
@@ -81,7 +73,6 @@
     </div>
 
     <script>
-        // আপনার ফায়ারবেস কনফিগ
         const firebaseConfig = {
             apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
             authDomain: "teot-a3046.firebaseapp.com",
@@ -89,95 +80,141 @@
             projectId: "teot-a3046"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const db = firebase.database(), auth = firebase.auth();
 
-        // ১. রিয়েল-টাইম স্লাইডার
+        // স্লাইডার ও নোটিশ (Instant Load)
         db.ref('settings/sliders').on('value', snap => {
-            let h = "";
-            snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
-            if(!h) h = `<img src="https://via.placeholder.com/800x400?text=Welcome+To+Tesla" class="slide">`;
-            document.getElementById('sliderTrack').innerHTML = h;
+            let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
+            document.getElementById('sliderTrack').innerHTML = h || `<img src="https://via.placeholder.com/800x400?text=Tesla+Esports" class="slide">`;
             initSlider();
         });
 
-        // ২. রিয়েল-টাইম নোটিশ
         db.ref('settings/notice').on('value', snap => {
-            const msg = snap.val();
-            const bar = document.getElementById('noticeBar');
-            if(msg && msg.trim() !== "") {
-                bar.style.display = "block";
-                document.getElementById('noticeMsg').innerText = msg;
-            } else {
-                bar.style.display = "none";
-            }
+            const m = snap.val();
+            document.getElementById('noticeBar').style.display = m ? "block" : "none";
+            document.getElementById('noticeMsg').innerText = m || "";
         });
 
-        // ৩. রিয়েল-টাইম ম্যাচ লিস্ট
+        // লাইভ ম্যাচ লিস্ট
         db.ref('matches').on('value', snap => {
             let h = "";
             snap.forEach(c => {
                 const m = c.val();
-                const total = m.totalSlots || 48;
-                const joined = m.joinedCount || 0;
-                const percent = (joined / total) * 100;
-
+                const total = m.totalSlots || 48, joined = m.joinedCount || 0, percent = (joined/total)*100;
                 h += `
                 <div class="match-card">
-                    <div class="match-header">
-                        <span class="match-mode"><i class="fas fa-crosshairs"></i> ${m.mode}</span>
-                        <span style="font-size:10px; color:#666;">MATCH #${m.matchNo}</span>
-                    </div>
+                    <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
                     <div class="match-body">
-                        <div class="m-title">${m.name}</div>
-                        <div class="timer-box" data-time="${m.startTime}">সময় লোড হচ্ছে...</div>
-                        
+                        <div style="font-size:17px; font-weight:600; margin-bottom:12px;">${m.name}</div>
+                        <div class="timer-box" data-time="${m.startTime}">Connecting...</div>
                         <div class="m-grid">
-                            <div class="g-box"><div class="g-label">Win Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
+                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.perKill} TK</div></div>
                             <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee} TK</div></div>
                         </div>
-
-                        <div class="slot-wrap">
-                            <div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
-                            <div class="s-info">
-                                <span>Joined: ${joined}/${total}</span>
-                                <span>${total - joined} Slots Left</span>
-                            </div>
+                        <div class="slot-wrap"><div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
+                        <div style="display:flex; justify-content:space-between; font-size:10px; margin-top:8px; color:#666;">
+                            <span>Slots: ${joined}/${total}</span><span>Left: ${total-joined}</span>
+                        </div></div>
+                        <div class="btn-row">
+                            <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">JOIN NOW</button>
                         </div>
-                        <button class="join-btn" onclick="location.href='details.html?id=${c.key}'">JOIN NOW</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center; padding:20px;'>No active matches found.</p>";
+            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>No Matches Found.</p>";
             startCountdowns();
         });
 
-        // স্লাইডার মুভমেন্ট
-        function initSlider() {
-            let i = 0;
-            const track = document.getElementById('sliderTrack');
-            if(window.sliderInterval) clearInterval(window.sliderInterval);
-            window.sliderInterval = setInterval(() => {
-                const slides = document.querySelectorAll('.slide');
-                if(slides.length > 1) {
-                    i = (i + 1) % slides.length;
-                    track.style.transform = `translateX(-${i * 100}%)`;
+        // জয়েনিং এবং ডাটা রিলেশন (Main Balance & Admin Sync)
+        async function handleJoin(id, mode, fee, joined, total) {
+            const user = auth.currentUser;
+            if(!user) return Swal.fire("Login Required", "দয়া করে আগে লগইন করুন", "warning");
+            if(joined >= total) return Swal.fire("Full", "ম্যাচটি ইতিমধ্যে ফুল হয়ে গেছে", "error");
+
+            // মোড অনুযায়ী Game UID সংখ্যা (Solo/Duo/Squad)
+            let boxCount = 1;
+            let mLow = mode.toLowerCase();
+            if(mLow.includes('duo')) boxCount = 2;
+            else if(mLow.includes('squad')) boxCount = 4;
+
+            let inputsHtml = `<p style="color:#888; font-size:13px; margin-bottom:10px;">আপনার সঠিক <b>Game UID</b> দিন। ভুল UID দিলে বাতিল হতে পারেন।</p>`;
+            for(let i=1; i<=boxCount; i++) {
+                inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="Player ${i} Game UID">`;
+            }
+
+            const { value: gameUids } = await Swal.fire({
+                title: `Join ${mode}`,
+                html: inputsHtml,
+                showCancelButton: true,
+                confirmButtonText: 'Confirm & Pay',
+                confirmButtonColor: '#00ff00',
+                preConfirm: () => {
+                    let uids = [];
+                    for(let i=1; i<=boxCount; i++) {
+                        let val = document.getElementById(`gameUid${i}`).value;
+                        if(!val) { Swal.showValidationMessage(`সবগুলো UID পূরণ করুন`); return false; }
+                        uids.push(val);
+                    }
+                    return uids;
                 }
+            });
+
+            if (gameUids) {
+                const userRef = db.ref('users/' + user.uid);
+                userRef.once('value', s => {
+                    const userData = s.val() || {};
+                    const mainBalance = userData.deposit || 0; // মেইন ব্যালেন্স থেকে কাটা হবে
+                    
+                    if(mainBalance < fee) {
+                        return Swal.fire("Low Balance", "আপনার মেইন ব্যালেন্স-এ পর্যাপ্ত টাকা নেই।", "error");
+                    }
+                    
+                    // মেইন ব্যালেন্স আপডেট
+                    userRef.update({ deposit: mainBalance - fee });
+
+                    // ম্যাচের জয়েন কাউন্ট আপডেট
+                    db.ref('matches/' + id).update({ joinedCount: joined + 1 });
+
+                    // অ্যাডমিনের জন্য ডাটাবেজ (Main UID + Game UID সিঙ্ক)
+                    db.ref('match_joins/' + id).push({
+                        mainUid: user.uid,
+                        userName: userData.name || "User",
+                        gameUids: gameUids,
+                        joinedAt: Date.now()
+                    });
+
+                    // ইউজারের জয়েন করা ম্যাচের লিস্ট
+                    db.ref('user_matches/' + user.uid).push(id);
+
+                    Swal.fire("Success", "ম্যাচে সফলভাবে জয়েন করেছেন!", "success");
+                });
+            }
+        }
+
+        function showRules(id) {
+            db.ref('matches/'+id+'/rules').once('value', s => {
+                Swal.fire({ title: 'Match Rules', text: s.val() || "Be fair and follow game rules.", icon: 'info', confirmButtonColor: '#00ff00' });
+            });
+        }
+
+        function initSlider() {
+            let i = 0; const t = document.getElementById('sliderTrack');
+            if(window.sldr) clearInterval(window.sldr);
+            window.sldr = setInterval(() => {
+                const s = document.querySelectorAll('.slide');
+                if(s.length > 1) { i = (i + 1) % s.length; t.style.transform = `translateX(-${i * 100}%)`; }
             }, 5000);
         }
 
-        // কাউন্টডাউন ফাংশন
         function startCountdowns() {
             if(window.timerInt) clearInterval(window.timerInt);
             window.timerInt = setInterval(() => {
                 document.querySelectorAll('.timer-box').forEach(el => {
-                    const target = new Date(el.getAttribute('data-time')).getTime();
-                    const now = new Date().getTime();
-                    const diff = target - now;
-                    if(diff < 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "red"; return; }
-                    const h = Math.floor(diff / 3600000);
-                    const m = Math.floor((diff % 3600000) / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
+                    const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime();
+                    if(diff < 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "#ff3333"; return; }
+                    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
                     el.innerHTML = `<i class="fas fa-clock"></i> Starts in: ${h}h ${m}m ${s}s`;
                 });
             }, 1000);
