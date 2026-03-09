@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Esports - Authentication</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --p: #00ff00; --b: #050505; --c: #121212; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-box { background: var(--c); padding: 30px; border-radius: 20px; border: 1px solid #222; width: 90%; max-width: 400px; text-align: center; }
+        .tab-btn { background: none; border: none; color: #555; font-family: 'Orbitron'; cursor: pointer; padding: 10px; font-size: 14px; }
+        .tab-btn.active { color: var(--p); border-bottom: 2px solid var(--p); }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 15px; box-sizing: border-box; }
+        .main-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; font-family: 'Orbitron'; margin-top: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <h2 style="font-family: 'Orbitron'; color: var(--p);">TESLA AUTH</h2>
+        <div style="margin-bottom: 20px;">
+            <button id="loginTab" class="tab-btn active" onclick="toggleAuth('login')">LOGIN</button>
+            <button id="regTab" class="tab-btn" onclick="toggleAuth('reg')">REGISTER</button>
+        </div>
+
+        <div id="loginForm">
+            <input type="email" id="lEmail" placeholder="Email Address">
+            <input type="password" id="lPass" placeholder="Password">
+            <button class="main-btn" onclick="handleLogin()">LET'S PLAY</button>
+        </div>
+
+        <div id="regForm" style="display: none;">
+            <input type="text" id="rName" placeholder="Full Name">
+            <input type="email" id="rEmail" placeholder="Email Address">
+            <input type="password" id="rPass" placeholder="Password">
+            <button class="main-btn" onclick="handleReg()">CREATE ACCOUNT</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+
+        function toggleAuth(type) {
+            document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('regForm').style.display = type === 'reg' ? 'block' : 'none';
+            document.getElementById('loginTab').classList.toggle('active', type === 'login');
+            document.getElementById('regTab').classList.toggle('active', type === 'reg');
+        }
+
+        function handleLogin() {
+            const e = document.getElementById('lEmail').value, p = document.getElementById('lPass').value;
+            auth.signInWithEmailAndPassword(e, p)
+                .then(() => window.location.href = "profile.html")
+                .catch(err => Swal.fire("Error", err.message, "error"));
+        }
+
+        function handleReg() {
+            const n = document.getElementById('rName').value, e = document.getElementById('rEmail').value, p = document.getElementById('rPass').value;
+            auth.createUserWithEmailAndPassword(e, p).then(res => {
+                db.ref('users/' + res.user.uid).set({ name: n, deposit: 0, winning: 0, playedCount: 0 });
+                window.location.href = "profile.html";
+            }).catch(err => Swal.fire("Error", err.message, "error"));
+        }
+    </script>
+</body>
+</html>
