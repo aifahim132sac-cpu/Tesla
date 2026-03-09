@@ -3,195 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Master Admin - Ultimate Edition</title>
-    
+    <title>Tesla Admin - Control Panel</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; --blue: #00c2ff; --yellow: #ffcc00; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
-        
-        .header { padding: 15px; text-align: center; background: #000; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 1000; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 18px; }
-        
-        .sec { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        :root { --p: #00ff00; --b: #0a0a0a; --c: #1a1a1a; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; padding: 20px; }
+        .tab-btn { padding: 10px; background: #222; color: #fff; border: 1px solid #444; cursor: pointer; border-radius: 5px; margin: 5px; }
+        .tab-btn.active { background: var(--p); color: #000; font-weight: bold; }
+        .sec { background: var(--c); padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #333; display: none; }
         .sec.active { display: block; }
-        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-
-        .card { background: var(--c); border-radius: 15px; padding: 18px; margin-bottom: 15px; border: 1px solid #222; }
-        h3 { color: var(--p); font-family: 'Orbitron'; font-size: 14px; margin-bottom: 15px; }
-
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; }
-        
-        .btn { background: var(--p); color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; }
-        .btn-red { background: var(--red); color: #fff; }
-
-        .item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--p); }
-        .win-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 5px; margin-bottom: 8px; }
-        
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; }
-        .n-i.active { color: var(--p); }
-        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
-        
-        .ss-img { width: 100%; border-radius: 8px; margin: 10px 0; cursor: pointer; border: 1px solid #333; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 15px; background: var(--p); border: none; border-radius: 10px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="header"><div class="title">TESLA MASTER ADMIN</div></div>
+    <h2>TESLA ADMIN PANEL</h2>
 
-    <div id="matches" class="sec active">
-        <div class="card">
-            <h3><i class="fas fa-plus-circle"></i> Create Match</h3>
-            <input type="number" id="mNo" placeholder="Match No">
-            <input type="text" id="mTitle" placeholder="Match Name">
-            <input type="datetime-local" id="mTime">
-            <button class="btn" onclick="postMatch()">PUBLISH MATCH</button>
+    <div style="text-align: center;">
+        <button class="tab-btn active" onclick="showSec('slider', this)">Slider</button>
+        <button class="tab-btn" onclick="showSec('match', this)">Match</button>
+        <button class="tab-btn" onclick="showSec('result', this)">Result & Pay</button>
+        <button class="tab-btn" onclick="showSec('withdraw', this)">Withdraws</button>
+    </div>
+
+    <div id="slider" class="sec active">
+        <h3>Home Slider Control</h3>
+        <p style="font-size: 11px; color: #888;">ইমেজের ডিরেক্ট লিঙ্ক দিন (যেমন: Imgbb লিঙ্ক)</p>
+        <input id="slideUrl" type="text" placeholder="https://i.ibb.co/example.jpg">
+        <button class="btn-action" onclick="addSlider()">ADD SLIDE IMAGE</button>
+        <div id="slideList" style="margin-top: 20px;"></div>
+    </div>
+
+    <div id="result" class="sec">
+        <h3>Publish Result & Pay</h3>
+        <p style="font-size: 11px; color: #888;">UID দিবেন, টাকা মেইন ও উইনিং—দুই ব্যালেন্সেই যাবে।</p>
+        <input id="resMatchNo" type="text" placeholder="Match No (#01)">
+        <input id="targetUid" placeholder="Player Main UID">
+        <div style="display: flex; gap: 10px;">
+            <input id="targetKill" type="number" placeholder="Kills">
+            <input id="winAmount" type="number" placeholder="Win TK (Total)">
         </div>
-        <div id="mList">Loading Matches...</div>
+        <button class="btn-action" style="background: #ffcc00; color: #000;" onclick="sendWinMoney()">SEND MONEY & PUBLISH</button>
     </div>
 
-    <div id="payments" class="sec">
-        <h3><i class="fas fa-money-bill-wave"></i> Deposit Requests</h3>
-        <div id="pList">Loading Requests...</div>
-        
-        <h3 style="margin-top:30px;"><i class="fas fa-university"></i> Withdraw Requests</h3>
-        <div id="wList">Loading Requests...</div>
-    </div>
-
-    <div id="results" class="sec">
-        <div class="card">
-            <h3><i class="fas fa-trophy"></i> Declare Result</h3>
-            <input type="number" id="resMNo" placeholder="Match No">
-            <select id="resMode">
-                <option value="BR Solo">BR Solo</option>
-                <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-                <option value="BR Duo">BR Duo</option>
-                <option value="BR Squad">BR Squad</option>
-            </select>
-            
-            <div id="winnerInputs">
-                <div class="win-row"><input type="text" id="wName1" placeholder="Name"><input type="number" id="wKill1" placeholder="Kill"><input type="number" id="wAmt1" placeholder="TK"></div>
-                <div class="win-row"><input type="text" id="wName2" placeholder="Name"><input type="number" id="wKill2" placeholder="Kill"><input type="number" id="wAmt2" placeholder="TK"></div>
-                <div class="win-row"><input type="text" id="wName3" placeholder="Name"><input type="number" id="wKill3" placeholder="Kill"><input type="number" id="wAmt3" placeholder="TK"></div>
-                <div class="win-row"><input type="text" id="wName4" placeholder="Name"><input type="number" id="wKill4" placeholder="Kill"><input type="number" id="wAmt4" placeholder="TK"></div>
-            </div>
-
-            <button class="btn" style="background:var(--yellow);" onclick="setResult()">SUBMIT RESULT</button>
-        </div>
-    </div>
-
-    <div id="users" class="sec">
-        <h3><i class="fas fa-users"></i> Registered Users</h3>
-        <div id="uList">Loading Users...</div>
-    </div>
-
-    <div class="nav">
-        <div class="n-i active" onclick="nav('matches', this)"><i class="fas fa-gamepad"></i>Matches</div>
-        <div class="n-i" onclick="nav('payments', this)"><i class="fas fa-money-bill-wave"></i>Payments</div>
-        <div class="n-i" onclick="nav('results', this)"><i class="fas fa-poll"></i>Results</div>
-        <div class="n-i" onclick="nav('users', this)"><i class="fas fa-users"></i>Users</div>
+    <div id="match" class="sec">
+        <h3>Create Match</h3>
+        <input id="mNo" type="text" placeholder="Match No">
+        <select id="mMode">
+            <option value="BR Solo">BR Solo</option>
+            <option value="BR Duo">BR Duo</option>
+            <option value="BR Squad">BR Squad</option>
+            <option value="Clash Squad">Clash Squad</option>
+            <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
+            <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
+        </select>
+        <input id="mFee" type="number" placeholder="Entry Fee">
+        <button class="btn-action" onclick="publishMatch()">PUBLISH</button>
     </div>
 
     <script>
-        // আপনার প্রোফাইল/রেজাল্ট পেজের সাথে মিল রেখে কনফিগ
-        const firebaseConfig = {
-            apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
-            authDomain: "teot-a3046.firebaseapp.com",
-            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046"
-        };
+        const firebaseConfig = { /* আপনার কনফিগ এখানে */ };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function nav(id, el) {
+        function showSec(id, btn) {
             document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.n-i').forEach(n => n.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); el.classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
         }
 
-        // ১. পেমেন্ট অ্যাপ্রুভাল লজিক (Deposit)
-        function approvePay(uid, amt, key) {
-            db.ref('users/' + uid + '/deposit').transaction(current => (current || 0) + Number(amt))
-            .then(() => {
-                db.ref('payments/' + key).remove(); // রিকোয়েস্ট ডিলিট করা
-                Swal.fire("Success", "Amount Added to User Balance!", "success");
+        // স্লাইডার অ্যাড করা
+        function addSlider() {
+            const url = document.getElementById('slideUrl').value;
+            if(!url) return;
+            db.ref('settings/sliders').push(url).then(() => {
+                Swal.fire("Success", "Slider Image Added!", "success");
+                document.getElementById('slideUrl').value = "";
             });
         }
 
-        // ২. উইথড্র অ্যাপ্রুভাল লজিক
-        function approveWit(uid, amt, key) {
-            db.ref('users/' + uid + '/winning').transaction(current => (current || 0) - Number(amt))
-            .then(() => {
-                db.ref('withdrawRequests/' + key).remove();
-                Swal.fire("Approved", "Withdrawal Successful!", "success");
+        // ডাবল ব্যালেন্স এবং কিলসহ রেজাল্ট পাঠানো
+        async function sendWinMoney() {
+            const uid = document.getElementById('targetUid').value;
+            const kills = document.getElementById('targetKill').value || 0;
+            const amount = parseInt(document.getElementById('winAmount').value);
+            const mNo = document.getElementById('resMatchNo').value;
+
+            if(!uid || !amount) return Swal.fire("Error", "Fill all fields", "error");
+
+            db.ref('users/' + uid).once('value', s => {
+                if(!s.exists()) return Swal.fire("Error", "User Not Found!", "error");
+                
+                const u = s.val();
+                // মেইন এবং উইনিং দুই জায়গাতেই অ্যাড হবে
+                db.ref('users/' + uid).update({
+                    winning: (u.winning || 0) + amount,
+                    deposit: (u.deposit || 0) + amount
+                }).then(() => {
+                    db.ref('results').push({
+                        matchNo: mNo,
+                        name: u.name,
+                        kills: kills,
+                        amount: amount,
+                        time: Date.now()
+                    });
+                    Swal.fire("Done!", "Money added to both wallets & Kill saved!", "success");
+                });
             });
-        }
-
-        // --- Data Listeners ---
-        // লোড ডিপোজিট রিকোয়েস্ট
-        db.ref('payments').on('value', s => {
-            let h = "";
-            s.forEach(c => { 
-                let p = c.val(); 
-                h += `<div class="item">
-                    <b>UID: ${p.shortUid}</b> | Amt: ${p.amount} TK<br>
-                    <img src="${p.ssUrl}" class="ss-img" onclick="window.open('${p.ssUrl}')">
-                    <button class="btn" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
-                    <button class="btn btn-red" onclick="db.ref('payments/${c.key}').remove()">REJECT</button>
-                </div>`; 
-            });
-            document.getElementById('pList').innerHTML = h || "No deposit requests.";
-        });
-
-        // লোড উইথড্র রিকোয়েস্ট
-        db.ref('withdrawRequests').on('value', s => {
-            let h = "";
-            s.forEach(c => { 
-                let w = c.val(); 
-                h += `<div class="item">
-                    <b>UID: ${w.shortUid}</b> | Amt: ${w.amount} TK<br>
-                    <small>Method: ${w.method} | Num: ${w.number}</small>
-                    <button class="btn" onclick="approveWit('${w.uid}', ${w.amount}, '${c.key}')">PAID & APPROVE</button>
-                </div>`; 
-            });
-            document.getElementById('wList').innerHTML = h || "No withdraw requests.";
-        });
-
-        // রেজাল্ট পাবলিশ লজিক
-        function setResult() {
-            let no = document.getElementById('resMNo').value;
-            let mode = document.getElementById('resMode').value;
-            let winners = {};
-            for(let i=1; i<=4; i++){
-                let name = document.getElementById('wName'+i).value;
-                if(name) {
-                    winners["p"+i] = {
-                        name: name,
-                        kills: document.getElementById('wKill'+i).value || 0,
-                        amount: (document.getElementById('wAmt'+i).value || 0) + " TK"
-                    };
-                }
-            }
-            if(!no) return Swal.fire("Error", "Match No is required", "error");
-            db.ref('results').push({ matchNo: no, mode: mode, players: winners, time: Date.now() })
-            .then(() => { Swal.fire("Success", "Result Published!", "success"); });
-        }
-
-        // ম্যাচ পাবলিশ
-        function postMatch() {
-            let mNo = document.getElementById('mNo').value;
-            let title = document.getElementById('mTitle').value;
-            let time = document.getElementById('mTime').value;
-            if(!mNo || !title || !time) return Swal.fire("Error", "All fields required", "error");
-            db.ref('matches').push({ matchNo: mNo, name: title, startTime: time, entryFee: 0, totalPrize: 0 })
-            .then(() => { Swal.fire("Success", "Match Live!", "success"); });
         }
     </script>
 </body>
