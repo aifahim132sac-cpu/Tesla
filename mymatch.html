@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Esports - My Matches</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --blue: #00c2ff; --red: #ff3333; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
+        
+        .header { padding: 25px; background: #000; text-align: center; border-bottom: 1px solid #1a1a1a; position: sticky; top: 0; z-index: 100; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); margin: 0; font-size: 20px; text-shadow: 0 0 10px var(--p); }
+
+        .container { padding: 15px; }
+
+        .my-card { background: var(--c); border-radius: 20px; padding: 15px; margin-bottom: 20px; border: 1px solid #1f1f1f; }
+        .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 13px; }
+        .status-tag { background: #1a1a1a; color: var(--p); font-size: 10px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--p); text-transform: uppercase; }
+        .m-name { font-size: 16px; font-weight: 500; margin-bottom: 12px; }
+        
+        /* Countdown Timer Box */
+        .timer-box { width: 100%; padding: 10px; background: #1a1a10; color: #ff9900; border: 1px solid #332200; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 15px; text-align: center; box-sizing: border-box; }
+
+        .room-box { background: #0a0a0a; border: 1px dashed #333; border-radius: 15px; padding: 15px; text-align: center; }
+        .room-header { font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+        .info-grid { display: flex; justify-content: center; gap: 10px; }
+        .info-item { flex: 1; background: #111; padding: 10px; border-radius: 10px; border: 1px solid #222; }
+        .info-item span { display: block; font-size: 8px; color: var(--blue); margin-bottom: 5px; }
+        .info-item b { font-size: 13px; color: #fff; letter-spacing: 1px; }
+
+        .pending-text { font-size: 10px; color: #555; line-height: 1.4; }
+
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 15px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
+        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; }
+        .n-i.active { color: var(--p); }
+        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header"><h2 class="title">MY MATCHES</h2></div>
+
+    <div id="myList" class="container">
+        <p style="text-align:center; color:#555; margin-top:50px;">ম্যাচ লিস্ট লোড হচ্ছে...</p>
+    </div>
+
+    <div class="nav">
+        <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i><div>Play</div></a>
+        <a href="result.html" class="n-i"><i class="fas fa-chart-bar"></i><div>Result</div></a>
+        <a href="mymatch.html" class="n-i active"><i class="fas fa-trophy"></i><div>My Match</div></a>
+        <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i><div>Profile</div></a>
+    </div>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com",
+            messagingSenderId: "742786792386", 
+            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(), db = firebase.database();
+
+        auth.onAuthStateChanged(user => {
+            if (user) { loadMyMatches(user.uid); }
+            else { window.location.href = "index.html"; }
+        });
+
+        function loadMyMatches(uid) {
+            db.ref('matches').on('value', snap => {
+                let html = "";
+                snap.forEach(c => {
+                    let m = c.val(), id = c.key;
+                    if (m.joined && m.joined[uid]) {
+                        
+                        let roomContent = "";
+                        if (!m.roomId || m.roomId == "Pending") {
+                            roomContent = `<p class="pending-text">ID & Password will be shared here 5-10 minutes before the match starts.</p>`;
+                        } else {
+                            roomContent = `
+                            <div class="info-grid">
+                                <div class="info-item"><span>ROOM ID</span><b>${m.roomId}</b></div>
+                                <div class="info-item"><span>PASSWORD</span><b>${m.roomPass}</b></div>
+                            </div>`;
+                        }
+
+                        html += `
+                        <div class="my-card">
+                            <div class="m-top">
+                                <span class="m-no">#${m.matchNo}</span>
+                                <span class="status-tag">Joined</span>
+                            </div>
+                            <div class="m-name">${m.name}</div>
+                            
+                            <div id="timer_${id}" class="timer-box">Calculating...</div>
+
+                            <div class="room-box">
+                                <div class="room-header">Room Details</div>
+                                ${roomContent}
+                            </div>
+                        </div>`;
+                        startCountdown(m.startTime, id);
+                    }
+                });
+                document.getElementById('myList').innerHTML = html || "<p style='text-align:center; color:#555;'>আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>";
+            });
+        }
+
+        function startCountdown(time, id) {
+            setInterval(() => {
+                let diff = new Date(time).getTime() - new Date().getTime();
+                let el = document.getElementById(`timer_${id}`);
+                if(el) {
+                    if(diff <= 0) { 
+                        el.innerHTML = "MATCH STARTED"; 
+                        el.style.color = "red"; 
+                        el.style.borderColor = "red";
+                    } else {
+                        let h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+                        el.innerHTML = `Starts In: ${h}h ${m}m ${s}s`;
+                    }
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
