@@ -42,21 +42,29 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
+        // আপনার নতুন আপডেট করা কনফিগ
+        const firebaseConfig = {
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.firebasestorage.app",
+            messagingSenderId: "742786792386",
+            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
-        // লগইন চেক এবং রিডাইরেক্ট
         auth.onAuthStateChanged(user => { 
             if (user) { 
                 loadMyMatches(user.uid); 
             } else { 
-                // লগইন না থাকলে সরাসরি auth.html এ পাঠিয়ে দিবে
                 window.location.href = "auth.html"; 
             } 
         });
 
         function loadMyMatches(uid) {
+            // ইউজার কোন কোন ম্যাচে জয়েন করেছে সেটা 'match_joins' অথবা আপনার দেওয়া 'user_matches' নোড থেকে চেক করবে
             db.ref('user_matches/' + uid).on('value', snap => {
                 let h = ""; 
                 if(!snap.exists()) { 
