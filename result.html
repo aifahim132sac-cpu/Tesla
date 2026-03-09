@@ -6,38 +6,88 @@
     <title>Tesla Esports - Results</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 80px; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --y: #ffcc00; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
         .header { padding: 20px; text-align: center; background: #000; border-bottom: 2px solid var(--p); }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
-        .res-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; letter-spacing: 2px; }
+        .res-card { background: var(--c); border-radius: 18px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .res-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 12px; }
+        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 12px; }
+        .m-mode { background: #1a1a1a; padding: 3px 10px; border-radius: 5px; font-size: 10px; color: #aaa; text-transform: uppercase; }
+        .winner-box { background: rgba(0, 255, 0, 0.03); border: 1px solid rgba(0, 255, 0, 0.1); border-radius: 12px; padding: 12px; }
+        .winner-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1a1a1a; }
+        .winner-row:last-child { border: none; }
+        .label { font-size: 11px; color: #777; }
+        .name { font-size: 13px; font-weight: 600; color: #fff; }
+        .prize { font-size: 12px; color: var(--y); font-family: 'Orbitron'; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
     </style>
 </head>
 <body>
-    <div class="header"><div class="title">RESULTS</div></div>
-    <div id="rList"><p style="text-align:center; padding:50px;">Fetching winners...</p></div>
+    <div class="header"><div class="title">TOURNAMENT RESULTS</div></div>
+    
+    <div id="rList">
+        <p style="text-align:center; padding:50px; color:#444;">Fetching winners...</p>
+    </div>
+
     <div class="nav">
         <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i active"><i class="fas fa-poll"></i>Result</a>
         <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i>My Match</a>
         <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i>Profile</a>
     </div>
+
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
         db.ref('results').on('value', snap => {
-            let h = ""; if(!snap.exists()) { document.getElementById('rList').innerHTML = "<p style='text-align:center;'>No results yet.</p>"; return; }
-            snap.forEach(c => {
-                let r = c.val(); h = `<div class="res-card"><h4 style="color:var(--p);">#${r.matchNo}</h4><p>${r.mode}</p></div>` + h;
-            }); document.getElementById('rList').innerHTML = h;
+            let h = ""; 
+            if(!snap.exists()) { 
+                document.getElementById('rList').innerHTML = "<p style='text-align:center; padding:50px; color:#666;'>No results published yet.</p>"; 
+                return; 
+            }
+            
+            // ডাটা রিভার্স করা (নতুন রেজাল্ট উপরে দেখাবে)
+            let resultData = [];
+            snap.forEach(c => { resultData.push(c.val()); });
+            resultData.reverse();
+
+            resultData.forEach(r => {
+                h += `<div class="res-card">
+                    <div class="res-header">
+                        <span class="m-no">MATCH #${r.matchNo || '00'}</span>
+                        <span class="m-mode">${r.mode || 'SOLO'}</span>
+                    </div>
+                    <div style="font-size:15px; font-weight:600; margin-bottom:10px;">${r.name || 'Tournament Battle'}</div>
+                    <div class="winner-box">
+                        <div class="winner-row">
+                            <div class="label"><i class="fas fa-crown" style="color:var(--y)"></i> WINNER</div>
+                            <div class="name">${r.winner || '---'}</div>
+                            <div class="prize">${r.winPrize || 0} TK</div>
+                        </div>
+                        <div class="winner-row">
+                            <div class="label"><i class="fas fa-medal" style="color:#C0C0C0"></i> 2ND PLACE</div>
+                            <div class="name">${r.runnerUp || '---'}</div>
+                            <div class="prize">${r.runnerPrize || 0} TK</div>
+                        </div>
+                        <div class="winner-row">
+                            <div class="label"><i class="fas fa-skull" style="color:#ff4444"></i> TOTAL KILLS</div>
+                            <div class="name">${r.totalKills || 0}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }); 
+            document.getElementById('rList').innerHTML = h;
         });
     </script>
 </body>
