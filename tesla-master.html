@@ -39,16 +39,7 @@
         .item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--p); position: relative; }
         .del-btn { background: var(--red); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; position: absolute; right: 10px; top: 10px; }
         
-        .room-box { background: #000; padding: 12px; border-radius: 10px; margin-top: 10px; border: 1px dashed #444; }
-        .room-label { font-size: 11px; color: var(--blue); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; display: block; }
         .u-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding: 12px 0; }
-        .u-info b { color: var(--p); font-size: 14px; }
-        .u-info p { margin: 2px 0; font-size: 11px; color: #888; }
-
-        .timer { font-size: 12px; color: var(--yellow); font-weight: bold; margin-top: 5px; display: block; border: 1px solid #333; padding: 4px; border-radius: 5px; text-align: center; background: #000; }
-        .slot-tag { background: var(--blue); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-        .player-list-box { background: #080808; margin-top: 10px; padding: 10px; border-radius: 8px; border: 1px solid #222; display: none; max-height: 200px; overflow-y: auto; }
-        .p-row { font-size: 11px; padding: 5px 0; border-bottom: 1px solid #111; color: #ccc; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -56,78 +47,36 @@
     <div class="header"><div class="title">TESLA MASTER ADMIN</div></div>
 
     <div id="matches" class="sec active">
-        <div class="card" style="border-top: 3px solid var(--yellow);">
-            <h3><i class="fas fa-bullhorn" style="color:var(--yellow);"></i> Global Announcement</h3>
-            <textarea id="notifMsg" placeholder="ইউজারদের জন্য কোনো জরুরি ঘোষণা লিখুন..."></textarea>
-            <button class="btn" style="background:var(--yellow);" onclick="sendNotif()"><i class="fas fa-paper-plane"></i> Send Notification</button>
-        </div>
-
         <div class="card">
             <h3><i class="fas fa-plus-circle"></i> Create Tournament</h3>
-            <input type="number" id="mNo" placeholder="Match No (Ex: 01)">
+            <input type="number" id="mNo" placeholder="Match No">
             <input type="text" id="mTitle" placeholder="Match Name">
-            
-            <div style="display:flex; gap:10px;">
-                <select id="mType" style="flex:1;">
-                    <option value="BR Solo">BR Solo</option>
-                    <option value="BR Duo">BR Duo</option>
-                    <option value="BR Squad">BR Squad</option>
-                    <option value="Clash Squad">Clash Squad</option>
-                    <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-                    <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
-                    <option value="Free Match">Free Match</option>
-                </select>
-                <input type="number" id="mMaxSlots" placeholder="Total Slots (Ex: 48)" style="flex:1;">
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="mEntry" placeholder="Entry Tk">
-                <input type="number" id="mKill" placeholder="Kill Tk">
-                <input type="number" id="mPrize" placeholder="Prize Tk">
-            </div>
-
-            <textarea id="mRules" placeholder="Match Rules (যেমন: No Hack, No Grenade...)" rows="2"></textarea>
-
             <input type="datetime-local" id="mTime">
-            <button class="btn" onclick="postMatch()"><i class="fas fa-check-circle"></i> Publish Match</button>
+            <button class="btn" onclick="postMatch()">Publish Match</button>
         </div>
-
-        <h3><i class="fas fa-tasks"></i> Live Matches (Control Center)</h3>
-        <div id="mList">Loading...</div>
+        <div id="mList">Loading Matches...</div>
     </div>
 
     <div id="payments" class="sec">
-        <h3><i class="fas fa-wallet"></i> Deposit Requests</h3>
-        <div id="pList">Loading Requests...</div>
+        <h3><i class="fas fa-money-bill-wave"></i> Deposit Requests</h3>
+        <div id="pList">Loading...</div>
+        
+        <h3 style="margin-top:30px;"><i class="fas fa-university"></i> Withdraw Requests</h3>
+        <div id="wList">Loading...</div>
     </div>
 
     <div id="results" class="sec">
         <div class="card">
             <h3><i class="fas fa-trophy"></i> Declare Result</h3>
             <input type="number" id="resMNo" placeholder="Match No">
-            <select id="resMode">
-                <option value="BR Solo">BR Solo</option>
-                <option value="BR Duo">BR Duo</option>
-                <option value="BR Squad">BR Squad</option>
-                <option value="Clash Squad">Clash Squad</option>
-                <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-                <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
-                <option value="Free Match">Free Match</option>
-            </select>
-            <input type="text" id="resWinner" placeholder="Winner Name (Ex: Fahim, Percy)">
-            <input type="text" id="resKillCount" placeholder="Kill Counts (Ex: 5, 2)">
-            <input type="text" id="resWinAmt" placeholder="Winning Amounts (Ex: 100, 50)">
+            <input type="text" id="resWinner" placeholder="Winner Name">
             <button class="btn" style="background:gold;" onclick="setResult()">Submit Result</button>
         </div>
-        <h3><i class="fas fa-history"></i> Published Results</h3>
         <div id="rList"></div>
     </div>
 
     <div id="users" class="sec">
-        <div class="card">
-            <input type="text" id="uSearch" placeholder="🔍 Search User Name..." onkeyup="searchUser()">
-        </div>
-        <h3><i class="fas fa-users"></i> Registered Users</h3>
+        <input type="text" id="uSearch" placeholder="Search User..." onkeyup="searchUser()">
         <div id="uList">Loading Users...</div>
     </div>
 
@@ -159,183 +108,73 @@
 
         function toast(t, m, i) { Swal.fire({ title: t, text: m, icon: i, background: '#111', color: '#fff' }); }
 
-        function sendNotif() {
-            let msg = document.getElementById('notifMsg').value;
-            if(!msg) return toast("Oops!", "মেসেজ লিখুন!", "warning");
-            db.ref('notifications').set({ message: msg, timestamp: Date.now() }).then(() => {
-                toast("Successful!", "ঘোষণা পাঠানো হয়েছে! ✅", "success");
-                document.getElementById('notifMsg').value = "";
+        // --- Deposit Management Logic ---
+        db.ref('payments').on('value', s => {
+            let h = "";
+            s.forEach(c => {
+                let p = c.val();
+                if(p.status === 'Pending') {
+                    h += `<div class="item" style="border-left-color: var(--p);">
+                        <b style="color: var(--p);">Amount: ${p.amount} TK</b><br>
+                        <small>User: ${p.uid}</small>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <a href="${p.ssUrl}" target="_blank" class="btn" style="background:var(--blue); flex:1;">VIEW SS</a>
+                            <button class="btn" style="flex:1;" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
+                        </div>
+                    </div>`;
+                }
+            });
+            document.getElementById('pList').innerHTML = h || "No pending deposits.";
+        });
+
+        function approvePay(uid, amt, pid) {
+            db.ref('users/' + uid).once('value', s => {
+                let current = parseInt(s.val().deposit || 0);
+                db.ref('users/' + uid).update({ deposit: current + parseInt(amt) });
+                db.ref('payments/' + pid).update({ status: 'Approved' });
+                toast("Success", "Balance added!", "success");
             });
         }
 
-        function postMatch() {
-            const m = {
-                matchNo: document.getElementById('mNo').value,
-                name: document.getElementById('mTitle').value,
-                mode: document.getElementById('mType').value,
-                maxSlots: document.getElementById('mMaxSlots').value || 48,
-                joinedCount: 0,
-                entry: document.getElementById('mEntry').value,
-                perKill: document.getElementById('mKill').value,
-                prize: document.getElementById('mPrize').value,
-                rules: document.getElementById('mRules').value || "Default Rules",
-                startTime: document.getElementById('mTime').value,
-                roomId: "Pending", roomPass: "Pending"
-            };
-            if(!m.matchNo || !m.name || !m.startTime) return toast("Error", "সব তথ্য দিন", "error");
-            db.ref('matches').push(m).then(() => {
-                toast("Published!", "ম্যাচ তৈরি হয়েছে! ✅", "success");
-                document.getElementById('mNo').value = ""; document.getElementById('mTitle').value = "";
+        // --- Withdraw Management Logic ---
+        db.ref('withdrawRequests').on('value', s => {
+            let h = "";
+            s.forEach(c => {
+                let w = c.val();
+                if(w.status === 'Pending') {
+                    h += `<div class="item" style="border-left-color: var(--yellow);">
+                        <b style="color: var(--yellow);">${w.amount} TK - ${w.method}</b><br>
+                        <small>Number: ${w.number} | UID: ${w.gameUid}</small>
+                        <button class="btn" style="margin-top:10px;" onclick="approveWit('${c.key}')">MARK AS PAID</button>
+                    </div>`;
+                }
             });
+            document.getElementById('wList').innerHTML = h || "No pending withdrawals.";
+        });
+
+        function approveWit(key) {
+            db.ref('withdrawRequests/' + key).update({ status: 'Completed' });
+            toast("Success", "Paid!", "success");
+        }
+
+        // --- Match & Result Logic (Simplified for full code) ---
+        function postMatch() {
+            let mNo = document.getElementById('mNo').value;
+            let title = document.getElementById('mTitle').value;
+            if(!mNo || !title) return;
+            db.ref('matches').push({ matchNo: mNo, name: title, startTime: document.getElementById('mTime').value, joinedCount: 0, maxSlots: 48, roomId: "Pending", roomPass: "Pending" });
+            toast("Success", "Match Published", "success");
         }
 
         db.ref('matches').on('value', s => {
             let h = "";
             s.forEach(c => {
                 let m = c.val();
-                let matchId = c.key;
-                let status = m.joinedCount >= m.maxSlots ? "FULL" : "Available";
-                
-                h += `<div class="item">
-                    <button class="del-btn" onclick="db.ref('matches/${matchId}').remove()">DELETE</button>
-                    <b style="color:var(--p);">#${m.matchNo} ${m.name}</b> 
-                    <span class="slot-tag">${m.joinedCount}/${m.maxSlots} ${status}</span><br>
-                    <small>${m.startTime} | ${m.mode}</small>
-                    
-                    <span id="timer_${matchId}" class="timer">Calculating...</span>
-
-                    <button class="btn" style="background:#222; color:var(--p); margin-top:8px; border:1px solid var(--p);" onclick="togglePlayers('${matchId}')">VIEW JOINED PLAYERS (UID)</button>
-                    <div id="pBox_${matchId}" class="player-list-box">Loading...</div>
-
-                    <div class="room-box">
-                        <span class="room-label">Room ID / Pass Update</span>
-                        <input type="text" id="rid_${matchId}" value="${m.roomId}" placeholder="Room ID">
-                        <input type="text" id="rps_${matchId}" value="${m.roomPass}" placeholder="Room Password">
-                        <button class="btn" style="background:var(--blue); height:35px;" onclick="pushRoom('${matchId}')">UPDATE ID/PASS</button>
-                    </div>
-                </div>`;
-                startTimer(m.startTime, `timer_${matchId}`);
+                h += `<div class="item"><b>#${m.matchNo} ${m.name}</b><br><small>${m.startTime}</small></div>`;
             });
-            document.getElementById('mList').innerHTML = h || "No Active Matches.";
+            document.getElementById('mList').innerHTML = h;
         });
 
-        function startTimer(time, elId) {
-            setInterval(() => {
-                let dest = new Date(time).getTime();
-                let now = new Date().getTime();
-                let diff = dest - now;
-                let el = document.getElementById(elId);
-                if(!el) return;
-                if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "var(--red)"; }
-                else {
-                    let h = Math.floor(diff/(1000*60*60));
-                    let m = Math.floor((diff%(1000*60*60))/(1000*60));
-                    let s = Math.floor((diff%(1000*60))/1000);
-                    el.innerHTML = `Starts In: ${h}h ${m}m ${s}s`;
-                }
-            }, 1000);
-        }
-
-        function togglePlayers(mid) {
-            let box = document.getElementById(`pBox_${mid}`);
-            if(box.style.display === "block") { box.style.display = "none"; return; }
-            box.style.display = "block";
-            db.ref('participants/' + mid).on('value', snap => {
-                let list = "";
-                if(!snap.exists()) list = "<div style='font-size:10px; color:#666;'>No players joined yet.</div>";
-                snap.forEach(p => {
-                    let d = p.val();
-                    list += `<div class="p-row"><span>${d.ign}</span> <span style="color:var(--blue)">UID: ${d.uid}</span></div>`;
-                });
-                box.innerHTML = list;
-            });
-        }
-
-        function pushRoom(id) {
-            db.ref('matches/' + id).update({
-                roomId: document.getElementById('rid_'+id).value,
-                roomPass: document.getElementById('rps_'+id).value
-            }).then(() => toast("Sent!", "ID/Pass আপডেট হয়েছে! ✅", "success"));
-        }
-
-        // --- Result & User Management (Same as previous, updated with Mode) ---
-        function setResult() {
-            let no = document.getElementById('resMNo').value;
-            let mode = document.getElementById('resMode').value;
-            let win = document.getElementById('resWinner').value;
-            let kill = document.getElementById('resKillCount').value;
-            let amt = document.getElementById('resWinAmt').value;
-            if(!no || !win) return toast("Warning!", "সবগুলো ঘর পূরণ করুন", "warning");
-            db.ref('results').push({ matchNo: no, mode: mode, winner: win, kills: kill, amount: amt }).then(() => {
-                toast("Published!", "রেজাল্ট পাবলিশ হয়েছে! ✅", "success");
-            });
-        }
-
-        db.ref('results').on('value', s => {
-            let h = "";
-            s.forEach(c => {
-                let r = c.val();
-                h += `<div class="item" style="border-left-color: gold;">
-                    <button class="del-btn" onclick="db.ref('results/${c.key}').remove()">DELETE</button>
-                    <b>Match #${r.matchNo} [${r.mode}] Result</b><br>
-                    <small style="color:gold;">Winners: ${r.winner}</small>
-                </div>`;
-            });
-            document.getElementById('rList').innerHTML = h || "No Results.";
-        });
-
-        // Search & User Edit
-        function searchUser() {
-            let q = document.getElementById('uSearch').value.toLowerCase();
-            document.querySelectorAll('.u-item').forEach(i => {
-                i.style.display = i.getAttribute('data-name').includes(q) ? "flex" : "none";
-            });
-        }
-
-        function renderUsers(users) {
-            let h = "";
-            for (let uid in users) {
-                let u = users[uid];
-                h += `<div class="u-item" data-name="${u.ign ? u.ign.toLowerCase() : ''}">
-                    <div class="u-info"><b>${u.ign || 'No Name'}</b><p>Bal: ${u.winning || 0} Tk</p></div>
-                    <button class="btn" style="width:70px; font-size:10px; padding:8px;" onclick="editUser('${uid}')">EDIT</button>
-                </div>`;
-            }
-            document.getElementById('uList').innerHTML = h || "No Users.";
-        }
-
-        function editUser(uid) {
-            let u = usersData[uid];
-            Swal.fire({
-                title: `Edit ${u.ign}`,
-                html: `<input id="sw-bal" type="number" value="${u.winning || 0}">`,
-                confirmButtonText: 'Update'
-            }).then(res => {
-                if(res.isConfirmed) db.ref('users/' + uid).update({ winning: parseInt(document.getElementById('sw-bal').value) });
-            });
-        }
-
-        db.ref('payments').on('value', s => {
-            let h = "";
-            s.forEach(c => {
-                let p = c.val();
-                h += `<div class="item"><b>Amount: ${p.amount} Tk</b><br><small>User: ${p.uid}</small>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <a href="${p.ssUrl}" target="_blank" style="background:var(--blue); color:#000; padding:8px; border-radius:8px; font-size:11px; text-decoration:none; font-weight:bold; flex:1; text-align:center;">VIEW SS</a>
-                        <button class="btn" style="flex:1;" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
-                    </div></div>`;
-            });
-            document.getElementById('pList').innerHTML = h || "No Requests.";
-        });
-
-        function approvePay(uid, amt, pid) {
-            db.ref('users/' + uid).once('value', s => {
-                let cur = parseInt(s.val().winning || 0);
-                db.ref('users/' + uid).update({ winning: cur + parseInt(amt) });
-                db.ref('payments/' + pid).remove();
-                toast("Success", "Balance added!", "success");
-            });
-        }
     </script>
 </body>
 </html>
