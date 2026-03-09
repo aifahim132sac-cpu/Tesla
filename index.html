@@ -13,6 +13,24 @@
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #111; --y: #ffcc00; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; overflow-x: hidden; }
+        
+        /* Login Modal UI */
+        #authModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #111; width: 85%; max-width: 350px; padding: 30px 20px; border-radius: 20px;
+            border: 1px solid #222; position: relative; text-align: center; animation: zoomIn 0.3s ease;
+        }
+        @keyframes zoomIn { from {transform: scale(0.8); opacity: 0;} to {transform: scale(1); opacity: 1;} }
+        .close-btn { position: absolute; top: 15px; right: 15px; font-size: 22px; color: #555; cursor: pointer; }
+        .m-title { font-family: 'Orbitron'; color: var(--p); margin-bottom: 25px; font-size: 18px; }
+        .auth-input { width: 100%; padding: 14px; margin: 8px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; outline: none; }
+        .auth-input:focus { border-color: var(--p); }
+        .auth-btn { width: 100%; padding: 15px; background: var(--p); border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; margin-top: 15px; cursor: pointer; color: #000; }
+
+        /* Main UI */
         .header { background: #000; padding: 20px 0; border-bottom: 1px solid #1a1a1a; text-align: center; }
         .header h2 { font-family: 'Orbitron'; color: var(--p); margin: 0; font-size: 22px; letter-spacing: 3px; }
         .slider-container { width: 92%; height: 160px; overflow: hidden; position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; }
@@ -44,40 +62,101 @@
     </style>
 </head>
 <body>
+
+    <div id="authModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeAuth()">&times;</span>
+            <h3 class="m-title" id="authTitle">TESLA LOGIN</h3>
+            <div id="authInputs">
+                <input type="email" id="authEmail" class="auth-input" placeholder="Email Address">
+                <input type="password" id="authPass" class="auth-input" placeholder="Password">
+                <input type="text" id="authName" class="auth-input" placeholder="Full Name" style="display:none;">
+            </div>
+            <button class="auth-btn" onclick="handleAuth()">LET'S PLAY</button>
+            <p style="font-size: 11px; color: #666; margin-top: 20px;" id="toggleText">
+                New here? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Create Account</span>
+            </p>
+        </div>
+    </div>
+
     <div class="header"><h2>TESLA ESPORTS</h2></div>
     <div class="slider-container"><div class="slider-track" id="sliderTrack"></div></div>
     <div id="noticeBar"><div class="marquee" id="noticeMsg">Welcome to Tesla Esports...</div></div>
+    
     <div id="matchList"></div>
+
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
         <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i>My Match</a>
         <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i>Profile</a>
     </div>
+
     <script>
         const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
+
+        let isLoginMode = true;
+
+        // Modal Controls
+        function openAuth() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
+
+        function toggleAuth() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('authTitle').innerText = isLoginMode ? "TESLA LOGIN" : "TESLA REGISTER";
+            document.getElementById('authName').style.display = isLoginMode ? "none" : "block";
+            document.getElementById('toggleText').innerHTML = isLoginMode ? 
+                `New here? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Create Account</span>` :
+                `Have account? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Login Now</span>`;
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPass').value;
+            const name = document.getElementById('authName').value;
+
+            if(!email || !pass) return Swal.fire("Error", "Please fill all fields", "error");
+
+            try {
+                if(isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                    closeAuth();
+                    Swal.fire({ icon: 'success', title: 'Success!', text: 'Login successful.', confirmButtonText: 'OK', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
+                } else {
+                    if(!name) return Swal.fire("Error", "Enter Name", "error");
+                    const res = await auth.createUserWithEmailAndPassword(email, pass);
+                    await db.ref('users/' + res.user.uid).set({ name: name, email: email, deposit: 0, winning: 0, uid: res.user.uid });
+                    closeAuth();
+                    Swal.fire({ icon: 'success', title: 'Created!', text: 'Registration successful.', confirmButtonText: 'OK', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
+                }
+            } catch(e) { Swal.fire("Error", e.message, "error"); }
+        }
+
+        // Slider & Matches logic
         db.ref('settings/sliders').on('value', snap => {
             let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
-            document.getElementById('sliderTrack').innerHTML = h || `<img src="https://via.placeholder.com/800x400?text=Tesla+Esports" class="slide">`;
+            document.getElementById('sliderTrack').innerHTML = h;
             initSlider();
         });
-        db.ref('settings/notice').on('value', snap => { document.getElementById('noticeMsg').innerText = snap.val() || "Welcome to Tesla Esports!"; });
+
+        db.ref('settings/notice').on('value', snap => { document.getElementById('noticeMsg').innerText = snap.val() || "Welcome!"; });
+
         db.ref('matches').on('value', snap => {
             let h = "";
             snap.forEach(c => {
                 const m = c.val();
                 const total = parseInt(m.totalSlots) || 48, joined = parseInt(m.joinedCount) || 0, percent = (joined/total)*100;
                 h += `<div class="match-card">
-                    <div class="match-header"><span class="match-mode">${m.mode || 'SOLO'}</span><span>#${m.matchNo || '00'}</span></div>
+                    <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
                     <div class="match-body">
                         <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.name}</div>
                         <div class="timer-box" data-time="${m.startTime}">Loading...</div>
                         <div class="m-grid">
-                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.totalPrize || 0} TK</div></div>
+                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">--</div></div>
-                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee || 0} TK</div></div>
+                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee} TK</div></div>
                         </div>
                         <div class="slot-wrap"><div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa;">
@@ -85,45 +164,79 @@
                         </div></div>
                         <div class="btn-row">
                             <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee || 0}, ${joined}, ${total})">${joined >= total ? 'FULL' : 'JOIN'}</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">${joined >= total ? 'FULL' : 'JOIN'}</button>
                         </div>
                     </div>
                 </div>`;
             });
-            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center; padding:20px;'>No Matches Available.</p>";
+            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>No Matches.</p>";
             startCountdowns();
         });
+
         async function handleJoin(id, mode, fee, joined, total) {
-            const user = auth.currentUser;
-            if(!user) return Swal.fire("Login Required", "Please login from Profile.", "warning");
-            if(joined >= total) return Swal.fire("Match Full", "Match is closed.", "error");
+            if(!auth.currentUser) return openAuth();
+            if(joined >= total) return Swal.fire("Full", "Match is full!", "error");
+            
+            // Player Inputs Logic
             let pCount = 1; let mLow = mode.toLowerCase();
-            if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad') || mLow.includes('clash')) pCount = 4;
-            let inputsHtml = "";
+            if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
+            
+            let html = "";
             for(let i=1; i<=pCount; i++) {
-                inputsHtml += `<div style="margin-bottom:12px; text-align:left;"><label style="font-size:10px; color:var(--p);">PLAYER ${i}</label><input id="pName${i}" class="swal2-input" placeholder="Game Name"><input id="pUid${i}" class="swal2-input" placeholder="Game UID"></div>`;
+                html += `<input id="pName${i}" class="swal2-input" placeholder="Player ${i} Name">
+                         <input id="pUid${i}" class="swal2-input" placeholder="Player ${i} UID">`;
             }
-            const { value: pData } = await Swal.fire({ title: `JOIN ${mode}`, html: `<div style="max-height:300px; overflow-y:auto;">${inputsHtml}</div>`, showCancelButton: true, confirmButtonText: 'CONFIRM', preConfirm: () => {
-                let d = []; for(let i=1; i<=pCount; i++) {
-                    let n = document.getElementById(`pName${i}`).value, u = document.getElementById(`pUid${i}`).value;
-                    if(!n || !u) { Swal.showValidationMessage(`Fill Player ${i} info`); return false; }
-                    d.push({ name: n, gameUid: u });
-                } return d;
-            }});
-            if (pData) {
-                db.ref('users/' + user.uid).once('value', async s => {
-                    const u = s.val() || {}; if((u.deposit || 0) < fee) return Swal.fire("Low Balance", "Add money first.", "error");
-                    await db.ref('users/' + user.uid).update({ deposit: (u.deposit || 0) - fee });
+
+            const { value: pData } = await Swal.fire({
+                title: 'Enter Details',
+                html: html,
+                confirmButtonText: 'JOIN NOW',
+                showCancelButton: true,
+                preConfirm: () => {
+                    let d = [];
+                    for(let i=1; i<=pCount; i++) {
+                        let n = document.getElementById(`pName${i}`).value, u = document.getElementById(`pUid${i}`).value;
+                        if(!n || !u) { Swal.showValidationMessage('Fill all info'); return false; }
+                        d.push({ name: n, gameUid: u });
+                    }
+                    return d;
+                }
+            });
+
+            if(pData) {
+                const uid = auth.currentUser.uid;
+                db.ref('users/' + uid).once('value', async s => {
+                    const u = s.val();
+                    if((u.deposit || 0) < fee) return Swal.fire("Low Balance", "Please add money.", "error");
+                    
+                    await db.ref('users/' + uid).update({ deposit: u.deposit - fee });
                     await db.ref('matches/' + id).update({ joinedCount: joined + 1 });
-                    db.ref('match_joins/' + id + '/' + user.uid).set({ mainUid: user.uid, players: pData, time: Date.now() });
-                    db.ref('user_matches/' + user.uid + '/' + id).set(true);
-                    Swal.fire("Joined!", "Success!", "success");
+                    await db.ref('match_joins/' + id + '/' + uid).set({ players: pData, time: Date.now() });
+                    Swal.fire("Joined!", "Successfully joined the match.", "success");
                 });
             }
         }
-        function showRules(id) { db.ref('matches/'+id+'/rules').once('value', s => { Swal.fire({ title: 'Rules', text: s.val() || "No Rules.", icon: 'info' }); }); }
-        function initSlider() { let i = 0; setInterval(() => { const s = document.querySelectorAll('.slide'); if(s.length > 1) { i = (i + 1) % s.length; document.getElementById('sliderTrack').style.transform = `translateX(-${i * 100}%)`; } }, 5000); }
-        function startCountdowns() { setInterval(() => { document.querySelectorAll('.timer-box').forEach(el => { const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime(); if(diff < 0) { el.innerHTML = "<span style='color:var(--p)'>LIVE</span>"; return; } const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; }); }, 1000); }
+
+        function showRules(id) { db.ref('matches/'+id+'/rules').once('value', s => { Swal.fire('Rules', s.val() || "Follow General Rules", 'info'); }); }
+        
+        function initSlider() { 
+            let i = 0; 
+            setInterval(() => { 
+                const s = document.querySelectorAll('.slide'); 
+                if(s.length > 1) { i = (i + 1) % s.length; document.getElementById('sliderTrack').style.transform = `translateX(-${i * 100}%)`; } 
+            }, 5000); 
+        }
+
+        function startCountdowns() { 
+            setInterval(() => { 
+                document.querySelectorAll('.timer-box').forEach(el => { 
+                    const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime(); 
+                    if(diff < 0) { el.innerHTML = "<span style='color:var(--p)'>LIVE</span>"; return; } 
+                    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); 
+                    el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; 
+                }); 
+            }, 1000); 
+        }
     </script>
 </body>
 </html>
