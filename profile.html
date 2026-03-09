@@ -22,9 +22,11 @@
         .val-p { color: var(--p); font-weight: 700; font-family: 'Orbitron'; font-size: 12px; }
         .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px 15px; display: none; border: 1px solid #222; }
         .form-sec.active { display: block; }
-        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 10px; box-sizing: border-box; }
-        .submit-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; font-family: 'Orbitron'; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 10px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--p); }
+        .submit-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; }
+        .submit-btn:active { transform: scale(0.98); }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
@@ -37,14 +39,14 @@
     </div>
 
     <div style="text-align:center; padding:20px;">
-        <h3 id="displayName">Loading...</h3>
-        <p id="displayUid" style="color:#444; font-size:10px;">UID: ---</p>
+        <h3 id="displayName" style="margin:0; font-family:'Orbitron';">Loading...</h3>
+        <p id="displayUid" style="color:#555; font-size:10px; margin-top:5px;">UID: ---</p>
     </div>
 
     <div class="stats-grid">
         <div class="s-box"><label>Main Balance</label><b class="val-p" id="uDep">0 TK</b></div>
         <div class="s-box"><label>Winning</label><b class="val-p" id="uBal" style="color:#ffcc00;">0 TK</b></div>
-        <div class="s-box"><label>Played</label><b id="uPlayed">0</b></div>
+        <div class="s-box"><label>Played</label><b id="uPlayed" style="font-family:'Orbitron';">0</b></div>
     </div>
 
     <div style="padding:0 15px; display:flex; gap:10px;">
@@ -55,7 +57,7 @@
     <div id="depSec" class="form-sec">
         <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">বিকাশ/নগদ এ টাকা পাঠিয়ে ট্রানজেকশন স্ক্রিনশটের লিঙ্ক দিন।</p>
         <input type="number" id="depAmt" placeholder="Amount (TK)">
-        <input type="text" id="depSS" placeholder="Imgbb SS Link">
+        <input type="text" id="depSS" placeholder="Imgbb / Imgur Link">
         <button class="submit-btn" onclick="handleDeposit()">SUBMIT DEPOSIT</button>
     </div>
 
@@ -74,66 +76,76 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
+        // আপনার নতুন সঠিক API Key এখানে বসানো হয়েছে
+        const firebaseConfig = {
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
         
         let currentDep = 0;
 
-        // চেক করা ইউজার লগইন আছে কি না
         auth.onAuthStateChanged(user => {
             if (user) { 
                 db.ref('users/' + user.uid).on('value', s => {
                     let u = s.val() || {}; 
                     currentDep = u.deposit || 0;
                     document.getElementById('displayName').innerText = u.name || "Player";
-                    document.getElementById('displayUid').innerText = "UID: " + user.uid.substring(0,8).toUpperCase();
+                    document.getElementById('displayUid').innerText = "UID: " + user.uid.substring(0,10).toUpperCase();
                     document.getElementById('uDep').innerText = currentDep + " TK";
                     document.getElementById('uBal').innerText = (u.winning || 0) + " TK";
                     document.getElementById('uPlayed').innerText = u.playedCount || 0;
                 });
             } else { 
-                // লগইন না থাকলে সরাসরি auth.html এ পাঠিয়ে দিবে
                 window.location.href = "auth.html"; 
             }
         });
 
         function toggleTab(t) { 
             const d = document.getElementById('depSec'), w = document.getElementById('witSec');
-            d.style.display = t==='dep' && d.style.display !== 'block' ? 'block' : 'none';
-            w.style.display = t==='wit' && w.style.display !== 'block' ? 'block' : 'none';
+            if (t === 'dep') {
+                d.style.display = d.style.display === 'block' ? 'none' : 'block';
+                w.style.display = 'none';
+            } else if (t === 'wit') {
+                w.style.display = w.style.display === 'block' ? 'none' : 'block';
+                d.style.display = 'none';
+            } else {
+                d.style.display = 'none'; w.style.display = 'none';
+            }
         }
 
         function handleDeposit() {
             const amt = document.getElementById('depAmt').value, ss = document.getElementById('depSS').value;
-            if(!amt || !ss) return Swal.fire("Error", "সবগুলো ঘর পূরণ করুন", "error");
+            if(!amt || !ss) return Swal.fire({ icon: "error", title: "Oops!", text: "সবগুলো ঘর পূরণ করুন", background: "#111", color: "#fff" });
+            
             db.ref('payments').push({ uid: auth.currentUser.uid, amount: amt, ssUrl: ss, status: "Pending", time: Date.now() });
-            Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে!", "success"); 
+            Swal.fire({ icon: "success", title: "Sent!", text: "ডিপোজিট রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে!", confirmButtonColor: "#00ff00", background: "#111", color: "#fff" }); 
             toggleTab('');
         }
 
         function sendWitRequest() {
             const amt = parseInt(document.getElementById('wAmt').value), num = document.getElementById('wNum').value;
-            if(!amt || !num) return Swal.fire("Error", "সঠিক তথ্য দিন", "error");
-            if(amt < 100) return Swal.fire("Error", "মিনিমাম ১০০ টাকা উইথড্র করুন", "error");
-            if(amt > currentDep) return Swal.fire("Low Balance", "আপনার অ্যাকাউন্টে পর্যাপ্ত টাকা নেই", "error");
+            if(!amt || !num) return Swal.fire({ icon: "error", title: "Oops!", text: "সঠিক তথ্য দিন", background: "#111", color: "#fff" });
+            if(amt < 100) return Swal.fire({ icon: "warning", title: "Limit", text: "মিনিমাম ১০০ টাকা উইথড্র করুন", background: "#111", color: "#fff" });
+            
+            // Winning Balance থেকে উইথড্র হবে (সাধারণত টুর্নামেন্ট অ্যাপে উইনিং ব্যালেন্স উইথড্র হয়)
+            // আপনি যদি মেইন ব্যালেন্স থেকে কাটতে চান তবে currentDep চেক করুন
+            if(amt > currentDep) return Swal.fire({ icon: "error", title: "Low Balance", text: "আপনার অ্যাকাউন্টে পর্যাপ্ত টাকা নেই", background: "#111", color: "#fff" });
 
             db.ref('withdrawRequests').push({ uid: auth.currentUser.uid, amount: amt, number: num, status: "Pending", time: Date.now() });
             db.ref('users/' + auth.currentUser.uid).update({ deposit: currentDep - amt });
-            Swal.fire("Success", "উইথড্র রিকোয়েস্ট সফল হয়েছে!", "success"); 
+            Swal.fire({ icon: "success", title: "Successful!", text: "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে!", confirmButtonColor: "#00ff00", background: "#111", color: "#fff" }); 
             toggleTab('');
         }
 
         function handleLogout() {
             Swal.fire({
-                title: 'Logout?',
-                text: "আপনি কি লগআউট করতে চান?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#00ff00',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes',
-                cancelButtonText: 'No'
+                title: 'Logout?', text: "আপনি কি লগআউট করতে চান?", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#00ff00', cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes', cancelButtonText: 'No', background: '#111', color: '#fff'
             }).then((result) => {
                 if (result.isConfirmed) {
                     auth.signOut().then(() => { window.location.href = "index.html"; });
