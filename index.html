@@ -4,227 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla Esports - Home</title>
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #111; --y: #ffcc00; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; overflow-x: hidden; }
-        
-        /* হেডার সেকশন */
         .header { background: #000; padding: 20px 0; border-bottom: 1px solid #1a1a1a; text-align: center; }
-        .header h2 { font-family: 'Orbitron'; color: var(--p); margin: 0; font-size: 22px; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0, 255, 0, 0.3); }
-
-        /* স্লাইডার */
-        .slider-container { width: 92%; height: 160px; overflow: hidden; position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .header h2 { font-family: 'Orbitron'; color: var(--p); margin: 0; font-size: 22px; letter-spacing: 3px; }
+        .slider-container { width: 92%; height: 160px; overflow: hidden; position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; }
         .slider-track { display: flex; transition: transform 0.5s ease; height: 100%; }
         .slide { min-width: 100%; height: 100%; object-fit: cover; }
-
-        /* স্ক্রলিং নোটিশ */
-        #noticeBar { background: rgba(0, 255, 0, 0.05); color: var(--p); padding: 12px 0; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; overflow: hidden; margin-bottom: 10px; }
-        .marquee { white-space: nowrap; display: inline-block; animation: marquee 15s linear infinite; font-size: 13px; font-weight: 500; }
+        #noticeBar { background: rgba(0, 255, 0, 0.05); color: var(--p); padding: 12px 0; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; overflow: hidden; }
+        .marquee { white-space: nowrap; display: inline-block; animation: marquee 15s linear infinite; font-size: 13px; }
         @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-        /* ম্যাচ কার্ড */
-        .match-card { background: var(--c); border-radius: 18px; margin: 15px; border: 1px solid #222; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
-        .match-header { padding: 12px 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
-        .match-mode { font-family: 'Orbitron'; font-size: 11px; color: var(--p); letter-spacing: 1px; }
+        .match-card { background: var(--c); border-radius: 18px; margin: 15px; border: 1px solid #222; overflow: hidden; }
+        .match-header { padding: 12px 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
+        .match-mode { font-family: 'Orbitron'; font-size: 11px; color: var(--p); }
         .match-body { padding: 15px; }
-        
-        .timer-box { background: rgba(255, 204, 0, 0.07); color: var(--y); padding: 10px; border-radius: 10px; text-align: center; font-family: 'Orbitron'; font-size: 12px; margin-bottom: 15px; border: 1px solid rgba(255, 204, 0, 0.15); letter-spacing: 1px; }
-
+        .timer-box { background: rgba(255, 204, 0, 0.07); color: var(--y); padding: 10px; border-radius: 10px; text-align: center; font-family: 'Orbitron'; font-size: 12px; margin-bottom: 15px; }
         .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
         .g-box { background: #000; padding: 12px 5px; border-radius: 12px; text-align: center; border: 1px solid #222; }
-        .g-label { font-size: 9px; color: #777; text-transform: uppercase; margin-bottom: 5px; font-weight: 600; }
+        .g-label { font-size: 9px; color: #777; text-transform: uppercase; }
         .g-val { font-size: 12px; font-weight: 700; color: #fff; font-family: 'Orbitron'; }
-
         .slot-wrap { margin-top: 15px; background: #0a0a0a; padding: 10px; border-radius: 12px; }
         .s-bar { height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
-        .s-fill { height: 100%; background: linear-gradient(90deg, #00aa00, var(--p)); transition: 1s ease-in-out; box-shadow: 0 0 12px var(--p); }
-
+        .s-fill { height: 100%; background: var(--p); transition: 1s ease-in-out; }
         .btn-row { display: flex; gap: 12px; margin-top: 15px; }
-        .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; border: none; font-size: 11px; transition: 0.3s; letter-spacing: 1px; }
+        .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; border: none; font-size: 11px; }
         .btn-rules { background: #1a1a1a; color: #fff; border: 1px solid #333; }
-        .btn-join { background: var(--p); color: #000; box-shadow: 0 4px 15px rgba(0, 255, 0, 0.2); }
-        .btn:active { transform: scale(0.96); }
-
-        /* বটম নেভিগেশন */
+        .btn-join { background: var(--p); color: #000; }
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 14px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
-
-        /* কাস্টম সুইট এলার্ট */
-        .swal2-popup { background: #050505 !important; color: #fff !important; border: 1px solid #222 !important; border-radius: 20px !important; }
-        .swal2-input { background: #000 !important; color: #fff !important; border: 1px solid #333 !important; font-size: 14px !important; border-radius: 10px !important; }
-        .swal2-confirm { background: var(--p) !important; color: #000 !important; font-family: 'Orbitron' !important; font-size: 12px !important; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h2>TESLA ESPORTS</h2>
-    </div>
-
-    <div class="slider-container">
-        <div class="slider-track" id="sliderTrack"></div>
-    </div>
-
-    <div id="noticeBar">
-        <div class="marquee" id="noticeMsg">Welcome to Tesla Esports... Stay tuned for upcoming tournaments!</div>
-    </div>
-
+    <div class="header"><h2>TESLA ESPORTS</h2></div>
+    <div class="slider-container"><div class="slider-track" id="sliderTrack"></div></div>
+    <div id="noticeBar"><div class="marquee" id="noticeMsg">Welcome to Tesla Esports...</div></div>
     <div id="matchList"></div>
-
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
         <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i>My Match</a>
         <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i>Profile</a>
     </div>
-
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
-            authDomain: "teot-a3046.firebaseapp.com",
-            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
-
-        // স্লাইডার ও নোটিশ লোডার
         db.ref('settings/sliders').on('value', snap => {
             let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
             document.getElementById('sliderTrack').innerHTML = h || `<img src="https://via.placeholder.com/800x400?text=Tesla+Esports" class="slide">`;
             initSlider();
         });
-        db.ref('settings/notices').limitToLast(1).on('value', snap => { 
-            snap.forEach(c => { document.getElementById('noticeMsg').innerText = c.val().text || ""; });
-        });
-
-        // ম্যাচ লিস্ট লোডার
+        db.ref('settings/notice').on('value', snap => { document.getElementById('noticeMsg').innerText = snap.val() || "Welcome to Tesla Esports!"; });
         db.ref('matches').on('value', snap => {
             let h = "";
             snap.forEach(c => {
                 const m = c.val();
                 const total = parseInt(m.totalSlots) || 48, joined = parseInt(m.joinedCount) || 0, percent = (joined/total)*100;
-                h += `
-                <div class="match-card">
-                    <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
+                h += `<div class="match-card">
+                    <div class="match-header"><span class="match-mode">${m.mode || 'SOLO'}</span><span>#${m.matchNo || '00'}</span></div>
                     <div class="match-body">
-                        <div style="font-size:16px; font-weight:600; margin-bottom:12px; font-family:'Poppins'; color:#fff;">${m.name}</div>
+                        <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.name}</div>
                         <div class="timer-box" data-time="${m.startTime}">Loading...</div>
                         <div class="m-grid">
-                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.totalPrize}</div></div>
+                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.totalPrize || 0} TK</div></div>
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">--</div></div>
-                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee}</div></div>
+                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee || 0} TK</div></div>
                         </div>
-                        <div class="slot-wrap">
-                            <div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
-                            <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa; font-weight:500;">
-                                <span>Joined: ${joined}/${total}</span><span>Left: ${total-joined}</span>
-                            </div>
-                        </div>
+                        <div class="slot-wrap"><div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa;">
+                            <span>Joined: ${joined}/${total}</span><span>Left: ${total-joined}</span>
+                        </div></div>
                         <div class="btn-row">
                             <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">${joined >= total ? 'FULL' : 'JOIN'}</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee || 0}, ${joined}, ${total})">${joined >= total ? 'FULL' : 'JOIN'}</button>
                         </div>
                     </div>
                 </div>`;
             });
-            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center; padding:20px; color:#444;'>No Live Matches Available.</p>";
+            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center; padding:20px;'>No Matches Available.</p>";
             startCountdowns();
         });
-
-        // জয়েন লজিক
         async function handleJoin(id, mode, fee, joined, total) {
             const user = auth.currentUser;
-            if(!user) return Swal.fire("Login Required", "দয়া করে প্রোফাইল থেকে লগইন করুন।", "warning");
-            if(joined >= total) return Swal.fire("Match Full", "দুঃখিত, এই ম্যাচটি পূর্ণ হয়ে গেছে।", "error");
-
-            let playerCount = 1;
-            let mLow = mode.toLowerCase();
-            if(mLow.includes('duo')) playerCount = 2;
-            else if(mLow.includes('squad') || mLow.includes('clash')) playerCount = 4;
-
-            let inputsHtml = `<p style="color:#aaa; font-size:11px; margin-bottom:15px;">সবগুলো প্লেয়ারের সঠিক তথ্য দিন</p>`;
-            for(let i=1; i<=playerCount; i++) {
-                inputsHtml += `
-                <div style="margin-bottom:12px; border:1px solid #222; padding:10px; border-radius:10px; text-align:left;">
-                    <span style="color:var(--p); font-size:10px; font-weight:bold;">PLAYER ${i}</span>
-                    <input id="pName${i}" class="swal2-input" placeholder="In-game Name">
-                    <input id="pUid${i}" class="swal2-input" placeholder="Game UID">
-                </div>`;
+            if(!user) return Swal.fire("Login Required", "Please login from Profile.", "warning");
+            if(joined >= total) return Swal.fire("Match Full", "Match is closed.", "error");
+            let pCount = 1; let mLow = mode.toLowerCase();
+            if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad') || mLow.includes('clash')) pCount = 4;
+            let inputsHtml = "";
+            for(let i=1; i<=pCount; i++) {
+                inputsHtml += `<div style="margin-bottom:12px; text-align:left;"><label style="font-size:10px; color:var(--p);">PLAYER ${i}</label><input id="pName${i}" class="swal2-input" placeholder="Game Name"><input id="pUid${i}" class="swal2-input" placeholder="Game UID"></div>`;
             }
-
-            const { value: playersData } = await Swal.fire({
-                title: `<span style="font-family:Orbitron; font-size:16px;">JOIN ${mode}</span>`,
-                html: `<div style="max-height:350px; overflow-y:auto;">${inputsHtml}</div>`,
-                showCancelButton: true,
-                confirmButtonText: 'CONFIRM JOIN',
-                preConfirm: () => {
-                    let data = [];
-                    for(let i=1; i<=playerCount; i++) {
-                        let n = document.getElementById(`pName${i}`).value;
-                        let u = document.getElementById(`pUid${i}`).value;
-                        if(!n || !u) { Swal.showValidationMessage(`Player ${i} এর তথ্য পূরণ করুন`); return false; }
-                        data.push({ name: n, gameUid: u });
-                    }
-                    return data;
-                }
-            });
-
-            if (playersData) {
+            const { value: pData } = await Swal.fire({ title: `JOIN ${mode}`, html: `<div style="max-height:300px; overflow-y:auto;">${inputsHtml}</div>`, showCancelButton: true, confirmButtonText: 'CONFIRM', preConfirm: () => {
+                let d = []; for(let i=1; i<=pCount; i++) {
+                    let n = document.getElementById(`pName${i}`).value, u = document.getElementById(`pUid${i}`).value;
+                    if(!n || !u) { Swal.showValidationMessage(`Fill Player ${i} info`); return false; }
+                    d.push({ name: n, gameUid: u });
+                } return d;
+            }});
+            if (pData) {
                 db.ref('users/' + user.uid).once('value', async s => {
-                    const u = s.val() || {};
-                    if((u.deposit || 0) < fee) return Swal.fire("Low Balance", "আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।", "error");
-                    
+                    const u = s.val() || {}; if((u.deposit || 0) < fee) return Swal.fire("Low Balance", "Add money first.", "error");
                     await db.ref('users/' + user.uid).update({ deposit: (u.deposit || 0) - fee });
                     await db.ref('matches/' + id).update({ joinedCount: joined + 1 });
-                    
-                    db.ref('match_joins/' + id + '/' + user.uid).set({
-                        mainUid: user.uid,
-                        players: playersData,
-                        teamType: mode,
-                        time: Date.now()
-                    });
+                    db.ref('match_joins/' + id + '/' + user.uid).set({ mainUid: user.uid, players: pData, time: Date.now() });
                     db.ref('user_matches/' + user.uid + '/' + id).set(true);
-                    Swal.fire("Success!", "ম্যাচে অংশগ্রহণ সফল হয়েছে।", "success");
+                    Swal.fire("Joined!", "Success!", "success");
                 });
             }
         }
-
-        function showRules(id) {
-            db.ref('matches/'+id+'/rules').once('value', s => {
-                Swal.fire({ title: 'Tournament Rules', text: s.val() || "এই ম্যাচের কোনো রুলস সেট করা নেই।", icon: 'info' });
-            });
-        }
-
-        function initSlider() {
-            let i = 0; const t = document.getElementById('sliderTrack');
-            setInterval(() => {
-                const s = document.querySelectorAll('.slide');
-                if(s.length > 1) { i = (i + 1) % s.length; t.style.transform = `translateX(-${i * 100}%)`; }
-            }, 5000);
-        }
-
-        function startCountdowns() {
-            setInterval(() => {
-                document.querySelectorAll('.timer-box').forEach(el => {
-                    const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime();
-                    if(diff < 0) { el.innerHTML = "<span style='color:var(--p)'>LIVE NOW</span>"; return; }
-                    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-                    el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`;
-                });
-            }, 1000);
-        }
+        function showRules(id) { db.ref('matches/'+id+'/rules').once('value', s => { Swal.fire({ title: 'Rules', text: s.val() || "No Rules.", icon: 'info' }); }); }
+        function initSlider() { let i = 0; setInterval(() => { const s = document.querySelectorAll('.slide'); if(s.length > 1) { i = (i + 1) % s.length; document.getElementById('sliderTrack').style.transform = `translateX(-${i * 100}%)`; } }, 5000); }
+        function startCountdowns() { setInterval(() => { document.querySelectorAll('.timer-box').forEach(el => { const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime(); if(diff < 0) { el.innerHTML = "<span style='color:var(--p)'>LIVE</span>"; return; } const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; }); }, 1000); }
     </script>
 </body>
 </html>
