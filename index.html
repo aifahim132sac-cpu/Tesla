@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,6 @@
         :root { --p: #00ff00; --b: #050505; --c: #111; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; }
         
-        /* Slider & Notice */
         .slider-container { width: 100%; height: 190px; overflow: hidden; position: relative; }
         .slider-track { display: flex; transition: transform 0.5s ease; height: 100%; }
         .slide { min-width: 100%; height: 100%; object-fit: cover; }
@@ -26,7 +25,6 @@
         .marquee p { display: inline-block; padding-left: 100%; animation: marquee 10s linear infinite; margin: 0; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
-        /* Match Card */
         .match-card { background: var(--c); border-radius: 12px; margin: 15px; border: 1px solid #222; overflow: hidden; }
         .match-header { padding: 12px 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
         .match-mode { font-family: 'Orbitron'; font-size: 10px; color: var(--p); }
@@ -42,13 +40,11 @@
         .s-bar { height: 6px; background: #222; border-radius: 10px; overflow: hidden; }
         .s-fill { height: 100%; background: var(--p); width: 0%; transition: 0.8s; box-shadow: 0 0 10px var(--p); }
 
-        /* Buttons */
         .btn-row { display: flex; gap: 10px; margin-top: 15px; }
         .btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; border: none; font-size: 11px; }
         .btn-rules { background: #222; color: #fff; border: 1px solid #333; }
         .btn-join { background: var(--p); color: #000; }
 
-        /* Bottom Nav */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -62,7 +58,7 @@
 
     <div class="slider-container"><div class="slider-track" id="sliderTrack"></div></div>
     <div id="noticeBar"><div class="marquee"><p id="noticeMsg"></p></div></div>
-    <div id="matchList"><p style="text-align:center; margin-top:50px; color:#444;">ম্যাচ লোড হচ্ছে...</p></div>
+    <div id="matchList"><p style="text-align:center; margin-top:50px; color:#444;">Loading Matches...</p></div>
 
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
@@ -81,7 +77,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
 
-        // Real-time Slider & Notice
         db.ref('settings/sliders').on('value', snap => {
             let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
             document.getElementById('sliderTrack').innerHTML = h || `<img src="https://via.placeholder.com/800x400?text=Tesla+Esports" class="slide">`;
@@ -94,7 +89,6 @@
             document.getElementById('noticeMsg').innerText = m || "";
         });
 
-        // Match List Fetch
         db.ref('matches').on('value', snap => {
             let h = "";
             snap.forEach(c => {
@@ -105,7 +99,7 @@
                     <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
                     <div class="match-body">
                         <div style="font-size:17px; font-weight:600; margin-bottom:12px;">${m.name}</div>
-                        <div class="timer-box" data-time="${m.startTime}">সময় লোড হচ্ছে...</div>
+                        <div class="timer-box" data-time="${m.startTime}">Loading...</div>
                         <div class="m-grid">
                             <div class="g-box"><div class="g-label">Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.perKill} TK</div></div>
@@ -113,85 +107,89 @@
                         </div>
                         <div class="slot-wrap"><div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
                         <div style="display:flex; justify-content:space-between; font-size:10px; margin-top:8px; color:#666;">
-                            <span>জয়েন: ${joined}/${total}</span><span>বাকি: ${total-joined}</span>
+                            <span>Joined: ${joined}/${total}</span><span>Left: ${total-joined}</span>
                         </div></div>
                         <div class="btn-row">
-                            <button class="btn btn-rules" onclick="showRules('${c.key}')">নিয়মাবলি</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">জয়েন করুন</button>
+                            <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">JOIN NOW</button>
                         </div>
                     </div>
                 </div>`;
             });
-            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>কোনো ম্যাচ পাওয়া যায়নি।</p>";
+            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>No Matches Available.</p>";
             startCountdowns();
         });
 
-        // সংশোধিত জয়েন লজিক (অনলাইন চেক + বাংলা পপ-আপ)
+        // ফিক্সড জয়েন লজিক: এটি এখন প্রোফাইল লগইন স্ট্যাটাস চেক করবে
         async function handleJoin(id, mode, fee, joined, total) {
-            // ফায়ারবেস অথেন্টিকেশন স্টেট চেক
-            auth.onAuthStateChanged(async (user) => {
-                if (!user) {
-                    return Swal.fire("লগইন নেই!", "দয়া করে প্রোফাইল থেকে আগে লগইন করুন।", "warning");
-                }
-                
-                if(joined >= total) return Swal.fire("ফুল!", "দুঃখিত, এই ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
-
-                let boxCount = 1;
-                let mLow = mode.toLowerCase();
-                if(mLow.includes('duo')) boxCount = 2;
-                else if(mLow.includes('squad')) boxCount = 4;
-
-                let inputsHtml = `<p style="color:#aaa; font-size:13px; margin-bottom:10px;">সঠিকভাবে <b>Game UID</b> প্রদান করুন।</p>`;
-                for(let i=1; i<=boxCount; i++) {
-                    inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="প্লেয়ার ${i} এর Game UID">`;
-                }
-
-                const { value: gameUids } = await Swal.fire({
-                    title: `${mode} এ জয়েন করুন`,
-                    html: inputsHtml,
-                    showCancelButton: true,
-                    cancelButtonText: 'বাতিল',
-                    confirmButtonText: 'নিশ্চিত করুন',
-                    confirmButtonColor: '#00ff00',
-                    preConfirm: () => {
-                        let uids = [];
-                        for(let i=1; i<=boxCount; i++) {
-                            let val = document.getElementById(`gameUid${i}`).value;
-                            if(!val) { Swal.showValidationMessage(`প্লেয়ার ${i} এর UID প্রয়োজন`); return false; }
-                            uids.push(val);
-                        }
-                        return uids;
-                    }
+            const user = auth.currentUser; // রিয়েল টাইম ইউজার সেশন চেক
+            
+            if (!user) {
+                return Swal.fire({
+                    title: "লগইন নেই!",
+                    text: "দয়া করে প্রোফাইল থেকে আগে লগইন করুন।",
+                    icon: "warning",
+                    confirmButtonText: "ওকে"
                 });
+            }
+            
+            if(joined >= total) return Swal.fire("ফুল!", "দুঃখিত, এই ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
 
-                if (gameUids) {
-                    const userRef = db.ref('users/' + user.uid);
-                    userRef.once('value', s => {
-                        const userData = s.val() || {};
-                        const mainBalance = userData.deposit || 0; 
-                        
-                        if(mainBalance < fee) {
-                            return Swal.fire("ব্যালেন্স নেই!", "আপনার মেইন ব্যালেন্স-এ পর্যাপ্ত টাকা নেই।", "error");
-                        }
-                        
-                        userRef.update({ deposit: mainBalance - fee });
-                        db.ref('matches/' + id).update({ joinedCount: joined + 1 });
-                        db.ref('match_joins/' + id).push({
-                            mainUid: user.uid,
-                            userName: userData.name || "ইউজার",
-                            gameUids: gameUids,
-                            joinedAt: Date.now()
-                        });
-                        db.ref('user_matches/' + user.uid).push(id);
-                        Swal.fire("অভিনন্দন!", "আপনি সফলভাবে ম্যাচে জয়েন করেছেন।", "success");
-                    });
+            let boxCount = 1;
+            let mLow = mode.toLowerCase();
+            if(mLow.includes('duo')) boxCount = 2;
+            else if(mLow.includes('squad')) boxCount = 4;
+
+            let inputsHtml = `<p style="color:#aaa; font-size:13px; margin-bottom:10px;">সঠিকভাবে <b>Game UID</b> প্রদান করুন।</p>`;
+            for(let i=1; i<=boxCount; i++) {
+                inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="Player ${i} Game UID">`;
+            }
+
+            const { value: gameUids } = await Swal.fire({
+                title: `${mode} Join`,
+                html: inputsHtml,
+                showCancelButton: true,
+                cancelButtonText: 'বাতিল',
+                confirmButtonText: 'নিশ্চিত করুন',
+                confirmButtonColor: '#00ff00',
+                preConfirm: () => {
+                    let uids = [];
+                    for(let i=1; i<=boxCount; i++) {
+                        let val = document.getElementById(`gameUid${i}`).value;
+                        if(!val) { Swal.showValidationMessage(`প্লেয়ার ${i} এর UID প্রয়োজন`); return false; }
+                        uids.push(val);
+                    }
+                    return uids;
                 }
             });
+
+            if (gameUids) {
+                const userRef = db.ref('users/' + user.uid);
+                userRef.once('value', s => {
+                    const userData = s.val() || {};
+                    const mainBalance = userData.deposit || 0; 
+                    
+                    if(mainBalance < fee) {
+                        return Swal.fire("ব্যালেন্স নেই!", "আপনার মেইন ব্যালেন্স-এ পর্যাপ্ত টাকা নেই।", "error");
+                    }
+                    
+                    userRef.update({ deposit: mainBalance - fee });
+                    db.ref('matches/' + id).update({ joinedCount: joined + 1 });
+                    db.ref('match_joins/' + id).push({
+                        mainUid: user.uid,
+                        userName: userData.name || "User",
+                        gameUids: gameUids,
+                        joinedAt: Date.now()
+                    });
+                    db.ref('user_matches/' + user.uid).push(id);
+                    Swal.fire("অভিনন্দন!", "আপনি সফলভাবে ম্যাচে জয়েন করেছেন।", "success");
+                });
+            }
         }
 
         function showRules(id) {
             db.ref('matches/'+id+'/rules').once('value', s => {
-                Swal.fire({ title: 'ম্যাচের নিয়মাবলি', text: s.val() || "নিয়ম সেট করা হয়নি।", icon: 'info', confirmButtonColor: '#00ff00' });
+                Swal.fire({ title: 'Match Rules', text: s.val() || "Rules not set.", icon: 'info', confirmButtonColor: '#00ff00' });
             });
         }
 
@@ -207,9 +205,9 @@
             setInterval(() => {
                 document.querySelectorAll('.timer-box').forEach(el => {
                     const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime();
-                    if(diff < 0) { el.innerHTML = "ম্যাচ শুরু হয়েছে"; return; }
+                    if(diff < 0) { el.innerHTML = "MATCH STARTED"; return; }
                     const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-                    el.innerHTML = `শুরু হবে: ${h}ঘণ্টা ${m}মিনিট ${s}সেকেন্ড পর`;
+                    el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`;
                 });
             }, 1000);
         }
