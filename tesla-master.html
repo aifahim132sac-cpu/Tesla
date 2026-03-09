@@ -82,9 +82,8 @@
                 </div>
             </div>
 
-            <button class="btn" style="background:gold;" onclick="setResult()">Submit Result</button>
+            <button class="btn" style="background:gold;" onclick="setResult()">SUBMIT RESULT</button>
         </div>
-        <div id="rList"></div>
     </div>
 
     <div id="users" class="sec">
@@ -118,41 +117,76 @@
             document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
-        // মোড অনুযায়ী ফিল্ড দেখানো/লুকানো
+        // মোড অনুযায়ী ইনপুট বক্স কন্ট্রোল
         function updateFields() {
             let m = document.getElementById('resMode').value;
             let extra = document.getElementById('extraWinners');
             let squad = document.getElementById('squadFields');
             
-            if(m.includes('Solo') || m.includes('1vs1')) { extra.style.display = "none"; }
-            else if(m.includes('Duo') || m.includes('2vs2')) { extra.style.display = "block"; squad.style.display = "none"; }
-            else { extra.style.display = "block"; squad.style.display = "block"; }
+            if(m.includes('Solo') || m.includes('1vs1')) { 
+                extra.style.display = "none"; 
+            } else if(m.includes('Duo') || m.includes('2vs2')) { 
+                extra.style.display = "block"; 
+                squad.style.display = "none"; 
+            } else { 
+                extra.style.display = "block"; 
+                squad.style.display = "block"; 
+            }
         }
 
+        // রেজাল্ট সাবমিট ফাংশন
         function setResult() {
             let no = document.getElementById('resMNo').value;
             let mode = document.getElementById('resMode').value;
             let winners = [];
             
-            // ডাটা সংগ্রহ
             for(let i=1; i<=4; i++) {
                 let name = document.getElementById('wName'+i).value;
                 if(name) {
                     winners.push({
                         name: name,
                         kills: document.getElementById('wKill'+i).value || 0,
-                        amount: document.getElementById('wAmt'+i).value || 0
+                        amount: (document.getElementById('wAmt'+i).value || 0) + " TK"
                     });
                 }
             }
 
-            if(!no || winners.length === 0) return Swal.fire("Error", "কমপক্ষে একজন ইউজারের নাম দিন", "error");
+            if(!no || winners.length === 0) return Swal.fire("Error", "ম্যাচ নম্বর ও নাম দিন", "error");
 
-            db.ref('results').push({ matchNo: no, mode: mode, players: winners, time: Date.now() })
-            .then(() => { Swal.fire("Success", "রেজাল্ট পাবলিশ হয়েছে!", "success"); });
+            db.ref('results').push({
+                matchNo: no,
+                mode: mode,
+                players: winners,
+                time: Date.now()
+            }).then(() => {
+                Swal.fire("Success", "রেজাল্ট পাবলিশ হয়েছে!", "success");
+                // Reset Fields
+                for(let i=1; i<=4; i++) {
+                    document.getElementById('wName'+i).value = "";
+                    document.getElementById('wKill'+i).value = "";
+                    document.getElementById('wAmt'+i).value = "";
+                }
+            });
         }
 
-        // --- আগের লজিকগুলো অক্ষুণ্ণ রাখা হয়েছে ---
+        // --- অন্যান্য ফাংশন (Deposit/Withdraw/Matches) ---
+        function postMatch() {
+            let mNo = document.getElementById('mNo').value;
+            let title = document.getElementById('mTitle').value;
+            if(!mNo || !title) return;
+            db.ref('matches').push({ matchNo: mNo, name: title, startTime: document.getElementById('mTime').value, joinedCount: 0, maxSlots: 48, roomId: "Pending", roomPass: "Pending" });
+            Swal.fire("Success", "Match Published", "success");
+        }
+
+        db.ref('matches').on('value', s => {
+            let h = "";
+            s.forEach(c => {
+                let m = c.val();
+                h += `<div class="item"><b>#${m.matchNo} ${m.name}</b><br><small>${m.startTime}</small></div>`;
+            });
+            document.getElementById('mList').innerHTML = h;
+        });
+
         db.ref('payments').on('value', s => {
             let h = "";
             s.forEach(c => {
@@ -177,7 +211,8 @@
                 Swal.fire("Success", "Balance added!", "success");
             });
         }
-
+        
+        // Withdraw Logic
         db.ref('withdrawRequests').on('value', s => {
             let h = "";
             s.forEach(c => {
@@ -196,23 +231,6 @@
             db.ref('withdrawRequests/' + key).update({ status: 'Completed' });
             Swal.fire("Success", "Paid!", "success");
         }
-
-        function postMatch() {
-            let mNo = document.getElementById('mNo').value;
-            let title = document.getElementById('mTitle').value;
-            if(!mNo || !title) return;
-            db.ref('matches').push({ matchNo: mNo, name: title, startTime: document.getElementById('mTime').value, joinedCount: 0, maxSlots: 48, roomId: "Pending", roomPass: "Pending" });
-            Swal.fire("Success", "Match Published", "success");
-        }
-
-        db.ref('matches').on('value', s => {
-            let h = "";
-            s.forEach(c => {
-                let m = c.val();
-                h += `<div class="item"><b>#${m.matchNo} ${m.name}</b><br><small>${m.startTime}</small></div>`;
-            });
-            document.getElementById('mList').innerHTML = h;
-        });
     </script>
 </body>
 </html>
