@@ -9,60 +9,105 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 100px; }
-        .header { padding: 20px; text-align: center; border-bottom: 1px solid #1a1a1a; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
-        .p-section { text-align: center; padding: 20px 0; }
-        .p-img { width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--p); object-fit: cover; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 15px; }
-        .s-box { background: var(--c); padding: 12px; border-radius: 12px; border: 1px solid #222; text-align: center; }
-        .val-p { color: var(--p); display: block; font-weight: bold; }
-        .form-sec { background: var(--c); padding: 20px; border-radius: 15px; margin: 15px; display: none; }
-        .form-sec.active { display: block; }
-        .submit-btn { width: 100%; padding: 12px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; }
-        .logout { text-align: center; color: #ff3333; margin-top: 20px; cursor: pointer; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
+        
+        .header { padding: 20px; text-align: center; border-bottom: 2px solid var(--p); background: #000; position: sticky; top: 0; z-index: 100; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; letter-spacing: 2px; }
+        
+        /* প্রোফাইল টপ সেকশন */
+        .p-section { text-align: center; padding: 30px 0; background: linear-gradient(180deg, #000 0%, #0a0a0a 100%); border-bottom: 1px solid #1a1a1a; }
+        .p-img { width: 85px; height: 85px; border-radius: 50%; border: 2px solid var(--p); padding: 4px; background: #111; margin-bottom: 15px; }
+        
+        /* স্ট্যাটাস গ্রিড */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 20px; }
+        .s-box { background: var(--c); padding: 15px 5px; border-radius: 15px; border: 1px solid #222; text-align: center; transition: 0.3s; }
+        .s-box:active { transform: scale(0.95); }
+        .s-box label { font-size: 9px; color: #777; display: block; text-transform: uppercase; margin-bottom: 5px; font-weight: 600; }
+        .val-p { color: var(--p); font-weight: 700; font-family: 'Orbitron'; font-size: 12px; }
+
+        /* ফরম সেকশন */
+        .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px 15px; display: none; border: 1px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .form-sec.active { display: block; animation: zoomIn 0.3s ease; }
+        @keyframes zoomIn { from {opacity: 0; transform: scale(0.95);} to {opacity: 1; transform: scale(1);} }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { font-size: 11px; color: #888; margin-left: 5px; }
+        input, select { width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; margin-top: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+        input:focus { border-color: var(--p); }
+
+        .submit-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; font-size: 12px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .submit-btn:active { opacity: 0.8; }
+        
+        /* নেভিগেশন */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
+
+        .logout { text-align: center; color: #ff3333; margin-top: 20px; font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <div class="header"><div class="title">TESLA PROFILE</div></div>
+    <div class="header"><div class="title">TESLA DASHBOARD</div></div>
 
     <div class="p-section">
-        <img id="uPic" src="https://via.placeholder.com/100" class="p-img">
-        <h3 id="displayName">User Name</h3>
-        <small id="displayUid">UID: --------</small>
+        <img id="uPic" src="https://i.ibb.co/vY8W8k0/user-placeholder.png" class="p-img" onerror="this.src='https://via.placeholder.com/100'">
+        <h3 id="displayName" style="margin: 0; font-size: 18px;">Loading...</h3>
+        <small id="displayUid" style="color: #555; font-family: monospace;">UID: --------</small>
     </div>
 
     <div class="stats-grid">
-        <div class="s-box">Winning<b class="val-p" id="uBal">0 TK</b></div>
-        <div class="s-box">Played<b id="uPlayed">0</b></div>
-        <div class="s-box">Deposit<b class="val-p" id="uDep">0 TK</b></div>
+        <div class="s-box"><label>Main Balance</label><b class="val-p" id="uDep">0 TK</b></div>
+        <div class="s-box"><label>Winning</label><b class="val-p" id="uBal" style="color: #ffcc00;">0 TK</b></div>
+        <div class="s-box"><label>Matches</label><b id="uPlayed" style="color: #fff;">0</b></div>
     </div>
 
-    <div style="padding:0 15px; display:flex; gap:10px;">
-        <button style="flex:1" onclick="toggleTab('dep')" id="btnDep" class="submit-btn">DEPOSIT</button>
-        <button style="flex:1; background:#333; color:#fff;" onclick="toggleTab('wit')" id="btnWit" class="submit-btn">WITHDRAW</button>
+    <div style="padding:0 15px; display:flex; gap:10px; margin-bottom: 25px;">
+        <button style="flex:1" onclick="toggleTab('dep')" class="submit-btn">ADD DEPOSIT</button>
+        <button style="flex:1; background:#222; color:#fff; border:1px solid #333;" onclick="toggleTab('wit')" class="submit-btn">WITHDRAW</button>
     </div>
 
-    <div id="depSec" class="form-sec active">
-        <input type="number" id="depAmt" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Amount">
-        <input type="file" id="depSS" style="margin-bottom:10px;">
-        <button class="submit-btn" onclick="handleDeposit()">SEND DEPOSIT REQUEST</button>
+    <div id="depSec" class="form-sec">
+        <h4 style="margin:0 0 15px 0; color:var(--p); font-family: Orbitron; font-size: 14px;">DEPOSIT REQUEST</h4>
+        <div class="input-group">
+            <label>Amount (TK)</label>
+            <input type="number" id="depAmt" placeholder="Enter Amount">
+        </div>
+        <div class="input-group">
+            <label>Transaction SS Link</label>
+            <input type="text" id="depSS" placeholder="Paste Imgbb Link">
+        </div>
+        <button class="submit-btn" onclick="handleDeposit()">SUBMIT DEPOSIT</button>
     </div>
 
     <div id="witSec" class="form-sec">
-        <input type="number" id="wAmt" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Amount">
-        <input type="number" id="wNum" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Number">
-        <button class="submit-btn" onclick="sendWitRequest()">SEND WITHDRAW REQUEST</button>
+        <h4 style="margin:0 0 5px 0; color:#ffcc00; font-family: Orbitron; font-size: 14px;">WITHDRAW MONEY</h4>
+        <p style="font-size: 10px; color: #777; margin-bottom: 15px;">টাকা আপনার "Main Balance" থেকে কাটা হবে।</p>
+        
+        <div class="input-group">
+            <label>Amount (Min. 50 TK)</label>
+            <input type="number" id="wAmt" placeholder="কত টাকা উইথড্র করবেন?">
+        </div>
+        <div class="input-group">
+            <label>Method</label>
+            <select id="wMethod">
+                <option value="Bkash">Bkash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Rocket">Rocket</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Number</label>
+            <input type="number" id="wNum" placeholder="017xxxxxxxx">
+        </div>
+        <button class="submit-btn" style="background:#ffcc00; color: #000;" onclick="sendWitRequest()">WITHDRAW NOW</button>
     </div>
 
     <div class="logout" onclick="auth.signOut().then(()=> window.location.href='index.html')">LOGOUT ACCOUNT</div>
@@ -84,14 +129,17 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
+        let currentMainBalance = 0;
+
         auth.onAuthStateChanged(user => {
             if (user) { 
-                document.getElementById('displayUid').innerText = "UID: " + user.uid.substring(0, 8).toUpperCase(); 
+                document.getElementById('displayUid').innerText = "UID: " + user.uid.substring(0, 10).toUpperCase(); 
                 db.ref('users/' + user.uid).on('value', s => {
                     let u = s.val() || {};
-                    document.getElementById('displayName').innerText = u.name || "User";
+                    currentMainBalance = u.deposit || 0; // মেইন ব্যালেন্স ট্র্যাকিং
+                    document.getElementById('displayName').innerText = u.name || "Tesla Player";
+                    document.getElementById('uDep').innerText = currentMainBalance + " TK";
                     document.getElementById('uBal').innerText = (u.winning || 0) + " TK";
-                    document.getElementById('uDep').innerText = (u.deposit || 0) + " TK";
                     document.getElementById('uPlayed').innerText = u.playedCount || 0;
                 });
             } else { window.location.href = "index.html"; }
@@ -103,10 +151,50 @@
         }
 
         async function handleDeposit() {
-            Swal.fire("Note", "Deposit system under maintenance", "info");
+            const amt = document.getElementById('depAmt').value;
+            const ss = document.getElementById('depSS').value;
+            const user = auth.currentUser;
+            if(!amt || !ss) return Swal.fire("Error", "Fill all fields", "error");
+
+            db.ref('payments').push({
+                uid: user.uid,
+                amount: amt,
+                ssUrl: ss,
+                status: "Pending",
+                time: Date.now()
+            }).then(() => {
+                Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে!", "success");
+                toggleTab('');
+            });
         }
+
         function sendWitRequest() {
-            Swal.fire("Note", "Withdraw system under maintenance", "info");
+            const amt = parseInt(document.getElementById('wAmt').value);
+            const num = document.getElementById('wNum').value;
+            const method = document.getElementById('wMethod').value;
+            const user = auth.currentUser;
+
+            if(!amt || !num) return Swal.fire("Error", "সবগুলো ঘর পূরণ করুন", "error");
+            if(amt < 50) return Swal.fire("Limit", "কমপক্ষে ৫০ টাকা উইথড্র করতে হবে", "warning");
+            
+            // মেইন ব্যালেন্স থেকে কাটার শর্ত
+            if(amt > currentMainBalance) {
+                return Swal.fire("Low Balance", "আপনার মেইন ব্যালেন্সে পর্যাপ্ত টাকা নেই!", "error");
+            }
+
+            db.ref('withdrawRequests').push({
+                uid: user.uid,
+                amount: amt,
+                number: num,
+                method: method,
+                status: "Pending",
+                time: Date.now()
+            }).then(() => {
+                // মেইন ব্যালেন্স থেকে টাকা কেটে নেওয়া
+                db.ref('users/' + user.uid).update({ deposit: currentMainBalance - amt });
+                Swal.fire("Success", "উইথড্র রিকোয়েস্ট সফল! মেইন ব্যালেন্স থেকে টাকা কাটা হয়েছে।", "success");
+                toggleTab('');
+            });
         }
     </script>
 </body>
