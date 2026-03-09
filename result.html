@@ -6,34 +6,46 @@
     <title>Tesla Esports - Results</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; --y: #ffcc00; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --y: #ffcc00; --r: #ff4444; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
         
-        /* Header Style */
-        .header { padding: 20px; text-align: center; background: #000; border-bottom: 2px solid var(--p); }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; letter-spacing: 2px; }
+        .header { padding: 20px; text-align: center; background: #000; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 16px; letter-spacing: 2px; }
         
-        /* Card Style */
-        .res-card { background: var(--c); border-radius: 18px; padding: 18px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.6s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        /* Match Card */
+        .res-card { background: var(--c); border-radius: 20px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .res-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 12px; }
-        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 12px; }
-        .m-mode { background: #1a1a1a; padding: 3px 10px; border-radius: 5px; font-size: 10px; color: #aaa; text-transform: uppercase; border: 1px solid #333; }
-        
-        /* Winner Section */
-        .winner-box { background: rgba(0, 255, 0, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 15px; }
-        .winner-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+        .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 11px; border: 1px solid var(--p); padding: 2px 8px; border-radius: 5px; }
+        .m-title { font-size: 15px; font-weight: 600; color: #fff; margin: 10px 0; display: block; }
+
+        /* Stats Row */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-item { background: #000; padding: 8px; border-radius: 10px; text-align: center; border: 1px solid #222; }
+        .stat-label { font-size: 9px; color: #777; display: block; margin-bottom: 4px; }
+        .stat-value { font-size: 11px; color: var(--p); font-weight: bold; font-family: 'Orbitron'; }
+
+        /* Winner List */
+        .winner-section { background: rgba(0, 255, 0, 0.05); border-radius: 15px; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(0, 255, 0, 0.1); }
+        .section-tag { font-size: 10px; color: var(--y); font-family: 'Orbitron'; margin-bottom: 10px; display: block; text-align: center; }
+        .winner-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; }
         .winner-row:last-child { border: none; }
-        
-        .label { font-size: 10px; color: #777; font-weight: 500; display: flex; align-items: center; gap: 6px; }
-        .name { font-size: 14px; font-weight: 600; color: #fff; flex: 1; margin-left: 15px; }
-        .prize { font-size: 12px; color: var(--y); font-family: 'Orbitron'; font-weight: bold; }
-        
+        .p-info { display: flex; align-items: center; gap: 10px; }
+        .p-name { font-size: 13px; font-weight: 500; }
+        .p-prize { color: var(--y); font-size: 12px; font-weight: bold; }
+
+        /* Full Result Table */
+        .full-result-btn { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #aaa; font-size: 12px; cursor: pointer; transition: 0.3s; }
+        .table-area { display: none; margin-top: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; color: #777; padding: 10px; border-bottom: 1px solid #222; font-weight: 500; }
+        td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; }
+        .kill-badge { background: var(--r); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
+
         /* Navigation */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
@@ -42,10 +54,11 @@
     </style>
 </head>
 <body>
-    <div class="header"><div class="title">TOURNAMENT RESULTS</div></div>
+
+    <div class="header"><div class="title">MATCH RESULTS</div></div>
     
     <div id="rList">
-        <p style="text-align:center; padding:50px; color:#444; font-size: 13px;">নতুন ফলাফল লোড হচ্ছে...</p>
+        <div style="text-align:center; padding:100px 20px; color:#555;">ফলাফল লোড হচ্ছে...</div>
     </div>
 
     <div class="nav">
@@ -56,7 +69,6 @@
     </div>
 
     <script>
-        // আপনার নতুন আপডেট করা API Key
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
@@ -68,50 +80,91 @@
 
         db.ref('results').on('value', snap => {
             let h = ""; 
-            if(!snap.exists()) { 
-                document.getElementById('rList').innerHTML = "<div style='text-align:center; padding:100px 20px; color:#555;'><h3>No Results!</h3><p>এখনো কোনো ম্যাচের ফলাফল দেওয়া হয়নি।</p></div>"; 
-                return; 
+            if(!snap.exists()) {
+                document.getElementById('rList').innerHTML = "<div style='text-align:center; padding:100px 20px; color:#555;'>No Results Yet!</div>";
+                return;
             }
             
-            let resultData = [];
-            snap.forEach(c => { 
-                let data = c.val();
-                data.id = c.key; // কী সেভ করে রাখছি
-                resultData.push(data); 
-            });
-            
-            // নতুন রেজাল্ট সবার উপরে দেখাবে
-            resultData.reverse();
+            let dataArr = [];
+            snap.forEach(c => { dataArr.push(c.val()); });
+            dataArr.reverse(); // নতুন রেজাল্ট আগে দেখাবে
 
-            resultData.forEach(r => {
+            dataArr.forEach((r, index) => {
+                let winnerListHtml = "";
+                let fullResultHtml = "";
+
+                if(r.players) {
+                    r.players.forEach(p => {
+                        if(p.type === 'winner') {
+                            winnerListHtml += `
+                            <div class="winner-row">
+                                <div class="p-info">
+                                    <i class="fas fa-crown" style="color:var(--y); font-size:12px;"></i>
+                                    <span class="p-name">${p.name}</span>
+                                </div>
+                                <div class="p-prize">TK ${p.prize}</div>
+                            </div>`;
+                        }
+                        // সব প্লেয়ারকেই টেবিল লিস্টে রাখা হচ্ছে
+                        fullResultHtml += `
+                        <tr>
+                            <td>${p.name}</td>
+                            <td><span class="kill-badge">${p.kills} KILLS</span></td>
+                            <td style="color:var(--y)">TK ${p.prize}</td>
+                        </tr>`;
+                    });
+                }
+
                 h += `
                 <div class="res-card">
                     <div class="res-header">
-                        <span class="m-no">MATCH #${r.matchNo || '00'}</span>
-                        <span class="m-mode">${r.mode || 'SOLO'}</span>
+                        <span class="m-no">#${r.matchNo}</span>
+                        <span style="font-size:10px; color:#555;">${r.date || ''}</span>
                     </div>
-                    <div style="font-size:16px; font-weight:600; margin-bottom:12px; color:var(--p); font-family: 'Orbitron';">${r.name || 'Tesla Battle'}</div>
-                    <div class="winner-box">
-                        <div class="winner-row">
-                            <div class="label"><i class="fas fa-crown" style="color:var(--y)"></i> WINNER</div>
-                            <div class="name">${r.winner || '---'}</div>
-                            <div class="prize">${r.winPrize || 0} TK</div>
-                        </div>
-                        <div class="winner-row">
-                            <div class="label"><i class="fas fa-medal" style="color:#C0C0C0"></i> 2ND PLACE</div>
-                            <div class="name">${r.runnerUp || '---'}</div>
-                            <div class="prize">${r.runnerPrize || 0} TK</div>
-                        </div>
-                        <div class="winner-row">
-                            <div class="label"><i class="fas fa-skull" style="color:#ff4444"></i> TOTAL KILLS</div>
-                            <div class="name">${r.totalKills || 0} Kills</div>
-                            <div class="prize" style="color:#fff">${r.killPrize || 0} TK</div>
-                        </div>
+                    
+                    <span class="m-title">${r.title || 'Tesla Esports Battle'}</span>
+
+                    <div class="stats-grid">
+                        <div class="stat-item"><span class="stat-label">WIN PRIZE</span><span class="stat-value">${r.winPrize || 0}</span></div>
+                        <div class="stat-item"><span class="stat-label">PER KILL</span><span class="stat-value">${r.perKill || 0}</span></div>
+                        <div class="stat-item"><span class="stat-label">ENTRY FEE</span><span class="stat-value">${r.entryFee || 0}</span></div>
+                    </div>
+
+                    <div class="winner-section">
+                        <span class="section-tag">WINNERS</span>
+                        ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">No winners listed</p>'}
+                    </div>
+
+                    <button class="full-result-btn" onclick="toggleTable(${index})">
+                        <i class="fas fa-chevron-down"></i> View Full Result
+                    </button>
+
+                    <div class="table-area" id="table-${index}">
+                        <table>
+                            <thead>
+                                <tr><th>PLAYER</th><th>KILLS</th><th>WINNING</th></tr>
+                            </thead>
+                            <tbody>
+                                ${fullResultHtml}
+                            </tbody>
+                        </table>
                     </div>
                 </div>`;
-            }); 
+            });
             document.getElementById('rList').innerHTML = h;
         });
+
+        function toggleTable(index) {
+            const el = document.getElementById('table-'+index);
+            const btn = el.previousElementSibling;
+            if(el.style.display === 'block') {
+                el.style.display = 'none';
+                btn.innerHTML = '<i class="fas fa-chevron-down"></i> View Full Result';
+            } else {
+                el.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Full Result';
+            }
+        }
     </script>
 </body>
 </html>
