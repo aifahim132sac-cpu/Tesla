@@ -31,6 +31,10 @@
         .auth-input:focus { border-color: var(--p); }
         .auth-btn { width: 100%; padding: 15px; background: var(--p); border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; margin-top: 15px; cursor: pointer; color: #000; transition: 0.3s; }
         .auth-btn:active { transform: scale(0.97); }
+        
+        /* Forgot Password Link */
+        .forgot-link { display: block; margin-top: 15px; font-size: 11px; color: #666; cursor: pointer; text-decoration: none; }
+        .forgot-link:hover { color: var(--p); }
 
         /* Main UI Elements */
         .header { background: #000; padding: 20px 0; border-bottom: 1px solid #1a1a1a; text-align: center; }
@@ -79,6 +83,9 @@
                 <input type="text" id="authName" class="auth-input" placeholder="Full Name" style="display:none;">
             </div>
             <button class="auth-btn" onclick="handleAuth()">LET'S PLAY</button>
+            
+            <a id="forgotBtn" class="forgot-link" onclick="handleForgot()">Forgot Password?</a>
+
             <p style="font-size: 11px; color: #666; margin-top: 20px;" id="toggleText">
                 New here? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Create Account</span>
             </p>
@@ -99,7 +106,6 @@
     </div>
 
     <script>
-        // Updated Firebase Config with NEW API KEY
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
@@ -115,7 +121,6 @@
 
         let isLoginMode = true;
 
-        // Modal Controls
         function openAuth() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
 
@@ -123,6 +128,7 @@
             isLoginMode = !isLoginMode;
             document.getElementById('authTitle').innerText = isLoginMode ? "TESLA LOGIN" : "TESLA REGISTER";
             document.getElementById('authName').style.display = isLoginMode ? "none" : "block";
+            document.getElementById('forgotBtn').style.display = isLoginMode ? "block" : "none";
             document.getElementById('toggleText').innerHTML = isLoginMode ? 
                 `New here? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Create Account</span>` :
                 `Have account? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Login Now</span>`;
@@ -148,6 +154,18 @@
                     Swal.fire({ icon: 'success', title: 'Account Created!', text: 'সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে।', confirmButtonText: 'OK', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
                 }
             } catch(e) { Swal.fire({ icon: 'error', title: 'Oops!', text: e.message, background: '#111', color: '#fff' }); }
+        }
+
+        // Forgot Password Function
+        function handleForgot() {
+            const email = document.getElementById('authEmail').value;
+            if(!email) return Swal.fire({ icon: 'info', title: 'ইমেইল লিখুন', text: 'আপনার ইমেইলটি লিখে তারপর Forgot Password এ ক্লিক করুন।', background: '#111', color: '#fff' });
+
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    Swal.fire({ icon: 'success', title: 'Email Sent!', text: 'রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
+                })
+                .catch(err => Swal.fire({ icon: 'error', title: 'Failed', text: err.message, background: '#111', color: '#fff' }));
         }
 
         // Slider logic
