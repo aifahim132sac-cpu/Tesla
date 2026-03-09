@@ -12,160 +12,60 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; --blue: #00c2ff; --orange: #ffcc00; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
-        
-        .header { padding: 25px; background: #000; text-align: center; border-bottom: 1px solid #1a1a1a; position: sticky; top: 0; z-index: 100; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); margin: 0; font-size: 20px; text-shadow: 0 0 10px var(--p); }
-
-        .container { padding: 15px; }
-
-        .my-card { background: var(--c); border-radius: 20px; padding: 15px; margin-bottom: 20px; border: 1px solid #1f1f1f; transition: 0.3s; }
-        .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 13px; }
-        .status-tag { background: rgba(0, 255, 0, 0.1); color: var(--p); font-size: 10px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--p); text-transform: uppercase; font-weight: bold; }
-        
-        .m-name { font-size: 17px; font-weight: 600; margin-bottom: 15px; color: #fff; }
-        
-        /* Play Page এর মতো কাউন্টডাউন বক্স */
-        .timer-box { background: rgba(255, 204, 0, 0.1); color: var(--orange); padding: 10px; border-radius: 10px; text-align: center; font-family: 'Orbitron'; font-size: 12px; margin-bottom: 15px; border: 1px solid rgba(255, 204, 0, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-        .room-box { background: #0a0a0a; border: 1px dashed #333; border-radius: 15px; padding: 15px; text-align: center; }
-        .room-header { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; font-weight: bold; }
-        
-        .info-grid { display: flex; justify-content: center; gap: 10px; }
-        .info-item { flex: 1; background: #111; padding: 12px 5px; border-radius: 10px; border: 1px solid #222; }
-        .info-item span { display: block; font-size: 8px; color: var(--blue); margin-bottom: 5px; text-transform: uppercase; }
-        .info-item b { font-size: 14px; color: #fff; letter-spacing: 1.5px; font-family: 'Orbitron'; }
-
-        .pending-msg { font-size: 12px; color: var(--orange); line-height: 1.5; margin: 0; padding: 5px; }
-
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 15px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; }
+        .header { padding: 25px; background: #000; text-align: center; border-bottom: 1px solid #1a1a1a; }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 20px; }
+        .my-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
-        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
+        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
     <div class="header"><h2 class="title">MY MATCHES</h2></div>
-
-    <div id="myList" class="container">
-        <p style="text-align:center; color:#555; margin-top:50px;">ম্যাচ লোড হচ্ছে...</p>
-    </div>
+    <div id="myList">Loading...</div>
 
     <div class="nav">
-        <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i><div>Play</div></a>
-        <a href="result.html" class="n-i"><i class="fas fa-poll"></i><div>Result</div></a>
-        <a href="mymatch.html" class="n-i active"><i class="fas fa-trophy"></i><div>My Match</div></a>
-        <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i><div>Profile</div></a>
+        <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i>Play</a>
+        <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
+        <a href="mymatch.html" class="n-i active"><i class="fas fa-trophy"></i>My Match</a>
+        <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i>Profile</a>
     </div>
 
     <script>
         const firebaseConfig = { 
-            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
+            apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046",
-            storageBucket: "teot-a3046.appspot.com",
-            messagingSenderId: "742786792386", 
-            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+            projectId: "teot-a3046"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
         auth.onAuthStateChanged(user => {
-            if (user) { loadMyMatches(user.uid); }
-            else { window.location.href = "index.html"; }
-        });
-
-        function loadMyMatches(uid) {
-            // ইউজারের জয়েন করা ম্যাচের আইডিগুলো চেক করা
-            db.ref('user_matches/' + uid).on('value', userMatchesSnap => {
-                let html = "";
-                if (!userMatchesSnap.exists()) {
-                    document.getElementById('myList').innerHTML = "<p style='text-align:center; color:#555; margin-top:50px;'>আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>";
-                    return;
-                }
-
-                userMatchesSnap.forEach(matchKeySnap => {
-                    const matchId = matchKeySnap.key;
-                    
-                    // মূল ম্যাচ টেবিল থেকে ডাটা আনা (Real-time update এর জন্য .on ব্যবহার করা হয়েছে)
-                    db.ref('matches/' + matchId).on('value', matchSnap => {
-                        const m = matchSnap.val();
-                        if (m) {
-                            let roomContent = "";
-                            
-                            // অ্যাডমিন আইডি পাস না দিলে বাংলা মেসেজ দেখাবে
-                            if (!m.roomId || m.roomId === "Pending") {
-                                roomContent = `<p class="pending-msg"><i class="fas fa-info-circle"></i> ম্যাচ শুরু হওয়ার ৫-১০ মিনিট আগে আইডি এবং পাসওয়ার্ড এখানে দেওয়া হবে।</p>`;
-                            } else {
-                                roomContent = `
-                                <div class="info-grid">
-                                    <div class="info-item"><span>ROOM ID</span><b>${m.roomId}</b></div>
-                                    <div class="info-item"><span>PASS</span><b>${m.roomPass}</b></div>
+            if (user) { 
+                db.ref('user_matches/' + user.uid).on('value', snap => {
+                    let h = "";
+                    if(!snap.exists()) h = "<p style='text-align:center;'>You haven't joined any matches.</p>";
+                    snap.forEach(c => {
+                        db.ref('matches/' + c.key).once('value', ms => {
+                            let m = ms.val();
+                            if(m) {
+                                h += `<div class="my-card">
+                                    <div style="color:var(--p)">#${m.matchNo}</div>
+                                    <h3>${m.name}</h3>
+                                    <small>Time: ${m.startTime}</small>
                                 </div>`;
+                                document.getElementById('myList').innerHTML = h;
                             }
-
-                            const cardHtml = `
-                            <div class="my-card" id="card_${matchId}">
-                                <div class="m-top">
-                                    <span class="m-no">#${m.matchNo || '00'}</span>
-                                    <span class="status-tag">Joined</span>
-                                </div>
-                                <div class="m-name">${m.name}</div>
-                                
-                                <div id="timer_${matchId}" class="timer-box" data-start="${m.startTime}">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading...
-                                </div>
-
-                                <div class="room-box">
-                                    <div class="room-header">Room Details</div>
-                                    ${roomContent}
-                                </div>
-                            </div>`;
-
-                            // ডুপ্লিকেট কার্ড এড়াতে আপডেট লজিক
-                            let existingCard = document.getElementById(`card_${matchId}`);
-                            if(existingCard) {
-                                existingCard.outerHTML = cardHtml;
-                            } else {
-                                html += cardHtml;
-                                document.getElementById('myList').innerHTML = html;
-                            }
-                        }
-                        startGlobalTimers();
+                        });
                     });
                 });
-            });
-        }
-
-        // লাইভ টাইমার ফাংশন
-        function startGlobalTimers() {
-            if(window.matchTimer) clearInterval(window.matchTimer);
-            
-            window.matchTimer = setInterval(() => {
-                document.querySelectorAll('.timer-box').forEach(el => {
-                    const startTime = el.getAttribute('data-start');
-                    if(!startTime) return;
-
-                    const diff = new Date(startTime).getTime() - new Date().getTime();
-                    
-                    if(diff <= 0) { 
-                        el.innerHTML = "<i class='fas fa-play-circle'></i> MATCH STARTED"; 
-                        el.style.color = "#ff3333";
-                        el.style.borderColor = "#ff3333";
-                        el.style.background = "rgba(255, 51, 51, 0.1)";
-                    } else {
-                        const h = Math.floor(diff/3600000);
-                        const m = Math.floor((diff%3600000)/60000);
-                        const s = Math.floor((diff%60000)/1000);
-                        el.innerHTML = `<i class="fas fa-stopwatch"></i> Starts In: ${h}h ${m}m ${s}s`;
-                    }
-                });
-            }, 1000);
-        }
+            } else { window.location.href = "index.html"; }
+        });
     </script>
 </body>
 </html>
