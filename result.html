@@ -24,7 +24,10 @@
         .match-info b { font-family: 'Orbitron'; font-size: 13px; color: var(--yellow); }
         .match-mode { font-size: 10px; background: #222; padding: 2px 8px; border-radius: 4px; color: #aaa; text-transform: uppercase; }
 
-        .player-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 5px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #222; }
+        /* রেজাল্ট টেবিল হেডার */
+        .table-head { display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 5px; font-size: 10px; color: #555; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #222; }
+
+        .player-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 5px; align-items: center; padding: 10px 0; border-bottom: 1px dashed #222; }
         .player-row:last-child { border-bottom: none; }
         .player-name { font-size: 13px; font-weight: 500; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .player-kill { font-size: 11px; color: #aaa; text-align: center; }
@@ -42,7 +45,7 @@
     <div class="header"><div class="title">MATCH RESULTS</div></div>
 
     <div class="res-container" id="rList">
-        <p style="text-align:center; color:#555; margin-top: 50px;">লোড হচ্ছে...</p>
+        <p style="text-align:center; color:#555; margin-top: 50px;">ম্যাচ রেজাল্ট লোড হচ্ছে...</p>
     </div>
 
     <div class="nav">
@@ -53,37 +56,39 @@
     </div>
 
     <script>
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046",
-            storageBucket: "teot-a3046.appspot.com",
-            messagingSenderId: "305101036814",
-            appId: "1:305101036814:web:658c16053f3e790f1352ac"
+            projectId: "teot-a3046"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // ডাটাবেস থেকে রেজাল্ট রিড করা
+        // রেজাল্ট রিড করা
         db.ref('results').orderByChild('time').on('value', snap => {
             let html = "";
             if (!snap.exists()) {
-                html = "<div style='text-align:center; color:#555; margin-top:50px;'>এখনো কোনো রেজাল্ট নেই।</div>";
+                html = "<div style='text-align:center; color:#555; margin-top:50px;'>এখনো কোনো রেজাল্ট পাবলিশ করা হয়নি।</div>";
             } else {
                 let results = [];
-                snap.forEach(child => { results.unshift(child.val()); }); // লেটেস্ট রেজাল্ট উপরে দেখাবে
+                snap.forEach(child => { 
+                    let val = child.val();
+                    results.unshift(val); // লেটেস্ট রেজাল্ট উপরে
+                });
 
                 results.forEach(r => {
                     let playerHtml = "";
-                    // অ্যাডমিন প্যানেল থেকে পাঠানো 'players' লিস্ট লুপ করা
-                    if(r.players && Array.isArray(r.players)) {
-                        r.players.forEach(p => {
+                    
+                    // প্লেয়ার ডাটা অবজেক্ট বা অ্যারে যাই হোক তা লুপ করার সেফ লজিক
+                    if (r.players) {
+                        Object.values(r.players).forEach(p => {
                             playerHtml += `
                             <div class="player-row">
-                                <span class="player-name"><i class="fas fa-user-circle" style="margin-right:5px; color:#555;"></i>${p.name}</span>
-                                <span class="player-kill">Kills: ${p.kills}</span>
-                                <span class="player-win">${p.amount}</span>
+                                <span class="player-name"><i class="fas fa-user-circle" style="margin-right:5px; color:#444;"></i>${p.name || 'Unknown'}</span>
+                                <span class="player-kill">${p.kills || 0} Kills</span>
+                                <span class="player-win">${p.amount || 0} TK</span>
                             </div>`;
                         });
                     }
@@ -91,14 +96,19 @@
                     html += `
                     <div class="res-card">
                         <div class="match-info">
-                            <b>Match #${r.matchNo}</b>
-                            <span class="match-mode">${r.mode}</span>
+                            <b>Match #${r.matchNo || '00'}</b>
+                            <span class="match-mode">${r.mode || 'Classic'}</span>
+                        </div>
+                        <div class="table-head">
+                            <span>Player Name</span>
+                            <span style="text-align:center;">Kills</span>
+                            <span style="text-align:right;">Won</span>
                         </div>
                         ${playerHtml}
                     </div>`;
                 });
             }
-            document.getElementById('rList').innerHTML = html;
+            document.getElementById('rList').innerHTML = html || "<p style='text-align:center;'>No results found.</p>";
         });
     </script>
 </body>
