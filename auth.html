@@ -17,10 +17,9 @@
             background: var(--c); padding: 35px 25px; border-radius: 20px; 
             border: 1px solid #222; width: 90%; max-width: 400px; 
             text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative; /* ক্রস বাটনের পজিশন ঠিক রাখার জন্য */
+            position: relative;
         }
 
-        /* Cross Button Style */
         .close-btn { 
             position: absolute; top: 15px; right: 20px; 
             font-size: 28px; color: #555; cursor: pointer; 
@@ -65,11 +64,16 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
+        // আপনার নতুন সঠিক API Key এখানে বসানো হয়েছে
+        const firebaseConfig = {
+            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
+            authDomain: "teot-a3046.firebaseapp.com",
+            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "teot-a3046"
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
-        // Home Redirect Function
         function goHome() {
             window.location.href = "index.html";
         }
@@ -83,7 +87,7 @@
 
         function handleLogin() {
             const e = document.getElementById('lEmail').value, p = document.getElementById('lPass').value;
-            if(!e || !p) return Swal.fire("Error", "Email এবং Password দিন", "warning");
+            if(!e || !p) return Swal.fire({ icon: 'warning', title: 'Oops!', text: 'Email এবং Password দিন', background: '#111', color: '#fff' });
 
             auth.signInWithEmailAndPassword(e, p)
                 .then(() => {
@@ -106,7 +110,7 @@
 
         function handleReg() {
             const n = document.getElementById('rName').value, e = document.getElementById('rEmail').value, p = document.getElementById('rPass').value;
-            if(!n || !e || !p) return Swal.fire("Error", "সবগুলো ঘর পূরণ করুন", "warning");
+            if(!n || !e || !p) return Swal.fire({ icon: 'warning', title: 'Oops!', text: 'সবগুলো ঘর পূরণ করুন', background: '#111', color: '#fff' });
 
             auth.createUserWithEmailAndPassword(e, p).then(res => {
                 db.ref('users/' + res.user.uid).set({ name: n, email: e, deposit: 0, winning: 0, playedCount: 0, uid: res.user.uid });
