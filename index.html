@@ -55,13 +55,14 @@
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
 
         .swal2-input { background: #1a1a1a !important; color: #fff !important; border: 1px solid #333 !important; }
+        .swal2-popup { background: #111 !important; color: #fff !important; border-radius: 15px !important; }
     </style>
 </head>
 <body>
 
     <div class="slider-container"><div class="slider-track" id="sliderTrack"></div></div>
     <div id="noticeBar"><div class="marquee"><p id="noticeMsg"></p></div></div>
-    <div id="matchList"><p style="text-align:center; margin-top:50px; color:#444;">Loading Matches...</p></div>
+    <div id="matchList"><p style="text-align:center; margin-top:50px; color:#444;">ম্যাচ লোড হচ্ছে...</p></div>
 
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
@@ -104,7 +105,7 @@
                     <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
                     <div class="match-body">
                         <div style="font-size:17px; font-weight:600; margin-bottom:12px;">${m.name}</div>
-                        <div class="timer-box" data-time="${m.startTime}">Loading...</div>
+                        <div class="timer-box" data-time="${m.startTime}">সময় লোড হচ্ছে...</div>
                         <div class="m-grid">
                             <div class="g-box"><div class="g-label">Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.perKill} TK</div></div>
@@ -112,75 +113,85 @@
                         </div>
                         <div class="slot-wrap"><div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
                         <div style="display:flex; justify-content:space-between; font-size:10px; margin-top:8px; color:#666;">
-                            <span>Joined: ${joined}/${total}</span><span>Left: ${total-joined}</span>
+                            <span>জয়েন: ${joined}/${total}</span><span>বাকি: ${total-joined}</span>
                         </div></div>
                         <div class="btn-row">
-                            <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">JOIN NOW</button>
+                            <button class="btn btn-rules" onclick="showRules('${c.key}')">নিয়মাবলি</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">জয়েন করুন</button>
                         </div>
                     </div>
                 </div>`;
             });
-            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>No Matches Available.</p>";
+            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>কোনো ম্যাচ পাওয়া যায়নি।</p>";
             startCountdowns();
         });
 
-        // Join Logic (Main Balance & Game UID)
+        // সংশোধিত জয়েন লজিক (অনলাইন চেক + বাংলা পপ-আপ)
         async function handleJoin(id, mode, fee, joined, total) {
-            const user = auth.currentUser;
-            if(!user) return Swal.fire("Error", "Pehle login karein!", "warning");
-            
-            let boxCount = 1;
-            let mLow = mode.toLowerCase();
-            if(mLow.includes('duo')) boxCount = 2;
-            else if(mLow.includes('squad')) boxCount = 4;
+            // ফায়ারবেস অথেন্টিকেশন স্টেট চেক
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) {
+                    return Swal.fire("লগইন নেই!", "দয়া করে প্রোফাইল থেকে আগে লগইন করুন।", "warning");
+                }
+                
+                if(joined >= total) return Swal.fire("ফুল!", "দুঃখিত, এই ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
 
-            let inputsHtml = `<p style="color:#aaa; font-size:13px;">Game UID correctly dijiye</p>`;
-            for(let i=1; i<=boxCount; i++) {
-                inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="Player ${i} Game UID">`;
-            }
+                let boxCount = 1;
+                let mLow = mode.toLowerCase();
+                if(mLow.includes('duo')) boxCount = 2;
+                else if(mLow.includes('squad')) boxCount = 4;
 
-            const { value: gameUids } = await Swal.fire({
-                title: `Join ${mode}`,
-                html: inputsHtml,
-                showCancelButton: true,
-                confirmButtonText: 'Confirm Join',
-                preConfirm: () => {
-                    let uids = [];
-                    for(let i=1; i<=boxCount; i++) {
-                        let val = document.getElementById(`gameUid${i}`).value;
-                        if(!val) { Swal.showValidationMessage(`UID Player ${i} zaroori hai`); return false; }
-                        uids.push(val);
+                let inputsHtml = `<p style="color:#aaa; font-size:13px; margin-bottom:10px;">সঠিকভাবে <b>Game UID</b> প্রদান করুন।</p>`;
+                for(let i=1; i<=boxCount; i++) {
+                    inputsHtml += `<input id="gameUid${i}" class="swal2-input" placeholder="প্লেয়ার ${i} এর Game UID">`;
+                }
+
+                const { value: gameUids } = await Swal.fire({
+                    title: `${mode} এ জয়েন করুন`,
+                    html: inputsHtml,
+                    showCancelButton: true,
+                    cancelButtonText: 'বাতিল',
+                    confirmButtonText: 'নিশ্চিত করুন',
+                    confirmButtonColor: '#00ff00',
+                    preConfirm: () => {
+                        let uids = [];
+                        for(let i=1; i<=boxCount; i++) {
+                            let val = document.getElementById(`gameUid${i}`).value;
+                            if(!val) { Swal.showValidationMessage(`প্লেয়ার ${i} এর UID প্রয়োজন`); return false; }
+                            uids.push(val);
+                        }
+                        return uids;
                     }
-                    return uids;
+                });
+
+                if (gameUids) {
+                    const userRef = db.ref('users/' + user.uid);
+                    userRef.once('value', s => {
+                        const userData = s.val() || {};
+                        const mainBalance = userData.deposit || 0; 
+                        
+                        if(mainBalance < fee) {
+                            return Swal.fire("ব্যালেন্স নেই!", "আপনার মেইন ব্যালেন্স-এ পর্যাপ্ত টাকা নেই।", "error");
+                        }
+                        
+                        userRef.update({ deposit: mainBalance - fee });
+                        db.ref('matches/' + id).update({ joinedCount: joined + 1 });
+                        db.ref('match_joins/' + id).push({
+                            mainUid: user.uid,
+                            userName: userData.name || "ইউজার",
+                            gameUids: gameUids,
+                            joinedAt: Date.now()
+                        });
+                        db.ref('user_matches/' + user.uid).push(id);
+                        Swal.fire("অভিনন্দন!", "আপনি সফলভাবে ম্যাচে জয়েন করেছেন।", "success");
+                    });
                 }
             });
-
-            if (gameUids) {
-                const userRef = db.ref('users/' + user.uid);
-                userRef.once('value', s => {
-                    const userData = s.val() || {};
-                    const mainBalance = userData.deposit || 0; // Main Balance
-                    
-                    if(mainBalance < fee) return Swal.fire("Error", "Main Balance kam hai!", "error");
-                    
-                    userRef.update({ deposit: mainBalance - fee });
-                    db.ref('matches/' + id).update({ joinedCount: joined + 1 });
-                    db.ref('match_joins/' + id).push({
-                        mainUid: user.uid,
-                        userName: userData.name || "User",
-                        gameUids: gameUids,
-                        joinedAt: Date.now()
-                    });
-                    db.ref('user_matches/' + user.uid).push(id);
-                    Swal.fire("Success", "Joined Successfully!", "success");
-                });
-            }
         }
 
         function showRules(id) {
             db.ref('matches/'+id+'/rules').once('value', s => {
-                Swal.fire({ title: 'Match Rules', text: s.val() || "Rules not set.", icon: 'info' });
+                Swal.fire({ title: 'ম্যাচের নিয়মাবলি', text: s.val() || "নিয়ম সেট করা হয়নি।", icon: 'info', confirmButtonColor: '#00ff00' });
             });
         }
 
@@ -196,9 +207,9 @@
             setInterval(() => {
                 document.querySelectorAll('.timer-box').forEach(el => {
                     const diff = new Date(el.getAttribute('data-time')).getTime() - new Date().getTime();
-                    if(diff < 0) { el.innerHTML = "MATCH STARTED"; return; }
+                    if(diff < 0) { el.innerHTML = "ম্যাচ শুরু হয়েছে"; return; }
                     const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-                    el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`;
+                    el.innerHTML = `শুরু হবে: ${h}ঘণ্টা ${m}মিনিট ${s}সেকেন্ড পর`;
                 });
             }, 1000);
         }
