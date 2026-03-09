@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,91 +10,113 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #111; --r: #ff4444; }
+        :root { --p: #00ff00; --b: #050505; --c: #111; --r: #ff4444; --y: #ffcc00; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding: 20px; padding-bottom: 100px; }
-        h2 { font-family: 'Orbitron'; text-align: center; color: var(--p); margin-bottom: 25px; }
+        h2 { font-family: 'Orbitron'; text-align: center; color: var(--p); margin-bottom: 25px; letter-spacing: 2px; }
+        
         .sec { background: var(--c); padding: 20px; border-radius: 20px; border: 1px solid #222; display: none; animation: fadeIn 0.3s ease; }
         .sec.active { display: block; }
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
-        input, select { width: 100%; padding: 14px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 12px; box-sizing: border-box; outline: none; }
-        .btn-action { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; }
-        .btn-del { background: var(--r); color: #fff; padding: 8px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; }
+
+        h3 { font-family: 'Orbitron'; font-size: 14px; color: var(--p); margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        
+        input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 12px; box-sizing: border-box; outline: none; font-family: 'Poppins'; }
+        input:focus { border-color: var(--p); }
+
+        .btn-action { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-action:active { transform: scale(0.98); }
+        .btn-del { background: var(--r); color: #fff; padding: 8px 12px; border-radius: 8px; border: none; font-size: 11px; cursor: pointer; }
+
+        /* Request Cards UI */
+        .req-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; position: relative; border-left: 4px solid var(--p); }
+        .req-card.withdraw { border-left-color: var(--r); }
+        .req-info { margin-bottom: 10px; }
+        .req-info p { margin: 3px 0; font-size: 13px; color: #ccc; }
+        .req-info b { color: #fff; }
+        .req-amount { font-family: 'Orbitron'; color: var(--p); font-size: 18px; display: block; margin-top: 5px; }
+
         .nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; transition: 0.3s; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 4px; }
+
         .r-card { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 15px; position: relative; }
+        .notice-card { background: #1a1a1a; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid var(--y); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .player-row { font-size: 11px; background: #1a1a1a; padding: 10px; margin: 8px 0; border-radius: 10px; border-left: 3px solid var(--p); color: #ddd; }
+        .team-tag { background: #222; color: #00ff00; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; margin-bottom: 5px; display: inline-block; border: 0.5px solid #00ff00; }
         .img-preview { width: 80px; height: 45px; object-fit: cover; border-radius: 5px; margin-right: 10px; border: 1px solid #333; }
-        .player-row { font-size: 12px; background: #1a1a1a; padding: 8px; margin: 5px 0; border-radius: 8px; border-left: 3px solid var(--p); }
-        .tab-btn { background: #222; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; flex: 1; }
+        
+        .tab-btn { background: #222; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; font-weight: bold; font-family: 'Orbitron'; font-size: 12px; transition: 0.3s; }
+        .tab-btn.active { background: var(--p); color: #000; border-color: var(--p); }
     </style>
 </head>
 <body>
 
-    <h2>TESLA ADMIN</h2>
+    <h2>TESLA MASTER</h2>
 
     <div id="slider" class="sec active">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Slider Management</h3>
+        <h3>SLIDER MANAGEMENT</h3>
         <input type="file" id="slideFile" accept="image/*">
-        <button class="btn-action" id="uploadBtn" onclick="uploadSlider()">ADD NEW SLIDE</button>
-        <div id="currentSliders" style="margin-top:20px;"></div>
+        <button class="btn-action" onclick="uploadSlider()">ADD NEW SLIDE</button>
+        <div id="currentSliders" style="margin-top:20px; margin-bottom: 30px;"></div>
+
+        <h3>NOTICE BOARD</h3>
+        <textarea id="noticeText" rows="3" placeholder="Write notice here..."></textarea>
+        <button class="btn-action" style="background: var(--y);" onclick="uploadNotice()">PUBLISH NOTICE</button>
+        <div id="noticeList" style="margin-top:20px;"></div>
     </div>
 
     <div id="match" class="sec">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Create Tournament</h3>
+        <h3>CREATE TOURNAMENT</h3>
         <input id="mNo" placeholder="Match No (#01)">
         <input id="mName" placeholder="Match Name">
         <select id="mMode">
+            <option value="">Select Mode</option>
             <option value="BR Solo">BR Solo</option>
             <option value="BR Duo">BR Duo</option>
             <option value="BR Squad">BR Squad</option>
             <option value="Clash Squad">Clash Squad</option>
-            <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-            <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
-            <option value="Custom Mode">Custom Mode</option>
         </select>
-        <div style="display: flex; gap: 5px;">
+        <div style="display: flex; gap: 8px;">
             <input id="mFee" type="number" placeholder="Entry Fee">
             <input id="mPrize" type="number" placeholder="Total Prize">
         </div>
-        <div style="display: flex; gap: 5px;">
-            <input id="mDate" type="text" placeholder="Date (15 March)">
-            <input id="mTime" type="text" placeholder="Time (09:00 PM)">
+        <div style="display: flex; gap: 8px;">
+            <input id="mDate" type="text" placeholder="Date (e.g. 15 March)">
+            <input id="mTime" type="text" placeholder="Time (e.g. 09:00 PM)">
         </div>
-        <input id="mTotalSlots" type="number" placeholder="Total Slots (e.g. 48)">
+        <input id="mTotalSlots" type="number" placeholder="Total Slots (48)">
+        <textarea id="mRules" rows="3" placeholder="Tournament Rules..."></textarea>
         <button class="btn-action" onclick="publishMatch()">PUBLISH MATCH</button>
-        <hr style="border: 0.5px solid #222; margin: 20px 0;">
-        <h4>Live Matches & Player List</h4>
+        
+        <h4 style="margin-top: 30px; color: var(--p);">LIVE MATCHES</h4>
         <div id="liveMatchList"></div>
     </div>
 
     <div id="result" class="sec">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Results & Winnings</h3>
+        <h3>MATCH RESULTS</h3>
         <select id="resMode">
+            <option value="">Select Result Mode</option>
             <option value="BR Solo">BR Solo</option>
             <option value="BR Duo">BR Duo</option>
             <option value="BR Squad">BR Squad</option>
-            <option value="Clash Squad">Clash Squad</option>
-            <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
-            <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
-            <option value="Custom Mode">Custom Mode</option>
         </select>
         <input id="resMatchNo" placeholder="Match No">
         <input id="targetUid" placeholder="Winner UID">
         <input id="targetKill" type="number" placeholder="Kills">
-        <input id="winAmount" type="number" placeholder="Winning TK">
-        <button class="btn-action" style="background:#ffcc00" onclick="sendResult()">PAY & POST RESULT</button>
+        <input id="winAmount" type="number" placeholder="Winning Amount (TK)">
+        <button class="btn-action" style="background:var(--y)" onclick="sendResult()">POST RESULT & PAY</button>
         <div id="publishedResults" style="margin-top:20px;"></div>
     </div>
 
     <div id="requests" class="sec">
-        <h3 style="font-family: Orbitron; font-size: 14px;">Financial Requests</h3>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button class="tab-btn" onclick="toggleReq('dep')">Deposits</button>
-            <button class="tab-btn" onclick="toggleReq('wit')">Withdraws</button>
+        <h3>FINANCIAL REQUESTS</h3>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button id="tabDep" class="tab-btn active" onclick="toggleReq('dep')">DEPOSITS</button>
+            <button id="tabWit" class="tab-btn" onclick="toggleReq('wit')">WITHDRAWS</button>
         </div>
-        <div id="depositBox"><h4>Deposit SS List</h4><div id="depList"></div></div>
-        <div id="withdrawBox" style="display:none;"><h4>Withdraw List</h4><div id="witList"></div></div>
+        <div id="depositBox"><div id="depList"></div></div>
+        <div id="withdrawBox" style="display:none;"><div id="witList"></div></div>
     </div>
 
     <div class="nav">
@@ -119,43 +141,50 @@
         function toggleReq(type) {
             document.getElementById('depositBox').style.display = type==='dep'?'block':'none';
             document.getElementById('withdrawBox').style.display = type==='wit'?'block':'none';
+            document.getElementById('tabDep').classList.toggle('active', type==='dep');
+            document.getElementById('tabWit').classList.toggle('active', type==='wit');
         }
 
+        // --- SLIDER ---
         async function uploadSlider() {
             const file = document.getElementById('slideFile').files[0];
-            if(!file) return;
+            if(!file) return Swal.fire("Empty!", "দয়া করে একটি ছবি সিলেক্ট করুন!", "warning");
             const fd = new FormData(); fd.append('image', file);
             const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:fd});
             const data = await res.json();
             if(data.success) {
-                db.ref('settings/sliders').push(data.data.url).then(() => Swal.fire("Success", "Slide Added", "success"));
+                db.ref('settings/sliders').push(data.data.url).then(() => Swal.fire("Success!", "স্লাইড সফলভাবে যোগ করা হয়েছে!", "success"));
             }
         }
 
         db.ref('settings/sliders').on('value', snap => {
             let h = "";
-            snap.forEach(c => {
-                h += `<div style="display:flex; align-items:center; margin-bottom:10px; background:#222; padding:10px; border-radius:12px;">
-                    <img src="${c.val()}" class="img-preview">
-                    <button class="btn-del" onclick="db.ref('settings/sliders/${c.key}').remove()">Delete</button>
-                </div>`;
-            });
+            snap.forEach(c => { h += `<div style="display:flex; align-items:center; margin-bottom:10px; background:#222; padding:10px; border-radius:12px;"><img src="${c.val()}" class="img-preview"> <button class="btn-del" onclick="db.ref('settings/sliders/${c.key}').remove()">Delete</button></div>`; });
             document.getElementById('currentSliders').innerHTML = h;
         });
 
+        // --- NOTICE ---
+        function uploadNotice() {
+            const text = document.getElementById('noticeText').value;
+            if(!text) return Swal.fire("Empty!", "দয়া করে নোটিশটি লিখুন!", "warning");
+            db.ref('settings/notices').push({ text: text, time: Date.now() }).then(() => {
+                Swal.fire("Success!", "নোটিশটি সফলভাবে আপলোড হয়েছে!", "success");
+                document.getElementById('noticeText').value = "";
+            });
+        }
+
+        db.ref('settings/notices').on('value', snap => {
+            let h = "";
+            snap.forEach(c => { h += `<div class="notice-card"><span>${c.val().text}</span><button class="btn-del" onclick="db.ref('settings/notices/${c.key}').remove()">X</button></div>`; });
+            document.getElementById('noticeList').innerHTML = h || "<p style='color:#444'>No notice found</p>";
+        });
+
+        // --- MATCHES ---
         function publishMatch() {
-            const m = {
-                matchNo: document.getElementById('mNo').value,
-                name: document.getElementById('mName').value,
-                mode: document.getElementById('mMode').value,
-                entryFee: document.getElementById('mFee').value,
-                totalPrize: document.getElementById('mPrize').value,
-                date: document.getElementById('mDate').value,
-                startTime: document.getElementById('mTime').value,
-                totalSlots: document.getElementById('mTotalSlots').value,
-                joined: 0, status: "Open", roomId: "Pending", roomPass: "Pending"
-            };
-            db.ref('matches').push(m).then(() => Swal.fire("Success", "Match Live", "success"));
+            const fields = ['mNo', 'mName', 'mMode', 'mFee', 'mPrize', 'mDate', 'mTime', 'mTotalSlots', 'mRules'];
+            for(let f of fields) { if(!document.getElementById(f).value) return Swal.fire("Empty!", "সবগুলো ঘর সঠিকভাবে পূরণ করুন!", "error"); }
+            const m = { matchNo: document.getElementById('mNo').value, name: document.getElementById('mName').value, mode: document.getElementById('mMode').value, entryFee: document.getElementById('mFee').value, totalPrize: document.getElementById('mPrize').value, date: document.getElementById('mDate').value, startTime: document.getElementById('mTime').value, totalSlots: document.getElementById('mTotalSlots').value, rules: document.getElementById('mRules').value, joined: 0, status: "Open" };
+            db.ref('matches').push(m).then(() => { Swal.fire("Success!", "ম্যাচটি সফলভাবে পাবলিশ করা হয়েছে!", "success"); fields.forEach(f => document.getElementById(f).value = ""); });
         }
 
         db.ref('matches').on('value', snap => {
@@ -164,87 +193,88 @@
                 let m = c.val();
                 h += `<div class="r-card">
                     <p><b>${m.matchNo}</b> - ${m.name}</p>
-                    <p style="font-size:10px">${m.date} | ${m.startTime} | Slots: ${m.joined}/${m.totalSlots}</p>
+                    <p style="font-size:10px; color: #888;">${m.date} | ${m.startTime}</p>
                     <div style="display:flex; gap:5px; margin-top:10px;">
-                        <button class="btn-action" style="padding:5px; font-size:10px;" onclick="updateRoom('${c.key}')">Room ID/Pass</button>
+                        <button class="btn-action" style="padding:5px; font-size:10px;" onclick="updateRoom('${c.key}')">Room Info</button>
                         <button class="btn-del" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
                     </div>
-                    <div id="pList-${c.key}" style="margin-top:10px;"></div>
+                    <div id="pList-${c.key}" style="margin-top:15px;"></div>
                 </div>`;
                 db.ref('joinedPlayers/'+c.key).on('value', pS => {
-                    let pH = "<b style='font-size:11px; color:#00ff00'>Joined:</b>";
-                    pS.forEach(pc => { pH += `<div class="player-row">UID: ${pc.val().uid}</div>`; });
-                    document.getElementById('pList-'+c.key).innerHTML = pH;
+                    let pH = "<b style='font-size:11px; color:var(--p)'>Players Joined:</b>";
+                    pS.forEach(pc => { 
+                        let data = pc.val();
+                        pH += `<div class="player-row"><span class="team-tag">${data.teamType}</span><br>`;
+                        data.players.forEach((p, idx) => { pH += `${idx+1}. <b>${p.name}</b> | ID: ${p.gameUid}<br>`; });
+                        pH += `</div>`;
+                    });
+                    document.getElementById('pList-'+c.key).innerHTML = pH || "No players yet";
                 });
             });
             document.getElementById('liveMatchList').innerHTML = h;
         });
 
-        function updateRoom(key) {
-            Swal.fire({
-                title: 'Room Details',
-                html: `<input id="rid" class="swal2-input" placeholder="Room ID"><input id="rpass" class="swal2-input" placeholder="Pass">`,
-                preConfirm: () => [document.getElementById('rid').value, document.getElementById('rpass').value]
-            }).then(r => {
-                if(r.value) db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] });
-            });
-        }
-
+        // --- RESULTS ---
         function sendResult() {
+            const fields = ['resMode', 'resMatchNo', 'targetUid', 'targetKill', 'winAmount'];
+            for(let f of fields) { if(!document.getElementById(f).value) return Swal.fire("Empty!", "সবগুলো ঘর পূরণ করা বাধ্যতামূলক!", "error"); }
             const uid = document.getElementById('targetUid').value;
             const amt = parseInt(document.getElementById('winAmount').value);
             db.ref('users/'+uid).once('value', s => {
-                if(!s.exists()) return Swal.fire("Error", "User Not Found", "error");
+                if(!s.exists()) return Swal.fire("Error!", "ইউজার আইডিটি খুঁজে পাওয়া যায়নি!", "error");
                 const u = s.val();
                 db.ref('users/'+uid).update({ deposit: (u.deposit || 0)+amt, winning: (u.winning || 0)+amt }).then(() => {
                     db.ref('results').push({ name: u.name, matchNo: document.getElementById('resMatchNo').value, mode: document.getElementById('resMode').value, kills: document.getElementById('targetKill').value, amount: amt });
-                    Swal.fire("Paid", "Result Posted", "success");
+                    Swal.fire("Success!", "টাকা পাঠানো ও রেজাল্ট পাবলিশ সফল হয়েছে!", "success");
                 });
             });
         }
 
-        db.ref('results').on('value', snap => {
-            let h = "";
-            snap.forEach(c => {
-                let r = c.val();
-                h += `<div class="r-card">
-                    <p><b>${r.name}</b> (${r.matchNo})</p>
-                    <button class="btn-del" style="position:absolute; top:10px; right:10px" onclick="db.ref('results/${c.key}').remove()">X</button>
-                </div>`;
-            });
-            document.getElementById('publishedResults').innerHTML = h;
-        });
-
+        // --- DEPOSITS & WITHDRAWS ---
         db.ref('requests/deposits').on('value', snap => {
             let h = "";
             snap.forEach(c => {
                 let d = c.val();
-                h += `<div class="r-card">
-                    <p>UID: ${d.uid} | TK: ${d.amount}</p>
-                    <a href="${d.ss}" target="_blank" style="color:var(--p); font-size:12px">View Screenshot</a><br>
-                    <button class="btn-action" style="padding:8px;" onclick="approveDep('${c.key}', '${d.uid}', ${d.amount})">APPROVE</button>
+                h += `<div class="req-card">
+                    <div class="req-info">
+                        <p>User ID: <b>${d.uid}</b></p>
+                        <p>Number: <b>${d.number || 'N/A'}</b></p>
+                        <span class="req-amount">TK ${d.amount}</span>
+                    </div>
+                    <a href="${d.ss}" target="_blank" style="color:var(--y); font-size:12px; text-decoration:none;">[ View Screenshot ]</a>
+                    <button class="btn-action" style="padding:10px; margin-top:10px;" onclick="approveDep('${c.key}', '${d.uid}', ${d.amount})">APPROVE DEPOSIT</button>
                 </div>`;
             });
-            document.getElementById('depList').innerHTML = h;
+            document.getElementById('depList').innerHTML = h || "<p style='color:#444; text-align:center;'>No deposit requests</p>";
         });
 
         db.ref('requests/withdraws').on('value', snap => {
             let h = "";
             snap.forEach(c => {
                 let w = c.val();
-                h += `<div class="r-card">
-                    <p>UID: ${w.uid} | TK: ${w.amount}</p>
-                    <p style="font-size:11px">Num: ${w.phone}</p>
-                    <button class="btn-action" style="background:var(--r); color:#fff; padding:8px;" onclick="db.ref('requests/withdraws/${c.key}').remove()">PAID</button>
+                h += `<div class="req-card withdraw">
+                    <div class="req-info">
+                        <p>User ID: <b>${w.uid}</b></p>
+                        <p>Phone: <b>${w.phone}</b></p>
+                        <p>Method: <b>${w.method || 'Bkash/Nagad'}</b></p>
+                        <span class="req-amount" style="color:var(--r)">TK ${w.amount}</span>
+                    </div>
+                    <button class="btn-action" style="background:var(--r); color:#fff; padding:10px;" onclick="db.ref('requests/withdraws/${c.key}').remove()">MARK AS PAID</button>
                 </div>`;
             });
-            document.getElementById('witList').innerHTML = h;
+            document.getElementById('witList').innerHTML = h || "<p style='color:#444; text-align:center;'>No withdraw requests</p>";
         });
 
         function approveDep(key, uid, amt) {
             db.ref('users/'+uid+'/deposit').transaction(c => (c||0)+parseInt(amt)).then(() => {
                 db.ref('requests/deposits/'+key).remove();
-                Swal.fire("Done", "Added", "success");
+                Swal.fire("Success!", "ইউজারের অ্যাকাউন্টে টাকা যোগ করা হয়েছে!", "success");
+            });
+        }
+
+        function updateRoom(key) {
+            Swal.fire({ title: 'Room Info', html: `<input id="rid" class="swal2-input" placeholder="Room ID"><input id="rpass" class="swal2-input" placeholder="Password">`, preConfirm: () => [document.getElementById('rid').value, document.getElementById('rpass').value] }).then(r => {
+                if(r.value[0] && r.value[1]) { db.ref('matches/'+key).update({ roomId: r.value[0], roomPass: r.value[1] }); Swal.fire("Success!", "রুম আইডি ও পাসওয়ার্ড সেভ হয়েছে!", "success"); }
             });
         }
     </script>
