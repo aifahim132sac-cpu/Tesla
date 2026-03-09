@@ -13,10 +13,17 @@
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 80px; }
-        .header { padding: 20px; text-align: center; background: #000; border-bottom: 1px solid #1a1a1a; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
-        .res-card { background: var(--c); border-radius: 12px; padding: 15px; margin: 15px; border: 1px solid #222; }
-        .player-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding: 8px 0; border-bottom: 1px dashed #222; font-size: 12px; }
+        .header { padding: 20px; text-align: center; background: #000; border-bottom: 2px solid var(--p); }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; text-shadow: 0 0 10px var(--p); }
+        
+        .res-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; }
+        .match-info { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        .player-header { display: grid; grid-template-columns: 2fr 1fr 1fr; font-size: 10px; color: #666; font-weight: bold; margin-bottom: 5px; padding: 0 5px; }
+        .player-row { display: grid; grid-template-columns: 2fr 1fr 1fr; padding: 10px 5px; border-bottom: 1px dashed #222; font-size: 12px; align-items: center; }
+        .player-row:last-child { border-bottom: none; }
+        .win-amt { color: var(--p); font-weight: bold; }
+
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -25,8 +32,11 @@
 </head>
 <body>
 
-    <div class="header"><div class="title">MATCH RESULTS</div></div>
-    <div id="rList">Loading Results...</div>
+    <div class="header"><div class="title">TOURNAMENT RESULTS</div></div>
+    
+    <div id="rList">
+        <div style="text-align:center; padding:50px; color:#444;">Fetching winners...</div>
+    </div>
 
     <div class="nav">
         <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i>Play</a>
@@ -45,20 +55,45 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // রেজাল্ট ডাটা রিড করা
         db.ref('results').on('value', snap => {
             let h = "";
+            if(!snap.exists()){
+                document.getElementById('rList').innerHTML = "<p style='text-align:center; margin-top:30px; color:#666;'>No results published yet.</p>";
+                return;
+            }
+
             snap.forEach(c => {
                 let r = c.val();
                 let pList = "";
-                Object.values(r.players || {}).forEach(p => {
-                    pList += `<div class="player-row"><span>${p.name}</span><span>${p.kills} Kills</span><span>${p.amount}</span></div>`;
-                });
-                h += `<div class="res-card">
-                    <div style="color:var(--p); font-family:Orbitron; margin-bottom:10px;">Match #${r.matchNo} (${r.mode})</div>
+                
+                // প্লেয়ার লিস্ট জেনারেট করা
+                if(r.players) {
+                    Object.values(r.players).forEach(p => {
+                        pList += `
+                        <div class="player-row">
+                            <span style="color:#eee;"><i class="fas fa-user-circle" style="color:#444"></i> ${p.name}</span>
+                            <span style="text-align:center;">${p.kills} Kills</span>
+                            <span class="win-amt" style="text-align:right;">${p.amount}</span>
+                        </div>`;
+                    });
+                }
+
+                h = `
+                <div class="res-card">
+                    <div class="match-info">
+                        <span style="font-family:Orbitron; font-size:12px; color:var(--p);">#${r.matchNo}</span>
+                        <span style="font-size:11px; color:#777;">${r.mode}</span>
+                    </div>
+                    <div class="player-header">
+                        <span>PLAYER NAME</span>
+                        <span style="text-align:center;">KILLS</span>
+                        <span style="text-align:right;">WINNING</span>
+                    </div>
                     ${pList}
-                </div>`;
+                </div>` + h; // নতুন রেজাল্ট সবার উপরে দেখাবে
             });
-            document.getElementById('rList').innerHTML = h || "No Results Yet.";
+            document.getElementById('rList').innerHTML = h;
         });
     </script>
 </body>
