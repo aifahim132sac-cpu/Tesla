@@ -4,33 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla Esports - My Matches</title>
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; --r: #ff3333; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
-        
-        .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 100; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; text-shadow: 0 0 10px var(--p); }
-
-        .my-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; position: relative; }
-        .m-no { position: absolute; top: 15px; right: 15px; font-family: 'Orbitron'; font-size: 10px; color: #555; }
-        
-        .room-box { background: #000; border: 1px dashed var(--p); padding: 12px; border-radius: 10px; margin-top: 15px; }
-        .room-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .r-val { background: #1a1a1a; padding: 8px; border-radius: 5px; font-size: 12px; color: var(--p); text-align: center; border: 1px solid #333; }
-        
-        .wait-msg { font-size: 11px; color: #ffcc00; text-align: center; line-height: 1.5; padding: 5px; }
-        
-        .details-btn { width: 100%; background: #222; color: #fff; border: 1px solid #333; padding: 8px; border-radius: 8px; margin-top: 10px; font-size: 10px; font-family: 'Orbitron'; cursor: pointer; }
-
+        .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); }
+        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
+        .my-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; }
+        .room-box { background: #000; border: 1px dashed var(--p); padding: 12px; border-radius: 10px; margin-top: 15px; text-align: center; }
+        .r-val { background: #1a1a1a; padding: 8px; border-radius: 5px; font-size: 12px; color: var(--p); border: 1px solid #333; margin-top: 5px; }
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -38,121 +25,37 @@
     </style>
 </head>
 <body>
-
-    <div class="header"><div class="title">MY JOINED MATCHES</div></div>
-    
-    <div id="myList">
-        <div style="text-align:center; padding:50px; color:#444;">Checking your entries...</div>
-    </div>
-
+    <div class="header"><div class="title">MY MATCHES</div></div>
+    <div id="myList"><p style="text-align:center; padding:50px; color:#444;">Checking...</p></div>
     <div class="nav">
         <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
         <a href="mymatch.html" class="n-i active"><i class="fas fa-trophy"></i>My Match</a>
         <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i>Profile</a>
     </div>
-
     <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
-            authDomain: "teot-a3046.firebaseapp.com",
-            databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", authDomain: "teot-a3046.firebaseapp.com", databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "teot-a3046" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
-
-        auth.onAuthStateChanged(user => {
-            if (user) { 
-                loadMyMatches(user.uid);
-            } else { window.location.href = "index.html"; }
-        });
-
+        auth.onAuthStateChanged(user => { if (user) { loadMyMatches(user.uid); } else { window.location.href = "index.html"; } });
         function loadMyMatches(uid) {
             db.ref('user_matches/' + uid).on('value', snap => {
-                let h = "";
-                if(!snap.exists()) {
-                    document.getElementById('myList').innerHTML = "<p style='text-align:center; margin-top:30px; color:#666;'>You haven't joined any match yet.</p>";
-                    return;
-                }
-
-                let matchesProcessed = 0;
-                let totalMatches = Object.keys(snap.val()).length;
-
+                let h = ""; if(!snap.exists()) { document.getElementById('myList').innerHTML = "<p style='text-align:center; margin-top:30px; color:#666;'>No matches joined.</p>"; return; }
                 snap.forEach(c => {
                     db.ref('matches/' + c.key).on('value', ms => {
-                        let m = ms.val();
-                        if(m) {
-                            let isRoomReady = (m.roomId && m.roomId !== "Pending");
-                            
-                            h += `
-                            <div class="my-card">
-                                <div class="m-no">#${m.matchNo}</div>
-                                <div style="color:var(--p); font-size:10px; font-family:Orbitron;">${m.mode}</div>
-                                <h3 style="margin:5px 0; font-size:15px;">${m.name}</h3>
-                                <div style="font-size:11px; color:#888;"><i class="far fa-clock"></i> ${m.startTime}</div>
-                                
+                        let m = ms.val(); if(m) {
+                            let isReady = (m.roomId && m.roomId !== "Pending");
+                            h += `<div class="my-card">
+                                <div style="color:var(--p); font-family:Orbitron; font-size:10px;">#${m.matchNo} - ${m.mode}</div>
+                                <h3 style="margin:5px 0;">${m.name}</h3>
                                 <div class="room-box">
-                                    ${isRoomReady ? `
-                                        <div style="text-align:center; font-size:10px; color:var(--p); font-family:Orbitron;">ROOM DETAILS READY</div>
-                                        <div class="room-info">
-                                            <div class="r-val">ID: ${m.roomId}</div>
-                                            <div class="r-val">PASS: ${m.roomPass}</div>
-                                        </div>
-                                        <button class="details-btn" style="border-color:var(--p)" onclick="copyRoom('${m.roomId}', '${m.roomPass}')">COPY INFO</button>
-                                    ` : `
-                                        <div class="wait-msg">
-                                            <i class="fas fa-exclamation-circle"></i><br>
-                                            ম্যাচ শুরুর ৫ মিনিট আগে রুম আইডি ও পাসওয়ার্ড দেওয়া হবে। দয়া করে অপেক্ষা করুন।
-                                        </div>
-                                    `}
+                                    ${isReady ? `<div class="r-val">ID: ${m.roomId}</div><div class="r-val">PASS: ${m.roomPass}</div>` : `<div style="font-size:10px; color:#ffcc00;">Room details will be given 5 mins before match.</div>`}
                                 </div>
-                                
-                                <button class="details-btn" onclick="showMyReg('${c.key}', '${uid}')">VIEW MY REGISTERED INFO</button>
                             </div>`;
-                        }
-                        
-                        matchesProcessed++;
-                        if(matchesProcessed >= totalMatches) {
-                            document.getElementById('myList').innerHTML = h;
-                        }
+                        } document.getElementById('myList').innerHTML = h;
                     });
                 });
             });
-        }
-
-        // ইউজারের নিজের দেওয়া নাম ও ইউআইডি দেখার ফাংশন
-        function showMyReg(matchId, userUid) {
-            db.ref('match_joins/' + matchId + '/' + userUid).once('value', s => {
-                let d = s.val();
-                if(!d) return;
-                
-                let pList = "";
-                d.players.forEach((p, i) => {
-                    pList += `<div style="text-align:left; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
-                                <b>Player ${i+1}:</b> ${p.name}<br>
-                                <small style="color:var(--p)">UID: ${p.gameUid}</small>
-                              </div>`;
-                });
-
-                Swal.fire({
-                    title: 'Your Details',
-                    html: `<div style="font-size:13px;">${pList}</div>`,
-                    background: '#050505',
-                    color: '#fff',
-                    confirmButtonColor: '#00ff00'
-                });
-            });
-        }
-
-        function copyRoom(id, pass) {
-            const el = document.createElement('textarea');
-            el.value = `ID: ${id} | PASS: ${pass}`;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            Swal.fire({ title: "Copied!", text: "Room details copied to clipboard.", icon: "success", timer: 1500, showConfirmButton: false });
         }
     </script>
 </body>
