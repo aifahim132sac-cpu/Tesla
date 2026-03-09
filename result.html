@@ -3,27 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Esports - Results</title>
+    <title>Tesla Esports - Match Results</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --yellow: #ffcc00; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 80px; }
-        .header { padding: 20px; text-align: center; border-bottom: 1px solid #1a1a1a; }
+        
+        .header { padding: 20px; text-align: center; background: #000; border-bottom: 1px solid #1a1a1a; position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; text-shadow: 0 0 10px var(--p); }
         
         .res-container { padding: 15px; }
-        .res-card { background: var(--c); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #222; border-left: 4px solid var(--p); }
-        .res-card b { display: block; font-size: 14px; margin-bottom: 5px; color: var(--p); }
-        .res-card p { margin: 2px 0; font-size: 11px; color: #ccc; }
-        .winner-tag { color: #ffcc00; font-weight: bold; }
+        .res-card { background: var(--c); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #222; border-left: 4px solid var(--p); }
+        
+        .match-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #222; padding-bottom: 8px; }
+        .match-info b { font-family: 'Orbitron'; font-size: 13px; color: var(--yellow); }
+        .match-mode { font-size: 10px; background: #222; padding: 2px 8px; border-radius: 4px; color: #aaa; text-transform: uppercase; }
 
+        .player-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 5px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #222; }
+        .player-row:last-child { border-bottom: none; }
+        .player-name { font-size: 13px; font-weight: 500; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .player-kill { font-size: 11px; color: #aaa; text-align: center; }
+        .player-win { font-size: 12px; font-weight: 600; color: var(--p); text-align: right; }
+
+        /* Navigation Bar */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 15px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; }
+        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; transition: 0.3s; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
     </style>
@@ -33,7 +42,7 @@
     <div class="header"><div class="title">MATCH RESULTS</div></div>
 
     <div class="res-container" id="rList">
-        <p style="text-align:center; color:#555;">রেজাল্ট লোড হচ্ছে...</p>
+        <p style="text-align:center; color:#555; margin-top: 50px;">লোড হচ্ছে...</p>
     </div>
 
     <div class="nav">
@@ -56,20 +65,36 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // ডাটাবেস থেকে রেজাল্ট নিয়ে আসা
-        db.ref('results').on('value', snap => {
+        // ডাটাবেস থেকে রেজাল্ট রিড করা
+        db.ref('results').orderByChild('time').on('value', snap => {
             let html = "";
             if (!snap.exists()) {
-                html = "<p style='text-align:center; color:#555;'>এখনো কোনো রেজাল্ট পাবলিশ হয়নি।</p>";
+                html = "<div style='text-align:center; color:#555; margin-top:50px;'>এখনো কোনো রেজাল্ট নেই।</div>";
             } else {
-                snap.forEach(child => {
-                    let r = child.val();
+                let results = [];
+                snap.forEach(child => { results.unshift(child.val()); }); // লেটেস্ট রেজাল্ট উপরে দেখাবে
+
+                results.forEach(r => {
+                    let playerHtml = "";
+                    // অ্যাডমিন প্যানেল থেকে পাঠানো 'players' লিস্ট লুপ করা
+                    if(r.players && Array.isArray(r.players)) {
+                        r.players.forEach(p => {
+                            playerHtml += `
+                            <div class="player-row">
+                                <span class="player-name"><i class="fas fa-user-circle" style="margin-right:5px; color:#555;"></i>${p.name}</span>
+                                <span class="player-kill">Kills: ${p.kills}</span>
+                                <span class="player-win">${p.amount}</span>
+                            </div>`;
+                        });
+                    }
+
                     html += `
                     <div class="res-card">
-                        <b>Match #${r.matchNo} - ${r.mode}</b>
-                        <p><span class="winner-tag">Winner:</span> ${r.winner}</p>
-                        <p>Total Kills: ${r.kills || 0}</p>
-                        <p>Prize Won: ${r.amount || 0} TK</p>
+                        <div class="match-info">
+                            <b>Match #${r.matchNo}</b>
+                            <span class="match-mode">${r.mode}</span>
+                        </div>
+                        ${playerHtml}
                     </div>`;
                 });
             }
