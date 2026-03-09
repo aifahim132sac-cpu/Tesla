@@ -14,7 +14,7 @@
     
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; --blue: #00c2ff; --yellow: #ffcc00; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
         
         .header { padding: 15px; text-align: center; background: #000; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 1000; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); text-shadow: 0 0 10px var(--p); font-size: 18px; }
@@ -23,24 +23,23 @@
         .sec.active { display: block; }
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
-        .card { background: var(--c); border-radius: 15px; padding: 18px; margin-bottom: 15px; border: 1px solid #222; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        h3 { color: var(--p); font-family: 'Orbitron'; font-size: 14px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .card { background: var(--c); border-radius: 15px; padding: 18px; margin-bottom: 15px; border: 1px solid #222; }
+        h3 { color: var(--p); font-family: 'Orbitron'; font-size: 14px; margin-bottom: 15px; }
 
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; outline: none; box-sizing: border-box; font-size: 13px; transition: 0.3s; }
-        input:focus { border-color: var(--p); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; }
         
-        .btn { background: var(--p); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; margin-top: 10px; }
-        .btn:active { transform: scale(0.98); }
-        
-        .win-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; background: #1a1a1a; padding: 10px; border-radius: 8px; border-left: 3px solid var(--p); }
-        .win-row input { margin: 0; padding: 8px; font-size: 11px; }
+        .btn { background: var(--p); color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; font-family: 'Orbitron'; font-size: 11px; margin-top: 5px; }
+        .btn-red { background: var(--red); color: #fff; }
 
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; transition: 0.3s; }
+        .item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--p); }
+        .win-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 5px; margin-bottom: 8px; }
+        
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; cursor: pointer; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
-
-        .item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--p); position: relative; }
+        
+        .ss-img { width: 100%; border-radius: 8px; margin: 10px 0; cursor: pointer; border: 1px solid #333; }
     </style>
 </head>
 <body>
@@ -49,7 +48,7 @@
 
     <div id="matches" class="sec active">
         <div class="card">
-            <h3><i class="fas fa-plus-circle"></i> Create Tournament</h3>
+            <h3><i class="fas fa-plus-circle"></i> Create Match</h3>
             <input type="number" id="mNo" placeholder="Match No">
             <input type="text" id="mTitle" placeholder="Match Name">
             <input type="datetime-local" id="mTime">
@@ -61,6 +60,7 @@
     <div id="payments" class="sec">
         <h3><i class="fas fa-money-bill-wave"></i> Deposit Requests</h3>
         <div id="pList">Loading Requests...</div>
+        
         <h3 style="margin-top:30px;"><i class="fas fa-university"></i> Withdraw Requests</h3>
         <div id="wList">Loading Requests...</div>
     </div>
@@ -69,35 +69,26 @@
         <div class="card">
             <h3><i class="fas fa-trophy"></i> Declare Result</h3>
             <input type="number" id="resMNo" placeholder="Match No">
-            <select id="resMode" onchange="updateFields()">
+            <select id="resMode">
                 <option value="BR Solo">BR Solo</option>
                 <option value="Lone Wolf 1vs1">Lone Wolf 1vs1</option>
                 <option value="BR Duo">BR Duo</option>
-                <option value="Lone Wolf 2vs2">Lone Wolf 2vs2</option>
                 <option value="BR Squad">BR Squad</option>
-                <option value="Clash Squad">Clash Squad</option>
             </select>
             
             <div id="winnerInputs">
-                <div class="win-row">
-                    <input type="text" id="wName1" placeholder="Winner Name">
-                    <input type="number" id="wKill1" placeholder="Kill">
-                    <input type="number" id="wAmt1" placeholder="TK">
-                </div>
-                <div id="extraWinners" style="display:none;">
-                    <div class="win-row"><input type="text" id="wName2" placeholder="Winner 2 Name"><input type="number" id="wKill2" placeholder="Kill"><input type="number" id="wAmt2" placeholder="TK"></div>
-                    <div id="squadFields" style="display:none;">
-                        <div class="win-row"><input type="text" id="wName3" placeholder="Winner 3 Name"><input type="number" id="wKill3" placeholder="Kill"><input type="number" id="wAmt3" placeholder="TK"></div>
-                        <div class="win-row"><input type="text" id="wName4" placeholder="Winner 4 Name"><input type="number" id="wKill4" placeholder="Kill"><input type="number" id="wAmt4" placeholder="TK"></div>
-                    </div>
-                </div>
+                <div class="win-row"><input type="text" id="wName1" placeholder="Name"><input type="number" id="wKill1" placeholder="Kill"><input type="number" id="wAmt1" placeholder="TK"></div>
+                <div class="win-row"><input type="text" id="wName2" placeholder="Name"><input type="number" id="wKill2" placeholder="Kill"><input type="number" id="wAmt2" placeholder="TK"></div>
+                <div class="win-row"><input type="text" id="wName3" placeholder="Name"><input type="number" id="wKill3" placeholder="Kill"><input type="number" id="wAmt3" placeholder="TK"></div>
+                <div class="win-row"><input type="text" id="wName4" placeholder="Name"><input type="number" id="wKill4" placeholder="Kill"><input type="number" id="wAmt4" placeholder="TK"></div>
             </div>
 
-            <button class="btn" style="background:var(--yellow); color:#000;" onclick="setResult()">SUBMIT RESULT</button>
+            <button class="btn" style="background:var(--yellow);" onclick="setResult()">SUBMIT RESULT</button>
         </div>
     </div>
 
     <div id="users" class="sec">
+        <h3><i class="fas fa-users"></i> Registered Users</h3>
         <div id="uList">Loading Users...</div>
     </div>
 
@@ -109,14 +100,12 @@
     </div>
 
     <script>
+        // আপনার প্রোফাইল/রেজাল্ট পেজের সাথে মিল রেখে কনফিগ
         const firebaseConfig = {
             apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046",
-            storageBucket: "teot-a3046.appspot.com",
-            messagingSenderId: "305101036814",
-            appId: "1:305101036814:web:658c16053f3e790f1352ac"
+            projectId: "teot-a3046"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -127,52 +116,82 @@
             document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
-        function updateFields() {
-            let mode = document.getElementById('resMode').value;
-            let extra = document.getElementById('extraWinners');
-            let squad = document.getElementById('squadFields');
-            if(mode.includes('Solo') || mode.includes('1vs1')) { extra.style.display="none"; }
-            else if(mode.includes('Duo') || mode.includes('2vs2')) { extra.style.display="block"; squad.style.display="none"; }
-            else { extra.style.display="block"; squad.style.display="block"; }
+        // ১. পেমেন্ট অ্যাপ্রুভাল লজিক (Deposit)
+        function approvePay(uid, amt, key) {
+            db.ref('users/' + uid + '/deposit').transaction(current => (current || 0) + Number(amt))
+            .then(() => {
+                db.ref('payments/' + key).remove(); // রিকোয়েস্ট ডিলিট করা
+                Swal.fire("Success", "Amount Added to User Balance!", "success");
+            });
         }
 
+        // ২. উইথড্র অ্যাপ্রুভাল লজিক
+        function approveWit(uid, amt, key) {
+            db.ref('users/' + uid + '/winning').transaction(current => (current || 0) - Number(amt))
+            .then(() => {
+                db.ref('withdrawRequests/' + key).remove();
+                Swal.fire("Approved", "Withdrawal Successful!", "success");
+            });
+        }
+
+        // --- Data Listeners ---
+        // লোড ডিপোজিট রিকোয়েস্ট
+        db.ref('payments').on('value', s => {
+            let h = "";
+            s.forEach(c => { 
+                let p = c.val(); 
+                h += `<div class="item">
+                    <b>UID: ${p.shortUid}</b> | Amt: ${p.amount} TK<br>
+                    <img src="${p.ssUrl}" class="ss-img" onclick="window.open('${p.ssUrl}')">
+                    <button class="btn" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button>
+                    <button class="btn btn-red" onclick="db.ref('payments/${c.key}').remove()">REJECT</button>
+                </div>`; 
+            });
+            document.getElementById('pList').innerHTML = h || "No deposit requests.";
+        });
+
+        // লোড উইথড্র রিকোয়েস্ট
+        db.ref('withdrawRequests').on('value', s => {
+            let h = "";
+            s.forEach(c => { 
+                let w = c.val(); 
+                h += `<div class="item">
+                    <b>UID: ${w.shortUid}</b> | Amt: ${w.amount} TK<br>
+                    <small>Method: ${w.method} | Num: ${w.number}</small>
+                    <button class="btn" onclick="approveWit('${w.uid}', ${w.amount}, '${c.key}')">PAID & APPROVE</button>
+                </div>`; 
+            });
+            document.getElementById('wList').innerHTML = h || "No withdraw requests.";
+        });
+
+        // রেজাল্ট পাবলিশ লজিক
         function setResult() {
             let no = document.getElementById('resMNo').value;
             let mode = document.getElementById('resMode').value;
-            let winners = [];
+            let winners = {};
             for(let i=1; i<=4; i++){
                 let name = document.getElementById('wName'+i).value;
                 if(name) {
-                    winners.push({
+                    winners["p"+i] = {
                         name: name,
                         kills: document.getElementById('wKill'+i).value || 0,
                         amount: (document.getElementById('wAmt'+i).value || 0) + " TK"
-                    });
+                    };
                 }
             }
-            if(!no || winners.length === 0) return Swal.fire("Error", "ম্যাচ নম্বর ও বিজয়ীর নাম দিন", "error");
+            if(!no) return Swal.fire("Error", "Match No is required", "error");
             db.ref('results').push({ matchNo: no, mode: mode, players: winners, time: Date.now() })
-            .then(() => { Swal.fire("Success", "রেজাল্ট পাবলিশ হয়েছে!", "success"); });
+            .then(() => { Swal.fire("Success", "Result Published!", "success"); });
         }
 
-        // --- Data Loading Functions ---
-        db.ref('matches').on('value', s => {
-            let h = "";
-            s.forEach(c => { let m = c.val(); h += `<div class="item"><b>#${m.matchNo} ${m.name}</b><br><small>${m.startTime}</small></div>`; });
-            document.getElementById('mList').innerHTML = h || "No matches.";
-        });
-
-        db.ref('payments').on('value', s => {
-            let h = "";
-            s.forEach(c => { let p = c.val(); if(p.status === 'Pending') h += `<div class="item"><b>${p.amount} TK</b><br><button class="btn" onclick="approvePay('${p.uid}', ${p.amount}, '${c.key}')">APPROVE</button></div>`; });
-            document.getElementById('pList').innerHTML = h || "No requests.";
-        });
-
+        // ম্যাচ পাবলিশ
         function postMatch() {
             let mNo = document.getElementById('mNo').value;
             let title = document.getElementById('mTitle').value;
-            if(!mNo || !title) return;
-            db.ref('matches').push({ matchNo: mNo, name: title, startTime: document.getElementById('mTime').value }).then(()=>Swal.fire("Success", "Published!", "success"));
+            let time = document.getElementById('mTime').value;
+            if(!mNo || !title || !time) return Swal.fire("Error", "All fields required", "error");
+            db.ref('matches').push({ matchNo: mNo, name: title, startTime: time, entryFee: 0, totalPrize: 0 })
+            .then(() => { Swal.fire("Success", "Match Live!", "success"); });
         }
     </script>
 </body>
