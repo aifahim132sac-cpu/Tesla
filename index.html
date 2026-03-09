@@ -32,11 +32,9 @@
         .auth-btn { width: 100%; padding: 15px; background: var(--p); border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; margin-top: 15px; cursor: pointer; color: #000; transition: 0.3s; }
         .auth-btn:active { transform: scale(0.97); }
         
-        /* Forgot Password Link */
         .forgot-link { display: block; margin-top: 15px; font-size: 11px; color: #666; cursor: pointer; text-decoration: none; }
         .forgot-link:hover { color: var(--p); }
 
-        /* Main UI Elements */
         .header { background: #000; padding: 20px 0; border-bottom: 1px solid #1a1a1a; text-align: center; }
         .header h2 { font-family: 'Orbitron'; color: var(--p); margin: 0; font-size: 22px; letter-spacing: 3px; }
         .slider-container { width: 92%; height: 160px; overflow: hidden; position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; }
@@ -46,7 +44,6 @@
         .marquee { white-space: nowrap; display: inline-block; animation: marquee 15s linear infinite; font-size: 13px; }
         @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
         
-        /* Match Card UI */
         .match-card { background: var(--c); border-radius: 18px; margin: 15px; border: 1px solid #222; overflow: hidden; }
         .match-header { padding: 12px 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
         .match-mode { font-family: 'Orbitron'; font-size: 11px; color: var(--p); }
@@ -56,6 +53,12 @@
         .g-box { background: #000; padding: 12px 5px; border-radius: 12px; text-align: center; border: 1px solid #222; }
         .g-label { font-size: 9px; color: #777; text-transform: uppercase; }
         .g-val { font-size: 12px; font-weight: 700; color: #fff; font-family: 'Orbitron'; }
+
+        /* ID/PASS Section Design */
+        .id-pass-box { background: #000; border: 1px dashed var(--p); border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center; }
+        .id-label { font-size: 10px; color: #777; margin-bottom: 5px; display: block; }
+        .id-content { font-size: 13px; color: var(--p); font-weight: bold; }
+
         .slot-wrap { margin-top: 15px; background: #0a0a0a; padding: 10px; border-radius: 12px; }
         .s-bar { height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
         .s-fill { height: 100%; background: var(--p); transition: 1s ease-in-out; }
@@ -64,7 +67,6 @@
         .btn-rules { background: #1a1a1a; color: #fff; border: 1px solid #333; }
         .btn-join { background: var(--p); color: #000; }
 
-        /* Navigation */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 14px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; transition: 0.3s; }
         .n-i.active { color: var(--p); }
@@ -83,9 +85,7 @@
                 <input type="text" id="authName" class="auth-input" placeholder="Full Name" style="display:none;">
             </div>
             <button class="auth-btn" onclick="handleAuth()">LET'S PLAY</button>
-            
             <a id="forgotBtn" class="forgot-link" onclick="handleForgot()">Forgot Password?</a>
-
             <p style="font-size: 11px; color: #666; margin-top: 20px;" id="toggleText">
                 New here? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Create Account</span>
             </p>
@@ -145,30 +145,24 @@
                 if(isLoginMode) {
                     await auth.signInWithEmailAndPassword(email, pass);
                     closeAuth();
-                    Swal.fire({ icon: 'success', title: 'Login Successful!', text: 'স্বাগতম! এখন আপনি জয়েন করতে পারবেন।', confirmButtonText: 'OK', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
+                    location.reload(); // রিলোড দিলে জয়েন করা ম্যাচের আইডি-পাস দেখাবে
                 } else {
                     if(!name) return Swal.fire("Error", "Enter Name", "error");
                     const res = await auth.createUserWithEmailAndPassword(email, pass);
                     await db.ref('users/' + res.user.uid).set({ name: name, email: email, deposit: 0, winning: 0, playedCount: 0, uid: res.user.uid });
                     closeAuth();
-                    Swal.fire({ icon: 'success', title: 'Account Created!', text: 'সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে।', confirmButtonText: 'OK', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
                 }
             } catch(e) { Swal.fire({ icon: 'error', title: 'Oops!', text: e.message, background: '#111', color: '#fff' }); }
         }
 
-        // Forgot Password Function
         function handleForgot() {
             const email = document.getElementById('authEmail').value;
-            if(!email) return Swal.fire({ icon: 'info', title: 'ইমেইল লিখুন', text: 'আপনার ইমেইলটি লিখে তারপর Forgot Password এ ক্লিক করুন।', background: '#111', color: '#fff' });
-
+            if(!email) return Swal.fire({ icon: 'info', title: 'ইমেইল লিখুন', background: '#111', color: '#fff' });
             auth.sendPasswordResetEmail(email)
-                .then(() => {
-                    Swal.fire({ icon: 'success', title: 'Email Sent!', text: 'রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
-                })
+                .then(() => Swal.fire({ icon: 'success', title: 'Email Sent!', background: '#111', color: '#fff' }))
                 .catch(err => Swal.fire({ icon: 'error', title: 'Failed', text: err.message, background: '#111', color: '#fff' }));
         }
 
-        // Slider logic
         db.ref('settings/sliders').on('value', snap => {
             let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
             document.getElementById('sliderTrack').innerHTML = h;
@@ -178,11 +172,25 @@
         db.ref('settings/notice').on('value', snap => { document.getElementById('noticeMsg').innerText = snap.val() || "Welcome!"; });
 
         // Match Rendering
-        db.ref('matches').on('value', snap => {
+        db.ref('matches').on('value', async snap => {
             let h = "";
+            const currentUid = auth.currentUser ? auth.currentUser.uid : null;
+
+            // সব জয়েন ডেটা একবারেই আনা হচ্ছে যাতে রেন্ডারিং ফাস্ট হয়
+            let allJoins = {};
+            if(currentUid) {
+                const joinsSnap = await db.ref('match_joins').once('value');
+                allJoins = joinsSnap.val() || {};
+            }
+
             snap.forEach(c => {
                 const m = c.val();
+                const mId = c.key;
                 const total = parseInt(m.totalSlots) || 48, joined = parseInt(m.joinedCount) || 0, percent = (joined/total)*100;
+                
+                // চেক করা হচ্ছে ইউজার জয়েন করেছে কিনা
+                const isJoined = currentUid && allJoins[mId] && allJoins[mId][currentUid];
+
                 h += `<div class="match-card">
                     <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
                     <div class="match-body">
@@ -193,13 +201,22 @@
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">--</div></div>
                             <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee} TK</div></div>
                         </div>
+
+                        ${isJoined ? `
+                        <div class="id-pass-box">
+                            <span class="id-label">ROOM ID & PASSWORD</span>
+                            <div class="id-content">${m.roomId}</div>
+                            ${m.roomPass ? `<div class="id-content" style="margin-top:5px; color:#fff;">Password: ${m.roomPass}</div>` : ''}
+                        </div>
+                        ` : ''}
+
                         <div class="slot-wrap"><div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
                         <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa;">
                             <span>Joined: ${joined}/${total}</span><span>Left: ${total-joined}</span>
                         </div></div>
                         <div class="btn-row">
-                            <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">${joined >= total ? 'FULL' : 'JOIN'}</button>
+                            <button class="btn btn-rules" onclick="showRules('${mId}')">RULES</button>
+                            <button class="btn btn-join" onclick="handleJoin('${mId}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">${isJoined ? 'JOINED' : (joined >= total ? 'FULL' : 'JOIN')}</button>
                         </div>
                     </div>
                 </div>`;
@@ -249,7 +266,7 @@
                     await db.ref('users/' + uid).update({ deposit: u.deposit - fee });
                     await db.ref('matches/' + id).update({ joinedCount: joined + 1 });
                     await db.ref('match_joins/' + id + '/' + uid).set({ players: pData, time: Date.now() });
-                    Swal.fire({ icon: "success", title: "Joined!", text: "ম্যাচে সফলভাবে জয়েন করেছেন।", confirmButtonText: 'OK', confirmButtonColor: '#00ff00', background: '#111', color: '#fff' });
+                    Swal.fire({ icon: "success", title: "Joined!", background: '#111', color: '#fff' });
                 });
             }
         }
