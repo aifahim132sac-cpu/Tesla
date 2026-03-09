@@ -3,203 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Esports - Play</title>
+    <title>Tesla Esports - Home</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; --red: #ff3333; --gold: #ffcc00; --blue: #00c2ff; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
+        :root { --p: #00ff00; --b: #050505; --c: #111; --red: #ff3333; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; }
         
-        /* Header Style */
-        .header { padding: 25px 20px; background: #000; text-align: center; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: center; position: relative; }
-        .bell-container { position: absolute; left: 20px; cursor: pointer; }
-        .bell-icon { color: var(--p); font-size: 24px; text-shadow: 0 0 10px var(--p); }
-        .notif-badge { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 50%; display: none; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); margin: 0; font-size: 20px; text-shadow: 0 0 15px var(--p); letter-spacing: 1px; }
+        /* Dynamic Slider */
+        .slider-container { width: 100%; height: 190px; overflow: hidden; position: relative; background: #000; }
+        .slider-track { display: flex; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; }
+        .slide { min-width: 100%; height: 100%; object-fit: cover; }
 
-        /* Notification Modal */
-        .notif-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; }
-        .notif-content { background: #111; width: 90%; max-width: 400px; border-radius: 20px; border: 1px solid #333; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
-        .notif-header { padding: 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        .notif-body { padding: 15px; overflow-y: auto; flex: 1; }
-        .notif-item { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid var(--p); }
+        /* Notice Bar (Slider এর ঠিক নিচে) */
+        #noticeBar { background: rgba(0, 255, 0, 0.05); color: var(--p); padding: 12px; font-size: 13px; display: none; border-bottom: 1px solid #222; border-top: 1px solid #222; }
+        .marquee { overflow: hidden; white-space: nowrap; }
+        .marquee p { display: inline-block; padding-left: 100%; animation: marquee 12s linear infinite; margin: 0; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
-        /* Match Cards - Pro Design */
-        .card { background: var(--c); border-radius: 20px; padding: 18px; margin: 15px; border: 1px solid #1f1f1f; position: relative; }
-        .m-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 13px; }
-        .m-mode { border: 1px solid var(--blue); color: var(--blue); font-size: 9px; padding: 2px 8px; border-radius: 5px; text-transform: uppercase; }
-        .m-name { font-size: 17px; font-weight: 500; margin-bottom: 15px; color: #fff; }
+        /* Match Card */
+        .match-card { background: var(--c); border-radius: 12px; margin: 15px; border: 1px solid #222; position: relative; }
+        .match-header { padding: 10px 15px; background: #1a1a1a; display: flex; justify-content: space-between; border-radius: 12px 12px 0 0; }
+        .match-mode { font-family: 'Orbitron'; font-size: 10px; color: var(--p); letter-spacing: 1px; }
+        
+        .match-body { padding: 15px; }
+        .m-title { font-size: 17px; font-weight: 600; margin-bottom: 10px; color: #fff; }
+        
+        /* Countdown */
+        .timer-box { background: rgba(255, 204, 0, 0.1); color: #ffcc00; padding: 5px; border-radius: 5px; text-align: center; font-family: 'Orbitron'; font-size: 11px; margin-bottom: 15px; }
 
-        /* Stats Grid (Prize, Kill, Entry) */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; text-align: center; }
-        .stat-box { background: #1a1a1a; padding: 10px 5px; border-radius: 12px; border: 1px solid #222; }
-        .stat-box small { display: block; font-size: 8px; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-        .stat-box b { font-size: 12px; display: block; }
-        .prize-txt { color: var(--gold); }
-        .kill-txt { color: #fff; }
-        .entry-txt { color: var(--p); }
+        .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .g-box { background: #000; padding: 10px 5px; border-radius: 8px; text-align: center; border: 1px solid #222; }
+        .g-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 3px; }
+        .g-val { font-size: 12px; font-weight: 600; color: #fff; }
 
-        /* Timer and Buttons */
-        .timer-box { width: 100%; padding: 10px; background: #000; color: #ff9900; border: 1px dotted #333; border-radius: 10px; font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: center; box-sizing: border-box; }
-        .btn-row { display: flex; gap: 10px; }
-        .id-pass-btn { flex: 1; background: #fff; color: #000; padding: 12px; border-radius: 12px; font-size: 11px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
-        .join-btn { flex: 2; background: var(--p); color: #000; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
-        .join-btn.joined { background: #1a1a1a; color: var(--p); border: 1px solid var(--p); }
+        /* Slot Progress */
+        .slot-wrap { margin-top: 10px; }
+        .s-bar { height: 6px; background: #222; border-radius: 10px; overflow: hidden; }
+        .s-fill { height: 100%; background: var(--p); width: 0%; transition: 0.8s; box-shadow: 0 0 10px var(--p); }
+        .s-info { display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; color: #888; }
 
-        /* Navigation */
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 15px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #666; font-size: 11px; text-decoration: none; }
+        .join-btn { background: var(--p); color: #000; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .join-btn:active { transform: scale(0.95); }
+
+        /* Bottom Nav */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #222; z-index: 1000; }
+        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; transition: 0.3s; }
         .n-i.active { color: var(--p); }
-        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
-
-        /* Login Box */
-        #authBox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .auth-card { background: var(--c); padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; border: 1px solid var(--p); text-align: center; }
-        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; outline: none; box-sizing: border-box; }
+        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
-    <div id="authBox">
-        <div class="auth-card">
-            <h3 style="color:var(--p); font-family:'Orbitron';">LOGIN</h3>
-            <input type="email" id="email" placeholder="Email Address">
-            <input type="password" id="pass" placeholder="Password">
-            <button class="join-btn" onclick="handleAuth()" style="width: 100%; margin-top: 10px;">LOGIN / SIGNUP</button>
-        </div>
+    <div class="slider-container">
+        <div class="slider-track" id="sliderTrack"></div>
     </div>
 
-    <div id="notifModal" class="notif-modal">
-        <div class="notif-content">
-            <div class="notif-header"><h3>NOTICES</h3><i class="fas fa-times" onclick="closeNotif()"></i></div>
-            <div id="notifList" class="notif-body"></div>
-        </div>
+    <div id="noticeBar">
+        <div class="marquee"><p id="noticeMsg"></p></div>
     </div>
 
-    <div class="header">
-        <div class="bell-container" onclick="openNotif()">
-            <i class="fas fa-bell bell-icon"></i>
-            <span id="notifBadge" class="notif-badge">0</span>
-        </div>
-        <h2 class="title">TESLA ESPORTS</h2>
-    </div>
-
-    <div id="mList" style="padding-bottom: 20px;">
-        <p style="text-align:center; margin-top:50px; color:#555;">Loading Matches...</p>
+    <div id="matchList">
+        <p style="text-align:center; color:#444; margin-top:50px;">ম্যাচ লোড হচ্ছে...</p>
     </div>
 
     <div class="nav">
-        <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i><div>Play</div></a>
-        <a href="result.html" class="n-i"><i class="fas fa-chart-bar"></i><div>Result</div></a>
-        <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i><div>My Match</div></a>
-        <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i><div>Profile</div></a>
+        <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
+        <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
+        <a href="mymatch.html" class="n-i"><i class="fas fa-trophy"></i>My Match</a>
+        <a href="profile.html" class="n-i"><i class="fas fa-user"></i>Profile</a>
     </div>
 
     <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc", 
+        // আপনার ফায়ারবেস কনফিগ
+        const firebaseConfig = {
+            apiKey: "AIzaSyDE_X_rS-D8W_7_v9_J_3_X_0_O_8", 
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046",
-            storageBucket: "teot-a3046.appspot.com",
-            messagingSenderId: "742786792386", 
-            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+            projectId: "teot-a3046"
         };
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.database();
+        const db = firebase.database();
 
-        auth.onAuthStateChanged(user => {
-            if (!user) { document.getElementById('authBox').style.display = 'flex'; }
-            else { document.getElementById('authBox').style.display = 'none'; loadData(user.uid); }
+        // ১. রিয়েল-টাইম স্লাইডার
+        db.ref('settings/sliders').on('value', snap => {
+            let h = "";
+            snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
+            if(!h) h = `<img src="https://via.placeholder.com/800x400?text=Welcome+To+Tesla" class="slide">`;
+            document.getElementById('sliderTrack').innerHTML = h;
+            initSlider();
         });
 
-        async function handleAuth() {
-            const e = document.getElementById('email').value, p = document.getElementById('pass').value;
-            if(!e || !p) return Swal.fire('Error', 'Fill all fields', 'error');
-            try { await auth.signInWithEmailAndPassword(e, p); }
-            catch { await auth.createUserWithEmailAndPassword(e, p); }
-        }
+        // ২. রিয়েল-টাইম নোটিশ
+        db.ref('settings/notice').on('value', snap => {
+            const msg = snap.val();
+            const bar = document.getElementById('noticeBar');
+            if(msg && msg.trim() !== "") {
+                bar.style.display = "block";
+                document.getElementById('noticeMsg').innerText = msg;
+            } else {
+                bar.style.display = "none";
+            }
+        });
 
-        function loadData(uid) {
-            // Load Matches (Admins data keys applied)
-            db.ref('matches').on('value', snap => {
-                let html = "";
-                snap.forEach(c => {
-                    let m = c.val(), id = c.key;
-                    let joined = m.joined && m.joined[uid];
-                    html += `
-                    <div class="card">
-                        <div class="m-top">
-                            <span class="m-no">MATCH #${m.matchNo}</span>
-                            <span class="m-mode">${m.mode}</span>
-                        </div>
-                        <div class="m-name">${m.name}</div>
+        // ৩. রিয়েল-টাইম ম্যাচ লিস্ট
+        db.ref('matches').on('value', snap => {
+            let h = "";
+            snap.forEach(c => {
+                const m = c.val();
+                const total = m.totalSlots || 48;
+                const joined = m.joinedCount || 0;
+                const percent = (joined / total) * 100;
+
+                h += `
+                <div class="match-card">
+                    <div class="match-header">
+                        <span class="match-mode"><i class="fas fa-crosshairs"></i> ${m.mode}</span>
+                        <span style="font-size:10px; color:#666;">MATCH #${m.matchNo}</span>
+                    </div>
+                    <div class="match-body">
+                        <div class="m-title">${m.name}</div>
+                        <div class="timer-box" data-time="${m.startTime}">সময় লোড হচ্ছে...</div>
                         
-                        <div class="stats-grid">
-                            <div class="stat-box"><small>Prize Pool</small><b class="prize-txt">${m.prize} TK</b></div>
-                            <div class="stat-box"><small>Per Kill</small><b class="kill-txt">${m.perKill} TK</b></div>
-                            <div class="stat-box"><small>Entry Fee</small><b class="entry-txt">${m.entry} TK</b></div>
+                        <div class="m-grid">
+                            <div class="g-box"><div class="g-label">Win Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
+                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.perKill} TK</div></div>
+                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee} TK</div></div>
                         </div>
 
-                        <div id="timer_${id}" class="timer-box">Calculating...</div>
-
-                        <div class="btn-row">
-                            <button class="id-pass-btn" onclick="checkIdPass('${id}')"><i class="fas fa-key"></i> ID & PASS</button>
-                            <button class="join-btn ${joined ? 'joined' : ''}" onclick="handleJoin('${id}')">
-                                ${joined ? 'JOINED' : 'JOIN NOW'}
-                            </button>
+                        <div class="slot-wrap">
+                            <div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
+                            <div class="s-info">
+                                <span>Joined: ${joined}/${total}</span>
+                                <span>${total - joined} Slots Left</span>
+                            </div>
                         </div>
-                    </div>`;
-                    startCountdown(m.startTime, id);
+                        <button class="join-btn" onclick="location.href='details.html?id=${c.key}'">JOIN NOW</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center; padding:20px;'>No active matches found.</p>";
+            startCountdowns();
+        });
+
+        // স্লাইডার মুভমেন্ট
+        function initSlider() {
+            let i = 0;
+            const track = document.getElementById('sliderTrack');
+            if(window.sliderInterval) clearInterval(window.sliderInterval);
+            window.sliderInterval = setInterval(() => {
+                const slides = document.querySelectorAll('.slide');
+                if(slides.length > 1) {
+                    i = (i + 1) % slides.length;
+                    track.style.transform = `translateX(-${i * 100}%)`;
+                }
+            }, 5000);
+        }
+
+        // কাউন্টডাউন ফাংশন
+        function startCountdowns() {
+            if(window.timerInt) clearInterval(window.timerInt);
+            window.timerInt = setInterval(() => {
+                document.querySelectorAll('.timer-box').forEach(el => {
+                    const target = new Date(el.getAttribute('data-time')).getTime();
+                    const now = new Date().getTime();
+                    const diff = target - now;
+                    if(diff < 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "red"; return; }
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    el.innerHTML = `<i class="fas fa-clock"></i> Starts in: ${h}h ${m}m ${s}s`;
                 });
-                document.getElementById('mList').innerHTML = html || "<p style='text-align:center;'>No matches found.</p>";
-            });
-
-            // Load Global Notice from Admin
-            db.ref('notifications').on('value', snap => {
-                let n = snap.val();
-                if(n) {
-                    document.getElementById('notifBadge').style.display = 'block';
-                    document.getElementById('notifList').innerHTML = `<div class="notif-item"><p style="font-size:13px;">${n.message}</p></div>`;
-                }
-            });
-        }
-
-        function checkIdPass(id) {
-            db.ref('matches/'+id).once('value', s => {
-                let m = s.val();
-                if(!m.joined || !m.joined[auth.currentUser.uid]) return Swal.fire('Oops','আগে জয়েন করুন!','warning');
-                if(!m.roomId || m.roomId == "Pending") {
-                    Swal.fire('ID & Pass', 'ম্যাচ শুরু হবার ৫ মিনিট আগে এখানে পাবেন।', 'info');
-                } else {
-                    Swal.fire({ title: 'ROOM DETAILS', html: `<b>ID:</b> ${m.roomId}<br><b>PASS:</b> ${m.roomPass}`, icon: 'success' });
-                }
-            });
-        }
-
-        function startCountdown(time, id) {
-            setInterval(() => {
-                let diff = new Date(time).getTime() - new Date().getTime();
-                let el = document.getElementById(`timer_${id}`);
-                if(el) {
-                    if(diff <= 0) { el.innerHTML = "MATCH STARTED"; el.style.color = "red"; }
-                    else {
-                        let h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-                        el.innerHTML = `Starts In: ${h}h ${m}m ${s}s`;
-                    }
-                }
             }, 1000);
         }
-
-        function openNotif() { document.getElementById('notifModal').style.display = 'flex'; }
-        function closeNotif() { document.getElementById('notifModal').style.display = 'none'; document.getElementById('notifBadge').style.display = 'none'; }
     </script>
 </body>
 </html>
