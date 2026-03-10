@@ -129,14 +129,12 @@
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                // .on ব্যবহার করা হয়েছে রিয়েল-টাইম আপডেটের জন্য
                 db.ref('users/' + user.uid).on('value', snap => {
                     const u = snap.val() || {};
                     currentUserData = u;
                     document.getElementById('userName').innerText = u.name || "Player";
                     document.getElementById('userUid').innerText = "UID: " + user.uid.toUpperCase().substring(0,14);
                     
-                    // Undefined ঠেকাতে || 0 ব্যবহার করা হয়েছে
                     document.getElementById('balMain').innerText = (u.balance || 0) + " TK";
                     document.getElementById('balWin').innerText = (u.winning || 0) + " TK";
                     document.getElementById('playedCount').innerText = u.played || 0;
@@ -177,9 +175,15 @@
             const file = input.files[0];
             if(!file) return;
 
-            const apiKey = "c98616196231908d132e4cc3503f19e4"; 
+            // Updated API Key and Loading System
+            const apiKey = "bb6ae5282e75af49c1e446d17733e498"; 
             
-            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ 
+                title: 'Uploading Photo...', 
+                text: 'Please wait a moment',
+                allowOutsideClick: false, 
+                didOpen: () => Swal.showLoading() 
+            });
 
             let formData = new FormData();
             formData.append("image", file);
@@ -193,13 +197,19 @@
                 
                 if(data.success) {
                     const url = data.data.url;
-                    // সরাসরি ডাটাবেজে ছবির লিংক সেভ করা হচ্ছে
                     await db.ref('users/' + auth.currentUser.uid).update({ profilePic: url });
-                    Swal.fire("Success", "প্রোফাইল পিকচার আপডেট হয়েছে!", "success");
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'প্রোফাইল পিকচার আপডেট হয়েছে!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
                 } else {
                     throw new Error("Upload failed");
                 }
             } catch(e) {
+                console.error(e);
                 Swal.fire("Error", "ছবি আপলোড করা যাচ্ছে না, পরে চেষ্টা করুন।", "error");
             }
         }
