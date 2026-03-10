@@ -79,7 +79,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
 
-        // ১. রিয়েল-টাইম ব্লক সিস্টেম
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref('users/' + user.uid).on('value', snapshot => {
@@ -94,7 +93,6 @@
             }
         });
 
-        // ২. রিয়েল-টাইম নোটিশ ও স্লাইডার
         db.ref('settings/notice').on('value', s => { document.getElementById('noticeMsg').innerText = s.val() || "Welcome!"; });
         db.ref('settings/sliders').on('value', snap => {
             let h = ""; snap.forEach(c => { h += `<img src="${c.val().image}" class="slide">`; });
@@ -102,7 +100,6 @@
             initSlider();
         });
 
-        // ৩. রিয়েল-টাইম ম্যাচ লিস্ট
         db.ref('matches').on('value', snap => {
             let h = "";
             const currentUid = auth.currentUser ? auth.currentUser.uid : null;
@@ -112,7 +109,6 @@
                 const total = m.slot || 48;
                 const joined = m.joined || 0;
                 const percent = (joined/total)*100;
-                // চেক করছে ইউজার অলরেডি জয়েন করেছে কি না
                 const isJoined = currentUid && m.joined_players && m.joined_players[currentUid];
 
                 h += `<div class="match-card">
@@ -133,7 +129,7 @@
                         </div>
                         <div class="btn-row">
                             <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mType}', ${m.mFee}, ${joined}, ${total})">${isJoined ? 'ALREADY JOINED' : 'JOIN MATCH'}</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mType}', ${m.mFee}, ${joined}, ${total}, '${m.matchNo}')">${isJoined ? 'ALREADY JOINED' : 'JOIN MATCH'}</button>
                         </div>
                     </div>
                 </div>`;
@@ -142,21 +138,20 @@
             startCountdowns();
         });
 
-        // ৪. ফুল আপডেট করা জয়েন ফাংশন
-        async function handleJoin(id, mode, fee, joined, total) {
+        // আপডেট করা জয়েন ফাংশন
+        async function handleJoin(id, mode, fee, joined, total, matchNo) {
             if(!auth.currentUser) return window.location.href = "auth.html";
             
             const uid = auth.currentUser.uid;
             const matchRef = db.ref('matches/' + id);
             
-            // ১. চেক করছে অলরেডি জয়েন কি না
             const check = await matchRef.child('joined_players/' + uid).once('value');
             if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
 
             if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
             
-            // ২. প্লেয়ার ডিটেইলস ইনপুট
-            let pCount = 1; let mLow = mode.toLowerCase();
+            let pCount = 1; 
+            let mLow = mode ? mode.toLowerCase() : "";
             if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
             
             let html = `<p style="color:#aaa; font-size:13px;">সঠিক ইন-গেম নাম এবং আইডি দিন।</p>`;
@@ -185,17 +180,31 @@
 
                     if(totalBal < fee) return Swal.fire("Low Balance!", "টাকা ডিপোজিট করুন।", "error");
                     
-                    // ৩. টাকা কাটার লজিক
                     let nB = u.balance, nW = u.winning;
                     if(nB >= fee) nB -= fee; else { let r = fee - nB; nB = 0; nW -= r; }
 
-                    // ৪. ডাটাবেজ আপডেট (ইউজার ও ম্যাচ)
+                    // ডাটাবেজ আপডেট
                     await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (u.played || 0) + 1 });
                     await matchRef.update({ joined: joined + 1 });
                     
-                    // ৫. 'joined' এবং 'joined_players' উভয় জায়গায় ডাটা রাখা (mymatch.html এর জন্য)
-                    await matchRef.child('joined/' + uid).set({ name: u.name, players: pData, time: Date.now() });
+                    // ইউজার এবং অ্যাডমিন উভয়ের জন্য ডাটা সেভ
+                    const joinData = { 
+                        name: pData[0].name, // প্রথম প্লেয়ারের নাম মেইন হিসেবে থাকবে
+                        allPlayers: pData, 
+                        uid: uid, 
+                        time: Date.now() 
+                    };
+
+                    await matchRef.child('joined/' + uid).set(joinData);
                     await matchRef.child('joined_players/' + uid).set(true);
+
+                    // অ্যাডমিন প্যানেলে প্লেয়ার লিস্ট দেখানোর জন্য স্পেশাল পাথ
+                    await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
+                        name: pData[0].name,
+                        uid: uid,
+                        gameId: pData[0].gameId,
+                        details: pData
+                    });
 
                     Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
                 });
