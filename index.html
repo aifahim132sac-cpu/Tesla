@@ -106,8 +106,8 @@
             
             snap.forEach(c => {
                 const m = c.val();
-                const total = m.slot || 48;
-                const joined = m.joined || 0;
+                const total = parseInt(m.slot) || 48;
+                const joined = parseInt(m.joined) || 0;
                 const percent = (joined/total)*100;
                 const isJoined = currentUid && m.joined_players && m.joined_players[currentUid];
 
@@ -117,9 +117,9 @@
                         <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.title}</div>
                         <div class="timer-box" data-time="${m.mTimeSelect}">Loading...</div>
                         <div class="m-grid">
-                            <div class="g-box"><div class="g-label">Prize</div><div class="g-val">${m.mPrize}</div></div>
-                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.mPk}</div></div>
-                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.mFee}</div></div>
+                            <div class="g-box"><div class="g-label">Prize</div><div class="g-val">${m.mPrize || 0}</div></div>
+                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.mPk || 0}</div></div>
+                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.mFee || 0}</div></div>
                         </div>
                         <div class="slot-wrap">
                             <div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
@@ -144,11 +144,14 @@
             const uid = auth.currentUser.uid;
             const matchRef = db.ref('matches/' + id);
             
+            // ১. ইতিমধ্যে জয়েন করেছে কি না চেক
             const check = await matchRef.child('joined_players/' + uid).once('value');
             if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
 
+            // ২. স্লট খালি আছে কি না চেক
             if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
             
+            // ৩. গেম মোড অনুযায়ী প্লেয়ার সংখ্যা নির্ধারণ
             let pCount = 1; 
             let mLow = mode ? mode.toLowerCase() : "";
             if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
@@ -156,7 +159,7 @@
             let html = `<p style="color:#aaa; font-size:13px;">সঠিক ইন-গেম নাম এবং আইডি দিন।</p>`;
             for(let i=1; i<=pCount; i++) {
                 html += `<input id="pName${i}" class="swal2-input" placeholder="Player ${i} Name" style="background:#222; color:#fff; border:1px solid #333;">
-                         <input id="pUid${i}" class="swal2-input" placeholder="Player ${i} UID" style="background:#222; color:#fff; border:1px solid #333;">`;
+                         <input id="pUid${i}" class="swal2-input" placeholder="Player ${i} Game ID" style="background:#222; color:#fff; border:1px solid #333;">`;
             }
 
             const { value: pData } = await Swal.fire({
@@ -174,54 +177,64 @@
 
             if(pData) {
                 db.ref('users/' + uid).once('value', async s => {
-                    const u = s.val();
-                    const totalBal = (u.balance || 0) + (u.winning || 0);
+                    const u = s.val() || {};
+                    const balance = parseFloat(u.balance) || 0;
+                    const winning = parseFloat(u.winning) || 0;
+                    const totalBal = balance + winning;
+                    const matchFee = parseFloat(fee) || 0;
 
-                    if(totalBal < fee) return Swal.fire("Low Balance!", "টাকা ডিপোজিট করুন।", "error");
+                    if(totalBal < matchFee) return Swal.fire("Low Balance!", "আপনার পর্যাপ্ত টাকা নেই। দয়া করে ডিপোজিট করুন।", "error");
                     
-                    let nB = u.balance, nW = u.winning;
-                    if(nB >= fee) nB -= fee; else { let r = fee - nB; nB = 0; nW -= r; }
+                    // ব্যালেন্স কাটার লজিক (প্রথমে মেইন ব্যালেন্স থেকে, পরে উইনিং থেকে)
+                    let nB = balance, nW = winning;
+                    if(nB >= matchFee) nB -= matchFee; else { let r = matchFee - nB; nB = 0; nW -= r; }
 
-                    // ১. ইউজারের প্রোফাইল আপডেট (ব্যালেন্স এবং জয়েন করা ম্যাচ লিস্ট)
-                    await db.ref('users/' + uid).update({ 
-                        balance: nB, 
-                        winning: nW, 
-                        played: (u.played || 0) + 1 
-                    });
-                    
-                    // এটিই My Match লিস্ট দেখানোর জন্য সবচেয়ে গুরুত্বপূর্ণ লাইন
-                    await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
+                    Swal.fire({title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
-                    // ২. ম্যাচের ভেতর প্লেয়ার কাউন্ট আপডেট
-                    await matchRef.update({ joined: joined + 1 });
-                    
-                    // ৩. ম্যাচের ভেতরে জয়েন করা প্লেয়ারদের ডিটেইলস সেভ
-                    const joinData = { 
-                        name: pData[0].name, 
-                        allPlayers: pData, 
-                        uid: uid, 
-                        time: Date.now() 
-                    };
+                    try {
+                        // ১. ইউজার প্রোফাইল আপডেট
+                        await db.ref('users/' + uid).update({ 
+                            balance: nB, 
+                            winning: nW, 
+                            played: (parseInt(u.played) || 0) + 1 
+                        });
+                        
+                        await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
 
-                    await matchRef.child('joined/' + uid).set(joinData);
-                    await matchRef.child('joined_players/' + uid).set(true);
+                        // ২. ম্যাচের প্লেয়ার সংখ্যা আপডেট (অ্যাটমিক ট্রানজেকশন ভালো হতো, তবে সিম্পল রাখার জন্য আপডেট করা হলো)
+                        await matchRef.update({ joined: joined + 1 });
+                        
+                        // ৩. ম্যাচের ভেতরে ডাটা সেভ
+                        const joinData = { 
+                            name: pData[0].name, 
+                            allPlayers: pData, 
+                            uid: uid, 
+                            time: Date.now() 
+                        };
+                        await matchRef.child('joined/' + uid).set(joinData);
+                        await matchRef.child('joined_players/' + uid).set(true);
 
-                    // ৪. অ্যাডমিন প্যানেলে প্লেয়ার লিস্ট দেখানোর জন্য
-                    await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
-                        name: pData[0].name,
-                        uid: uid,
-                        gameId: pData[0].gameId,
-                        details: pData
-                    });
+                        // ৪. অ্যাডমিন প্যানেলে (tesla-master.html) প্লেয়ার লিস্ট দেখানোর জন্য ডাটা পাঠানো
+                        await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
+                            name: pData[0].name,
+                            uid: uid,
+                            gameId: pData[0].gameId,
+                            details: pData,
+                            joinedAt: new Date().toLocaleString()
+                        });
 
-                    Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
+                        Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
+                    } catch (err) {
+                        console.error(err);
+                        Swal.fire("Error!", "সার্ভারে সমস্যা হচ্ছে, পরে চেষ্টা করুন।", "error");
+                    }
                 });
             }
         }
 
-        function showRules(id) { db.ref('matches/'+id+'/mRules').once('value', s => { Swal.fire('Match Rules', s.val() || "সতর্কতার সাথে গেম খেলুন। হ্যাকিং নিষিদ্ধ।", 'info'); }); }
+        function showRules(id) { db.ref('matches/'+id+'/mRules').once('value', s => { Swal.fire({title: 'Match Rules', html: s.val() || "সতর্কতার সাথে গেম খেলুন। হ্যাকিং নিষিদ্ধ।", icon: 'info', background: '#111', color: '#fff'}); }); }
         function initSlider() { let i = 0; setInterval(() => { const s = document.querySelectorAll('.slide'); if(s.length > 1) { i = (i + 1) % s.length; document.getElementById('sliderTrack').style.transform = `translateX(-${i * 100}%)`; } }, 5000); }
-        function startCountdowns() { setInterval(() => { document.querySelectorAll('.timer-box').forEach(el => { const t = el.getAttribute('data-time'); if(!t) return; const diff = new Date(t).getTime() - new Date().getTime(); if(diff < 0) { el.innerHTML = "LIVE"; return; } const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; }); }, 1000); }
+        function startCountdowns() { setInterval(() => { document.querySelectorAll('.timer-box').forEach(el => { const t = el.getAttribute('data-time'); if(!t) return; const diff = new Date(t).getTime() - new Date().getTime(); if(diff < 0) { el.innerHTML = "LIVE"; el.style.color = "#00ff00"; return; } const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; }); }, 1000); }
     </script>
 </body>
 </html>
