@@ -15,7 +15,6 @@
         .header { padding: 20px; text-align: center; background: #000; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 16px; letter-spacing: 2px; }
         
-        /* Match Card */
         .res-card { background: var(--c); border-radius: 20px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -23,13 +22,6 @@
         .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 11px; border: 1px solid var(--p); padding: 2px 8px; border-radius: 5px; }
         .m-title { font-size: 15px; font-weight: 600; color: #fff; margin: 10px 0; display: block; }
 
-        /* Stats Row */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-item { background: #000; padding: 8px; border-radius: 10px; text-align: center; border: 1px solid #222; }
-        .stat-label { font-size: 9px; color: #777; display: block; margin-bottom: 4px; }
-        .stat-value { font-size: 11px; color: var(--p); font-weight: bold; font-family: 'Orbitron'; }
-
-        /* Winner List */
         .winner-section { background: rgba(0, 255, 0, 0.05); border-radius: 15px; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(0, 255, 0, 0.1); }
         .section-tag { font-size: 10px; color: var(--y); font-family: 'Orbitron'; margin-bottom: 10px; display: block; text-align: center; }
         .winner-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; }
@@ -38,7 +30,6 @@
         .p-name { font-size: 13px; font-weight: 500; }
         .p-prize { color: var(--y); font-size: 12px; font-weight: bold; }
 
-        /* Full Result Table */
         .full-result-btn { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #aaa; font-size: 12px; cursor: pointer; transition: 0.3s; }
         .table-area { display: none; margin-top: 15px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -46,7 +37,6 @@
         td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; }
         .kill-badge { background: var(--r); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
 
-        /* Navigation */
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -86,31 +76,36 @@
             }
             
             let dataArr = [];
-            snap.forEach(c => { dataArr.push(c.val()); });
-            dataArr.reverse(); // নতুন রেজাল্ট আগে দেখাবে
+            snap.forEach(c => { 
+                let val = c.val();
+                val.key = c.key; 
+                dataArr.push(val); 
+            });
+            dataArr.reverse(); 
 
-            dataArr.forEach((r, index) => {
+            dataArr.forEach((r) => {
                 let winnerListHtml = "";
                 let fullResultHtml = "";
 
                 if(r.players) {
                     r.players.forEach(p => {
-                        if(p.type === 'winner') {
+                        // Admin Panel matching: 'Winner' with uppercase 'W'
+                        if(p.type === 'Winner') {
                             winnerListHtml += `
                             <div class="winner-row">
                                 <div class="p-info">
                                     <i class="fas fa-crown" style="color:var(--y); font-size:12px;"></i>
                                     <span class="p-name">${p.name}</span>
                                 </div>
-                                <div class="p-prize">TK ${p.prize}</div>
+                                <div class="p-prize">TK ${p.winning || 0}</div>
                             </div>`;
                         }
-                        // সব প্লেয়ারকেই টেবিল লিস্টে রাখা হচ্ছে
+                        
                         fullResultHtml += `
                         <tr>
-                            <td>${p.name}</td>
-                            <td><span class="kill-badge">${p.kills} KILLS</span></td>
-                            <td style="color:var(--y)">TK ${p.prize}</td>
+                            <td>${p.pos || '-'}. ${p.name}</td>
+                            <td><span class="kill-badge">${p.kills || 0} KILLS</span></td>
+                            <td style="color:var(--y)">TK ${p.winning || 0}</td>
                         </tr>`;
                     });
                 }
@@ -118,28 +113,22 @@
                 h += `
                 <div class="res-card">
                     <div class="res-header">
-                        <span class="m-no">#${r.matchNo}</span>
-                        <span style="font-size:10px; color:#555;">${r.date || ''}</span>
+                        <span class="m-no">MATCH ID: ${r.matchId}</span>
+                        <span style="font-size:10px; color:#555;">${r.time ? new Date(r.time).toLocaleDateString() : ''}</span>
                     </div>
                     
-                    <span class="m-title">${r.title || 'Tesla Esports Battle'}</span>
-
-                    <div class="stats-grid">
-                        <div class="stat-item"><span class="stat-label">WIN PRIZE</span><span class="stat-value">${r.winPrize || 0}</span></div>
-                        <div class="stat-item"><span class="stat-label">PER KILL</span><span class="stat-value">${r.perKill || 0}</span></div>
-                        <div class="stat-item"><span class="stat-label">ENTRY FEE</span><span class="stat-value">${r.entryFee || 0}</span></div>
-                    </div>
+                    <span class="m-title">Tesla Esports Battle Result</span>
 
                     <div class="winner-section">
                         <span class="section-tag">WINNERS</span>
                         ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">No winners listed</p>'}
                     </div>
 
-                    <button class="full-result-btn" onclick="toggleTable(${index})">
+                    <button class="full-result-btn" onclick="toggleTable('${r.key}')">
                         <i class="fas fa-chevron-down"></i> View Full Result
                     </button>
 
-                    <div class="table-area" id="table-${index}">
+                    <div class="table-area" id="table-${r.key}">
                         <table>
                             <thead>
                                 <tr><th>PLAYER</th><th>KILLS</th><th>WINNING</th></tr>
@@ -154,8 +143,8 @@
             document.getElementById('rList').innerHTML = h;
         });
 
-        function toggleTable(index) {
-            const el = document.getElementById('table-'+index);
+        function toggleTable(key) {
+            const el = document.getElementById('table-'+key);
             const btn = el.previousElementSibling;
             if(el.style.display === 'block') {
                 el.style.display = 'none';
