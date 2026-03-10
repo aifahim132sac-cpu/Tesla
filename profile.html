@@ -23,6 +23,24 @@
         .plus-btn { position: absolute; bottom: 5px; right: 5px; background: var(--p); color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid #000; font-size: 16px; }
 
         .u-info { text-align: center; margin-bottom: 25px; }
+        
+        /* UID Section Style - No changes to your original intent, just added copy functionality */
+        .uid-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #1a1a1a;
+            padding: 8px 15px;
+            border-radius: 25px;
+            margin-top: 5px;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .uid-container:active { transform: scale(0.95); }
+        #userUid { color: #555; font-size: 11px; margin: 0; letter-spacing: 1px; word-break: break-all; }
+
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 15px; }
         .s-box { background: var(--c); padding: 15px 5px; border-radius: 15px; border: 1px solid #222; text-align: center; }
         .s-box label { font-size: 9px; color: #777; display: block; margin-bottom: 5px; text-transform: uppercase; }
@@ -49,7 +67,6 @@
         .edit-name-icon { color: var(--p); margin-left: 8px; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .edit-name-icon:hover { transform: scale(1.2); }
 
-        /* উন্নত ও বড় হেল্পলাইন সেকশন */
         .helpline-box { 
             margin: 30px 15px; 
             padding: 25px; 
@@ -96,7 +113,11 @@
             <h3 id="userName" style="margin:0; font-family:'Orbitron';">Loading...</h3>
             <i class="fas fa-edit edit-name-icon" onclick="editUserName()"></i>
         </div>
-        <p id="userUid" style="color:#555; font-size:11px; margin-top:5px; letter-spacing: 1px;">UID: ---</p>
+        
+        <div class="uid-container" onclick="copyUid()">
+            <p id="userUid">UID: ---</p>
+            <i class="fas fa-copy" style="color:var(--p); font-size:12px;"></i>
+        </div>
     </div>
 
     <div class="stats-grid">
@@ -167,14 +188,18 @@
         const auth = firebase.auth(), db = firebase.database();
 
         let currentUserData = {};
+        let originalUid = ""; // সম্পূর্ণ আইডি রাখার জন্য
 
         auth.onAuthStateChanged(user => {
             if (user) {
+                originalUid = user.uid; // Firebase এর আসল ফুল আইডি
                 db.ref('users/' + user.uid).on('value', snap => {
                     const u = snap.val() || {};
                     currentUserData = u;
                     document.getElementById('userName').innerText = u.name || "Player";
-                    document.getElementById('userUid').innerText = "UID: " + user.uid.toUpperCase().substring(0,14);
+                    
+                    // আপডেট: এখানে এখন সম্পূর্ণ (Full) UID দেখাবে
+                    document.getElementById('userUid').innerText = "UID: " + user.uid;
                     
                     document.getElementById('balMain').innerText = (u.balance || 0) + " TK";
                     document.getElementById('balWin').innerText = (u.winning || 0) + " TK";
@@ -190,6 +215,23 @@
                 });
             } else { window.location.href = "auth.html"; }
         });
+
+        // ফুল আইডি কপি ফাংশন
+        function copyUid() {
+            if(!originalUid) return;
+            navigator.clipboard.writeText(originalUid).then(() => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    background: '#121212',
+                    color: '#fff'
+                });
+                Toast.fire({ icon: 'success', title: 'Full UID Copied!' });
+            });
+        }
 
         function editUserName() {
             Swal.fire({
@@ -212,113 +254,58 @@
             });
         }
 
-        // দ্রুত আপলোড ফাংশন
         async function uploadProfilePic(input) {
             const file = input.files[0];
             if(!file) return;
-
-            // ছবির সাইজ চেক (৫ এমবির বেশি হলে সতর্কবার্তা)
             if (file.size > 5 * 1024 * 1024) {
                 return Swal.fire("Error", "ছবি অনেক বড়! দয়া করে ছোট সাইজের ছবি দিন।", "error");
             }
-
             const apiKey = "bb6ae5282e75af49c1e446d17733e498"; 
-            
             Swal.fire({ 
                 title: 'Uploading...', 
                 text: 'Fasten your seatbelt!',
                 allowOutsideClick: false, 
                 didOpen: () => Swal.showLoading() 
             });
-
             let formData = new FormData();
             formData.append("image", file);
-
             try {
-                // সরাসরি হাই-স্পিড API কল
                 const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
                     method: "POST",
                     body: formData
                 });
                 const data = await response.json();
-                
                 if(data.success) {
                     const url = data.data.url;
                     await db.ref('users/' + auth.currentUser.uid).update({ profilePic: url });
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Done!',
-                        text: 'প্রোফাইল পিকচার আপডেট হয়েছে।',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                } else {
-                    throw new Error("Failed");
-                }
-            } catch(e) {
-                Swal.fire("Error", "ছবি আপলোড করা যাচ্ছে না।", "error");
-            }
+                    Swal.fire({ icon: 'success', title: 'Done!', text: 'প্রোফাইল পিকচার আপডেট হয়েছে।', timer: 1500, showConfirmButton: false });
+                } else { throw new Error("Failed"); }
+            } catch(e) { Swal.fire("Error", "ছবি আপলোড করা যাচ্ছে না।", "error"); }
         }
 
         function openTab(t) {
             const d = document.getElementById('depForm'), w = document.getElementById('witForm');
-            d.style.display = 'none';
-            w.style.display = 'none';
+            d.style.display = 'none'; w.style.display = 'none';
             if(t === 'dep') d.style.display = 'block';
             if(t === 'wit') w.style.display = 'block';
         }
 
         function submitDeposit() {
-            const m = document.getElementById('dMethod').value;
-            const s = document.getElementById('dSender').value;
-            const a = parseFloat(document.getElementById('dAmount').value);
-            const t = document.getElementById('dTrx').value;
-
+            const m = document.getElementById('dMethod').value, s = document.getElementById('dSender').value, 
+                  a = parseFloat(document.getElementById('dAmount').value), t = document.getElementById('dTrx').value;
             if(!m || !s || !a || !t) return Swal.fire("Error", "সবগুলো তথ্য দিন", "error");
-
-            db.ref('payments').push({
-                uid: auth.currentUser.uid,
-                name: currentUserData.name || "Unknown",
-                method: m,
-                number: s,
-                amount: a,
-                trxId: t,
-                type: "Deposit",
-                status: "Pending",
-                time: new Date().toLocaleString(),
-                timestamp: Date.now()
-            }).then(() => {
-                Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে।", "success");
-                openTab('');
-            });
+            db.ref('payments').push({ uid: auth.currentUser.uid, name: currentUserData.name || "Unknown", method: m, number: s, amount: a, trxId: t, type: "Deposit", status: "Pending", time: new Date().toLocaleString(), timestamp: Date.now() })
+            .then(() => { Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে।", "success"); openTab(''); });
         }
 
         function submitWithdraw() {
-            const m = document.getElementById('wMethod').value;
-            const n = document.getElementById('wNumber').value;
-            const a = parseFloat(document.getElementById('wAmount').value);
-
+            const m = document.getElementById('wMethod').value, n = document.getElementById('wNumber').value, a = parseFloat(document.getElementById('wAmount').value);
             if(!m || !n || !a) return Swal.fire("Error", "সবগুলো তথ্য দিন", "error");
-
             const winBal = currentUserData.winning || 0;
-
             if (a > winBal) return Swal.fire("Error", "আপনার পর্যাপ্ত উইনিং ব্যালেন্স নেই!", "error");
             if (a < 50) return Swal.fire("Error", "সর্বনিম্ন ৫০ টাকা উইথড্র করা যাবে।", "error");
-
-            db.ref('payments').push({
-                uid: auth.currentUser.uid,
-                name: currentUserData.name || "Unknown",
-                method: m,
-                number: n,
-                amount: a,
-                type: "Withdraw",
-                status: "Pending",
-                time: new Date().toLocaleString(),
-                timestamp: Date.now()
-            }).then(() => {
-                Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।", "success");
-                openTab('');
-            });
+            db.ref('payments').push({ uid: auth.currentUser.uid, name: currentUserData.name || "Unknown", method: m, number: n, amount: a, type: "Withdraw", status: "Pending", time: new Date().toLocaleString(), timestamp: Date.now() })
+            .then(() => { Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।", "success"); openTab(''); });
         }
 
         function handleLogout() { auth.signOut().then(() => window.location.href = "auth.html"); }
