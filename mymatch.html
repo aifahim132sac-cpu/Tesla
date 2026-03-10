@@ -37,85 +37,91 @@
         <p style="text-align:center; padding:50px; color:#444;">ম্যাচ চেক করা হচ্ছে...</p>
     </div>
 
-    <div class="nav">
+    <nav class="nav">
         <a href="index.html" class="n-i"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
         <a href="mymatch.html" class="n-i active"><i class="fas fa-trophy"></i>My Match</a>
         <a href="profile.html" class="n-i"><i class="fas fa-user-circle"></i>Profile</a>
-    </div>
+    </nav>
 
     <script>
-        const firebaseConfig = {
+        const config = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046",
-            storageBucket: "teot-a3046.appspot.com"
+            projectId: "teot-a3046"
         };
-        firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(config);
         const auth = firebase.auth(), db = firebase.database();
 
         auth.onAuthStateChanged(user => { 
-            if (user) { 
-                loadMyMatches(user.uid); 
-            } else { 
-                window.location.href = "auth.html"; 
-            } 
+            if (user) { loadMyMatches(user.uid); } 
+            else { window.location.href = "auth.html"; } 
         });
 
-        function loadMyMatches(uid) {
-            db.ref('matches').on('value', snap => {
+        async function loadMyMatches(uid) {
+            // ইউজারের জয়েন করা ম্যাচের লিস্ট আগে নিয়ে আসা
+            db.ref('users/' + uid + '/joinedMatches').on('value', async (userSnap) => {
                 let h = "";
-                let hasJoined = false;
-                const matches = snap.val();
+                if (!userSnap.exists()) {
+                    document.getElementById('myList').innerHTML = `<div style="text-align:center; margin-top:80px;"><i class="fas fa-ghost" style="font-size:50px; color:#222;"></i><p style="color:#666; margin-top:15px;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p></div>`;
+                    return;
+                }
 
-                if(matches) {
-                    Object.keys(matches).forEach(matchId => {
-                        const m = matches[matchId];
-                        
-                        if(m.joined && m.joined[uid]) {
-                            hasJoined = true;
+                const myMatches = userSnap.val(); // এটা মূলত ম্যাচ আইডি গুলোর অবজেক্ট
+                const matchIds = Object.keys(myMatches);
 
-                            // নতুন স্মার্ট লজিক: 
-                            // আইডি যদি ৪ অক্ষরের কম হয়, অথবা TBA/Pending থাকে, তবেই ওয়েটিং মেসেজ দেখাবে।
+                // সব ম্যাচ থেকে শুধু আমার জয়েন করা ম্যাচগুলো খুঁজে বের করা
+                db.ref('matches').once('value', (snap) => {
+                    const allMatches = snap.val();
+                    if (!allMatches) return;
+
+                    matchIds.forEach(id => {
+                        // ডাটাবেজে যদি পুশ আইডি বা ম্যাচ আইডি কোনো একভাবে থাকে, সেটা চেক করা
+                        let m = null;
+                        if (allMatches[id]) {
+                            m = allMatches[id];
+                        } else {
+                            // ম্যাচ নম্বর (Ex: 01) দিয়েও চেক করা হচ্ছে ব্যাকআপ হিসেবে
+                            m = Object.values(allMatches).find(x => x.matchNo === id);
+                        }
+
+                        if (m) {
                             const roomId = m.roomId ? m.roomId.toString().trim() : "";
-                            const isReady = (roomId.length >= 4 && 
-                                            roomId.toLowerCase() !== "pending" && 
-                                            roomId.toLowerCase() !== "tba");
+                            const roomPass = m.roomPass ? m.roomPass.toString().trim() : "";
+                            
+                            // যদি আইডি এবং পাস থাকে তবেই দেখানো হবে
+                            const isReady = (roomId.length > 0 && roomId.toLowerCase() !== "pending" && roomId.toLowerCase() !== "tba");
 
                             h += `<div class="my-card">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
                                     <span style="color:var(--p); font-family:Orbitron; font-size:10px;">MATCH #${m.matchNo || 'N/A'}</span>
-                                    <span style="font-size:10px; color:#777; background:#222; padding:2px 8px; border-radius:4px;">${m.map || 'ERANGEL'}</span>
+                                    <span style="font-size:10px; color:#777; background:#222; padding:2px 8px; border-radius:4px;">${m.mType || 'SOLO'}</span>
                                 </div>
                                 <h3 style="margin:8px 0; font-size:16px;">${m.title}</h3>
                                 <div style="font-size:11px; color:#aaa; margin-bottom:10px;">
-                                    <i class="far fa-clock"></i> ${m.time || 'TBA'} | <i class="fas fa-users"></i> ${m.type || 'SOLO'}
+                                    <i class="far fa-clock"></i> ${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'}
                                 </div>
                                 <div class="room-box">
                                     ${isReady ? 
-                                        `<div class="r-val"><span>ID: ${m.roomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.roomId}')"></i></div>
-                                         <div class="r-val"><span>PASS: ${m.roomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.roomPass}')"></i></div>` 
+                                        `<div class="r-val"><span>Room ID: ${roomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${roomId}')"></i></div>
+                                         <div class="r-val"><span>Pass: ${roomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${roomPass}')"></i></div>` 
                                         : `<div style="font-size:12px; color:#ffcc00; padding:15px; line-height:1.6;">
                                             <i class="fas fa-clock" style="font-size:18px; margin-bottom:8px;"></i><br>
-                                            রুম আইডি এবং পাসওয়ার্ড ম্যাচ শুরুর ৫-১০ মিনিট আগে এখানে দেওয়া হবে। একটু অপেক্ষা করুন।
+                                            ম্যাচ শুরুর ১০-১৫ মিনিট আগে আইডি এবং পাসওয়ার্ড এখানে দেওয়া হবে। একটু অপেক্ষা করুন।
                                            </div>`
                                     }
                                 </div>
                             </div>`;
                         }
                     });
-                }
-
-                if(!hasJoined) {
-                    document.getElementById('myList').innerHTML = `
-                    <div style="text-align:center; margin-top:80px;">
-                        <i class="fas fa-ghost" style="font-size:50px; color:#222;"></i>
-                        <p style="color:#666; margin-top:15px;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>
-                    </div>`;
-                } else {
-                    document.getElementById('myList').innerHTML = h;
-                }
+                    
+                    if(h === "") {
+                        document.getElementById('myList').innerHTML = `<div style="text-align:center; margin-top:80px;"><p style="color:#666;">ম্যাচ লোড করা সম্ভব হচ্ছে না।</p></div>`;
+                    } else {
+                        document.getElementById('myList').innerHTML = h;
+                    }
+                });
             });
         }
 
