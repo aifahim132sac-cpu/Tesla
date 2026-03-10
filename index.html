@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* আপনার অরিজিনাল স্টাইল হুবহু রাখা হয়েছে */
         :root { --p: #00ff00; --b: #050505; --c: #111; --y: #ffcc00; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; overflow-x: hidden; }
         #authModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: center; }
@@ -36,8 +35,6 @@
         .g-box { background: #000; padding: 12px 5px; border-radius: 12px; text-align: center; border: 1px solid #222; }
         .g-label { font-size: 9px; color: #777; text-transform: uppercase; }
         .g-val { font-size: 12px; font-weight: 700; color: #fff; font-family: 'Orbitron'; }
-        .id-pass-box { background: #000; border: 1px dashed var(--p); border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center; }
-        .id-content { font-size: 13px; color: var(--p); font-weight: bold; }
         .slot-wrap { margin-top: 15px; background: #0a0a0a; padding: 10px; border-radius: 12px; }
         .s-bar { height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
         .s-fill { height: 100%; background: var(--p); transition: 1s ease-in-out; }
@@ -55,23 +52,7 @@
 <body>
 
     <div id="blockLayer">
-        <div>
-            <i class="fas fa-user-slash" style="font-size: 60px; color: #ff3e3e; margin-bottom: 20px;"></i>
-            <h2 style="font-family: 'Orbitron';">ACCOUNT BLOCKED</h2>
-            <p id="blockMsg" style="color: #aaa;"></p>
-        </div>
-    </div>
-
-    <div id="authModal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeAuth()">&times;</span>
-            <h3 class="m-title" id="authTitle">LOGIN</h3>
-            <input type="email" id="authEmail" class="auth-input" placeholder="Email">
-            <input type="password" id="authPass" class="auth-input" placeholder="Password">
-            <input type="text" id="authName" class="auth-input" placeholder="Full Name" style="display:none;">
-            <button class="auth-btn" onclick="handleAuth()">LET'S PLAY</button>
-            <p id="toggleText" style="font-size: 12px; margin-top: 15px;">New here? <span style="color:var(--p); cursor:pointer;" onclick="toggleAuth()">Create Account</span></p>
-        </div>
+        <div><i class="fas fa-user-slash" style="font-size: 60px; color: #ff3e3e; margin-bottom: 20px;"></i><h2 style="font-family: 'Orbitron';">ACCOUNT BLOCKED</h2><p id="blockMsg" style="color: #aaa;"></p></div>
     </div>
 
     <div class="header"><h2>TESLA ESPORTS</h2></div>
@@ -92,7 +73,8 @@
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046"
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
@@ -104,7 +86,7 @@
                     const u = snapshot.val();
                     if (u && u.isBlocked) {
                         document.getElementById('blockLayer').style.display = 'flex';
-                        document.getElementById('blockMsg').innerText = `UID: ${user.uid}\nআপনার অ্যাকাউন্টটি ব্লক করা হয়েছে।`;
+                        document.getElementById('blockMsg').innerText = `আপনার অ্যাকাউন্টটি ব্লক করা হয়েছে।`;
                     } else {
                         document.getElementById('blockLayer').style.display = 'none';
                     }
@@ -120,20 +102,18 @@
             initSlider();
         });
 
-        // ৩. রিয়েল-টাইম ম্যাচ লিস্ট (অ্যাডমিন সিঙ্ক সহ)
-        db.ref('matches').on('value', async snap => {
+        // ৩. রিয়েল-টাইম ম্যাচ লিস্ট
+        db.ref('matches').on('value', snap => {
             let h = "";
             const currentUid = auth.currentUser ? auth.currentUser.uid : null;
-            let allJoins = {};
-            if(currentUid) {
-                const joinsSnap = await db.ref('match_joins').once('value');
-                allJoins = joinsSnap.val() || {};
-            }
-
+            
             snap.forEach(c => {
                 const m = c.val();
-                const total = m.slot || 48, joined = m.joined || 0, percent = (joined/total)*100;
-                const isJoined = currentUid && allJoins[c.key] && allJoins[c.key][currentUid];
+                const total = m.slot || 48;
+                const joined = m.joined || 0;
+                const percent = (joined/total)*100;
+                // চেক করছে ইউজার অলরেডি জয়েন করেছে কি না
+                const isJoined = currentUid && m.joined_players && m.joined_players[currentUid];
 
                 h += `<div class="match-card">
                     <div class="match-header"><span class="match-mode">${m.mType || 'SOLO'}</span><span>#${m.matchNo}</span></div>
@@ -141,18 +121,10 @@
                         <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.title}</div>
                         <div class="timer-box" data-time="${m.mTimeSelect}">Loading...</div>
                         <div class="m-grid">
-                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.mPrize} TK</div></div>
-                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.mPk} TK</div></div>
-                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.mFee} TK</div></div>
+                            <div class="g-box"><div class="g-label">Prize</div><div class="g-val">${m.mPrize}</div></div>
+                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.mPk}</div></div>
+                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.mFee}</div></div>
                         </div>
-
-                        ${isJoined ? `
-                        <div class="id-pass-box">
-                            <span style="font-size:10px; color:#777;">ROOM ID & PASSWORD</span>
-                            <div class="id-content">ID: ${m.mRoomId || 'Wait...'}</div>
-                            <div class="id-content" style="color:#fff;">Pass: ${m.mRoomPass || 'Wait...'}</div>
-                        </div>` : ''}
-
                         <div class="slot-wrap">
                             <div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
                             <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa;">
@@ -161,7 +133,7 @@
                         </div>
                         <div class="btn-row">
                             <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mType}', ${m.mFee}, ${joined}, ${total})">${isJoined ? 'JOINED' : 'JOIN'}</button>
+                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mType}', ${m.mFee}, ${joined}, ${total})">${isJoined ? 'ALREADY JOINED' : 'JOIN MATCH'}</button>
                         </div>
                     </div>
                 </div>`;
@@ -170,25 +142,31 @@
             startCountdowns();
         });
 
-        // ৪. আপনার অরিজাল বড় জয়েন ফাংশন
+        // ৪. ফুল আপডেট করা জয়েন ফাংশন
         async function handleJoin(id, mode, fee, joined, total) {
-            if(!auth.currentUser) return openAuth();
-            if(joined >= total) return Swal.fire("Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
+            if(!auth.currentUser) return window.location.href = "auth.html";
             
+            const uid = auth.currentUser.uid;
+            const matchRef = db.ref('matches/' + id);
+            
+            // ১. চেক করছে অলরেডি জয়েন কি না
+            const check = await matchRef.child('joined_players/' + uid).once('value');
+            if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
+
+            if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
+            
+            // ২. প্লেয়ার ডিটেইলস ইনপুট
             let pCount = 1; let mLow = mode.toLowerCase();
             if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
             
             let html = `<p style="color:#aaa; font-size:13px;">সঠিক ইন-গেম নাম এবং আইডি দিন।</p>`;
             for(let i=1; i<=pCount; i++) {
-                html += `<input id="pName${i}" class="swal2-input" placeholder="Player ${i} Name">
-                         <input id="pUid${i}" class="swal2-input" placeholder="Player ${i} UID">`;
+                html += `<input id="pName${i}" class="swal2-input" placeholder="Player ${i} Name" style="background:#222; color:#fff; border:1px solid #333;">
+                         <input id="pUid${i}" class="swal2-input" placeholder="Player ${i} UID" style="background:#222; color:#fff; border:1px solid #333;">`;
             }
 
             const { value: pData } = await Swal.fire({
-                title: 'Enter Details',
-                html: html,
-                confirmButtonText: 'JOIN NOW',
-                showCancelButton: true,
+                title: 'Join Match', html: html, confirmButtonText: 'CONFIRM JOIN', showCancelButton: true, confirmButtonColor: '#00ff00', background: '#111', color: '#fff',
                 preConfirm: () => {
                     let d = [];
                     for(let i=1; i<=pCount; i++) {
@@ -201,27 +179,32 @@
             });
 
             if(pData) {
-                const uid = auth.currentUser.uid;
                 db.ref('users/' + uid).once('value', async s => {
                     const u = s.val();
-                    if((u.balance || 0) < fee) return Swal.fire("Low Balance!", "টাকা ডিপোজিট করুন।", "error");
+                    const totalBal = (u.balance || 0) + (u.winning || 0);
+
+                    if(totalBal < fee) return Swal.fire("Low Balance!", "টাকা ডিপোজিট করুন।", "error");
                     
-                    await db.ref('users/' + uid).update({ balance: u.balance - fee });
-                    await db.ref('matches/' + id).update({ joined: joined + 1 });
-                    await db.ref('match_joins/' + id + '/' + uid).set({ players: pData, time: Date.now() });
-                    Swal.fire("Success!", "জয়েন করা হয়েছে।", "success");
+                    // ৩. টাকা কাটার লজিক
+                    let nB = u.balance, nW = u.winning;
+                    if(nB >= fee) nB -= fee; else { let r = fee - nB; nB = 0; nW -= r; }
+
+                    // ৪. ডাটাবেজ আপডেট (ইউজার ও ম্যাচ)
+                    await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (u.played || 0) + 1 });
+                    await matchRef.update({ joined: joined + 1 });
+                    
+                    // ৫. 'joined' এবং 'joined_players' উভয় জায়গায় ডাটা রাখা (mymatch.html এর জন্য)
+                    await matchRef.child('joined/' + uid).set({ name: u.name, players: pData, time: Date.now() });
+                    await matchRef.child('joined_players/' + uid).set(true);
+
+                    Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
                 });
             }
         }
 
-        // বাকি সব আপনার অরিজিনাল ফাংশন
-        function showRules(id) { db.ref('matches/'+id+'/mRules').once('value', s => { Swal.fire('Rules', s.val() || "General Rules", 'info'); }); }
+        function showRules(id) { db.ref('matches/'+id+'/mRules').once('value', s => { Swal.fire('Match Rules', s.val() || "সতর্কতার সাথে গেম খেলুন। হ্যাকিং নিষিদ্ধ।", 'info'); }); }
         function initSlider() { let i = 0; setInterval(() => { const s = document.querySelectorAll('.slide'); if(s.length > 1) { i = (i + 1) % s.length; document.getElementById('sliderTrack').style.transform = `translateX(-${i * 100}%)`; } }, 5000); }
         function startCountdowns() { setInterval(() => { document.querySelectorAll('.timer-box').forEach(el => { const t = el.getAttribute('data-time'); if(!t) return; const diff = new Date(t).getTime() - new Date().getTime(); if(diff < 0) { el.innerHTML = "LIVE"; return; } const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; }); }, 1000); }
-        function openAuth() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
-        function toggleAuth() { /* আপনার আগের toggle লজিক */ }
-        async function handleAuth() { /* আপনার আগের auth লজিক */ }
     </script>
 </body>
 </html>
