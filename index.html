@@ -21,7 +21,7 @@
         .auth-btn { width: 100%; padding: 15px; background: var(--p); border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; color: #000; }
         .header { background: #000; padding: 20px 0; border-bottom: 1px solid #1a1a1a; text-align: center; }
         .header h2 { font-family: 'Orbitron'; color: var(--p); margin: 0; font-size: 22px; letter-spacing: 3px; }
-        .slider-container { width: 92%; height: 160px; overflow: hidden; position: position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; }
+        .slider-container { width: 92%; height: 160px; overflow: hidden; position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; }
         .slider-track { display: flex; transition: transform 0.5s ease; height: 100%; }
         .slide { min-width: 100%; height: 100%; object-fit: cover; }
         #noticeBar { background: rgba(0, 255, 0, 0.05); color: var(--p); padding: 12px 0; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; overflow: hidden; }
@@ -47,6 +47,33 @@
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
         #blockLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+        
+        /* Join Form Specific Style */
+        .join-input-box {
+            text-align: left;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            padding: 12px;
+            border-radius: 10px;
+            background: #000;
+        }
+        .join-input-box label {
+            color: var(--p);
+            font-size: 10px;
+            font-family: 'Orbitron';
+            display: block;
+            margin-bottom: 5px;
+        }
+        .swal-custom-input {
+            width: 100% !important;
+            margin: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            color: #fff !important;
+            font-size: 14px !important;
+            padding: 5px 0 !important;
+            outline: none !important;
+        }
     </style>
 </head>
 <body>
@@ -79,16 +106,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database(), auth = firebase.auth();
 
-        // --- User Status & Block Check ---
         auth.onAuthStateChanged(user => {
             if (user) {
-                // ১. অনলাইন স্ট্যাটাস আপডেট লজিক
                 const statusRef = db.ref('users/' + user.uid + '/isOnline');
                 statusRef.set(true);
-                // ইউজার ডিসকানেক্ট হলে অটোমেটিক false হবে
                 statusRef.onDisconnect().set(false);
 
-                // ২. ব্লক চেক লজিক
                 db.ref('users/' + user.uid).on('value', snapshot => {
                     const u = snapshot.val();
                     if (u && u.isBlocked) {
@@ -154,21 +177,37 @@
             
             const check = await matchRef.child('joined_players/' + uid).once('value');
             if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
-
             if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
             
             let pCount = 1; 
             let mLow = mode ? mode.toLowerCase() : "";
             if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
             
-            let html = `<p style="color:#aaa; font-size:13px;">সঠিক ইন-গেম নাম এবং আইডি দিন।</p>`;
+            let html = `<p style="color:#aaa; font-size:12px; margin-bottom:20px;">আপনার গেমের সঠিক তথ্য দিন।</p>`;
             for(let i=1; i<=pCount; i++) {
-                html += `<input id="pName${i}" class="swal2-input" placeholder="Player ${i} Name" style="background:#222; color:#fff; border:1px solid #333;">
-                         <input id="pUid${i}" class="swal2-input" placeholder="Player ${i} Game ID" style="background:#222; color:#fff; border:1px solid #333;">`;
+                html += `
+                <div class="join-input-box">
+                    <label>PLAYER ${i} NAME</label>
+                    <input id="pName${i}" class="swal-custom-input" placeholder="Enter In-Game Name">
+                </div>
+                <div class="join-input-box">
+                    <label>PLAYER ${i} GAME UID</label>
+                    <input id="pUid${i}" class="swal-custom-input" placeholder="Paste Full Game UID">
+                </div>`;
             }
 
             const { value: pData } = await Swal.fire({
-                title: 'Join Match', html: html, confirmButtonText: 'CONFIRM JOIN', showCancelButton: true, confirmButtonColor: '#00ff00', background: '#111', color: '#fff',
+                title: 'JOIN MATCH', 
+                html: html, 
+                confirmButtonText: 'CONFIRM JOIN', 
+                showCancelButton: true, 
+                confirmButtonColor: '#00ff00', 
+                background: '#111', 
+                color: '#fff',
+                customClass: {
+                    title: 'm-title',
+                    confirmButton: 'auth-btn'
+                },
                 preConfirm: () => {
                     let d = [];
                     for(let i=1; i<=pCount; i++) {
@@ -191,32 +230,16 @@
                     if(totalBal < matchFee) return Swal.fire("Low Balance!", "আপনার পর্যাপ্ত টাকা নেই। দয়া করে ডিপোজিট করুন।", "error");
                     
                     let nB = balance, nW = winning;
-                    if(nB >= matchFee) {
-                        nB -= matchFee; 
-                    } else {
-                        let r = matchFee - nB;
-                        nB = 0;
-                        nW -= r;
-                    }
+                    if(nB >= matchFee) { nB -= matchFee; } else { let r = matchFee - nB; nB = 0; nW -= r; }
 
                     Swal.fire({title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
                     try {
-                        await db.ref('users/' + uid).update({ 
-                            balance: nB, 
-                            winning: nW, 
-                            played: (parseInt(u.played) || 0) + 1 
-                        });
-                        
+                        await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (parseInt(u.played) || 0) + 1 });
                         await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
                         await matchRef.update({ joined: joined + 1 });
                         
-                        const joinData = { 
-                            name: pData[0].name, 
-                            allPlayers: pData, 
-                            uid: uid, 
-                            time: Date.now() 
-                        };
+                        const joinData = { name: pData[0].name, allPlayers: pData, uid: uid, time: Date.now() };
                         await matchRef.child('joined/' + uid).set(joinData);
                         await matchRef.child('joined_players/' + uid).set(true);
 
@@ -230,7 +253,6 @@
 
                         Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
                     } catch (err) {
-                        console.error(err);
                         Swal.fire("Error!", "সার্ভারে সমস্যা হচ্ছে, পরে চেষ্টা করুন।", "error");
                     }
                 });
