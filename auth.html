@@ -121,6 +121,7 @@
                 .catch(err => Swal.fire({ icon: 'error', title: 'Failed', text: err.message, background: '#111', color: '#fff' }));
         }
 
+        // --- রেজিস্ট্রেশন ফাংশন আপডেট করা হয়েছে ---
         function handleReg() {
             const n = document.getElementById('rName').value.trim(), e = document.getElementById('rEmail').value.trim(), p = document.getElementById('rPass').value;
             
@@ -129,17 +130,21 @@
 
             showLoading();
             auth.createUserWithEmailAndPassword(e, p).then(res => {
+                // এখানে ডাটাবেজ স্ট্রাকচার একদম নিখুঁত করা হয়েছে
                 const userData = { 
                     name: n, 
                     email: e, 
-                    balance: 0,    
-                    winning: 0, 
-                    played: 0,     
+                    balance: 0,    // মেইন ব্যালেন্স
+                    winning: 0,    // উইনিং ব্যালেন্স
+                    played: 0,     // ম্যাচ খেলার সংখ্যা
                     uid: res.user.uid,
-                    joinedMatches: {}, // জয়েন করা ম্যাচের লিস্টের জন্য এম্পটি অবজেক্ট
-                    profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    joinedMatches: {}, // এটি ব্ল্যাঙ্ক রাখা হয়েছে যেন ম্যাচ জয়েনিং এ সমস্যা না হয়
+                    profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png", // ডিফল্ট ছবি
+                    status: "active", // ইউজারের স্ট্যাটাস
+                    createdAt: new Date().toISOString() // একাউন্ট খোলার সময়
                 };
 
+                // ডাটাবেজে ডাটা পুশ করা হচ্ছে
                 db.ref('users/' + res.user.uid).set(userData).then(() => {
                     Swal.close();
                     window.location.href = "index.html";
