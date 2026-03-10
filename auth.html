@@ -54,7 +54,7 @@
         <div id="loginForm">
             <input type="email" id="lEmail" placeholder="Email Address">
             <input type="password" id="lPass" placeholder="Password">
-            <button class="main-btn" onclick="handleLogin()">LET'S PLAY</button>
+            <button class="main-btn" id="loginBtn" onclick="handleLogin()">LET'S PLAY</button>
             <a class="forgot-pass" onclick="handleForgot()">Forgot Password?</a>
         </div>
 
@@ -62,7 +62,7 @@
             <input type="text" id="rName" placeholder="Full Name">
             <input type="email" id="rEmail" placeholder="Email Address">
             <input type="password" id="rPass" placeholder="Password">
-            <button class="main-btn" onclick="handleReg()">CREATE ACCOUNT</button>
+            <button class="main-btn" id="regBtn" onclick="handleReg()">CREATE ACCOUNT</button>
         </div>
     </div>
 
@@ -72,7 +72,7 @@
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "teot-a3046",
-            storageBucket: "teot-a3046.appspot.com" // আপলোড সুবিধার জন্য এটি যোগ করা হয়েছে
+            storageBucket: "teot-a3046.appspot.com"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
@@ -86,46 +86,67 @@
             document.getElementById('regTab').classList.toggle('active', type === 'reg');
         }
 
+        function showLoading() {
+            Swal.fire({
+                title: 'Processing...',
+                html: 'অনুগ্রহ করে অপেক্ষা করুন',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+        }
+
         function handleLogin() {
-            const e = document.getElementById('lEmail').value, p = document.getElementById('lPass').value;
+            const e = document.getElementById('lEmail').value.trim(), p = document.getElementById('lPass').value;
             if(!e || !p) return Swal.fire({ icon: 'warning', title: 'Oops!', text: 'Email এবং Password দিন', background: '#111', color: '#fff' });
 
+            showLoading();
             auth.signInWithEmailAndPassword(e, p)
                 .then(() => {
-                    window.location.href = "profile.html"; // সাকসেস হলে সরাসরি প্রোফাইলে যাবে
+                    Swal.close();
+                    window.location.href = "index.html"; 
                 })
-                .catch(err => Swal.fire({ icon: 'error', title: 'Login Failed', text: err.message, background: '#111', color: '#fff' }));
+                .catch(err => {
+                    Swal.fire({ icon: 'error', title: 'Login Failed', text: 'আপনার ইমেইল অথবা পাসওয়ার্ড ভুল।', background: '#111', color: '#fff' });
+                });
         }
 
         function handleForgot() {
-            const email = document.getElementById('lEmail').value;
+            const email = document.getElementById('lEmail').value.trim();
             if(!email) return Swal.fire({ icon: 'info', title: 'ইমেইল দিন', text: 'আপনার ইমেইলটি লিখে তারপর Forgot Password এ ক্লিক করুন।', background: '#111', color: '#fff' });
 
             auth.sendPasswordResetEmail(email)
                 .then(() => {
-                    Swal.fire({ icon: 'success', title: 'Email Sent!', text: 'পাসওয়ার্ড রিসেট করার লিঙ্ক ইমেইলে পাঠানো হয়েছে।', background: '#111', color: '#fff' });
+                    Swal.fire({ icon: 'success', title: 'Email Sent!', text: 'পাসওয়ার্ড রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে। স্প্যাম ফোল্ডারও চেক করবেন।', background: '#111', color: '#fff' });
                 })
                 .catch(err => Swal.fire({ icon: 'error', title: 'Failed', text: err.message, background: '#111', color: '#fff' }));
         }
 
         function handleReg() {
-            const n = document.getElementById('rName').value, e = document.getElementById('rEmail').value, p = document.getElementById('rPass').value;
+            const n = document.getElementById('rName').value.trim(), e = document.getElementById('rEmail').value.trim(), p = document.getElementById('rPass').value;
+            
             if(!n || !e || !p) return Swal.fire({ icon: 'warning', title: 'Oops!', text: 'সবগুলো ঘর পূরণ করুন', background: '#111', color: '#fff' });
+            if(p.length < 6) return Swal.fire({ icon: 'warning', title: 'পাসওয়ার্ড দুর্বল', text: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন।', background: '#111', color: '#fff' });
 
+            showLoading();
             auth.createUserWithEmailAndPassword(e, p).then(res => {
-                // আপনার প্রোফাইল পেজ এবং অ্যাডমিন প্যানেলের সাথে মিল রেখে ফিল্ডগুলো আপডেট করা হয়েছে
-                db.ref('users/' + res.user.uid).set({ 
+                const userData = { 
                     name: n, 
                     email: e, 
-                    balance: 0,    // 'deposit' এর বদলে 'balance' যা অ্যাডমিন ও প্রোফাইলে ব্যবহৃত
+                    balance: 0,    
                     winning: 0, 
-                    played: 0,     // 'playedCount' এর বদলে 'played'
+                    played: 0,     
                     uid: res.user.uid,
-                    profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png" // ডিফল্ট ফটো
-                }).then(() => {
-                    window.location.href = "profile.html";
+                    joinedMatches: {}, // জয়েন করা ম্যাচের লিস্টের জন্য এম্পটি অবজেক্ট
+                    profilePic: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                };
+
+                db.ref('users/' + res.user.uid).set(userData).then(() => {
+                    Swal.close();
+                    window.location.href = "index.html";
                 });
-            }).catch(err => Swal.fire({ icon: 'error', title: 'Registration Failed', text: err.message, background: '#111', color: '#fff' }));
+            }).catch(err => {
+                Swal.fire({ icon: 'error', title: 'Registration Failed', text: err.message, background: '#111', color: '#fff' });
+            });
         }
     </script>
 </body>
