@@ -10,17 +10,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #121212; --y: #ffcc00; --r: #ff4444; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
         
         .header { padding: 20px; text-align: center; background: #000; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 16px; letter-spacing: 2px; }
         
-        .res-card { background: var(--c); border-radius: 20px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* দ্রুত লোডিং এনিমেশন */
+        .res-card { background: var(--c); border-radius: 20px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
         .res-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .m-no { color: var(--p); font-family: 'Orbitron'; font-size: 11px; border: 1px solid var(--p); padding: 2px 8px; border-radius: 5px; }
-        .m-time { font-size: 10px; color: #555; }
+        .m-time { font-size: 10px; color: #777; }
 
         .winner-section { background: rgba(0, 255, 0, 0.05); border-radius: 15px; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(0, 255, 0, 0.1); }
         .section-tag { font-size: 10px; color: var(--y); font-family: 'Orbitron'; margin-bottom: 10px; display: block; text-align: center; }
@@ -30,12 +31,18 @@
         .p-name { font-size: 13px; font-weight: 500; }
         .p-prize { color: var(--y); font-size: 12px; font-weight: bold; }
 
-        .full-result-btn { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; color: #aaa; font-size: 12px; cursor: pointer; transition: 0.3s; }
-        .table-area { display: none; margin-top: 15px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: left; color: #777; padding: 10px; border-bottom: 1px solid #222; font-weight: 500; }
-        td { padding: 12px 10px; border-bottom: 1px solid #1a1a1a; }
-        .kill-badge { background: var(--r); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
+        .full-result-btn { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 12px; cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .full-result-btn:active { transform: scale(0.98); background: #222; }
+
+        .table-area { display: none; margin-top: 15px; overflow: hidden; border-radius: 10px; border: 1px solid #222; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; background: #080808; }
+        th { text-align: left; color: #555; padding: 12px 10px; border-bottom: 1px solid #222; font-size: 10px; text-transform: uppercase; }
+        td { padding: 12px 10px; border-bottom: 1px solid #111; }
+        .kill-badge { background: var(--r); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+
+        /* No Result UI */
+        #no-res { text-align: center; padding: 150px 20px; color: #444; display: none; }
+        #no-res i { font-size: 50px; margin-bottom: 15px; color: #222; }
 
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
@@ -47,8 +54,11 @@
 
     <div class="header"><div class="title">MATCH RESULTS</div></div>
     
-    <div id="rList">
-        <div style="text-align:center; padding:100px 20px; color:#555;">ফলাফল লোড হচ্ছে...</div>
+    <div id="rList"></div>
+
+    <div id="no-res">
+        <i class="fas fa-folder-open"></i>
+        <p style="font-family: 'Orbitron'; letter-spacing: 1px;">NO RESULTS FOUND</p>
     </div>
 
     <nav class="nav">
@@ -69,98 +79,113 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // রিয়েল-টাইম ডাটা ফেচিং
+        // রিয়েল-টাইম এবং ফাস্ট লোডিং সিস্টেম
         db.ref('results').on('value', snap => {
-            let h = ""; 
+            const listArea = document.getElementById('rList');
+            const noResArea = document.getElementById('no-res');
+            
             if(!snap.exists()) {
-                document.getElementById('rList').innerHTML = "<div style='text-align:center; padding:100px 20px; color:#555;'>No Results Yet!</div>";
+                listArea.innerHTML = "";
+                noResArea.style.display = "block";
                 return;
             }
-            
-            let dataArr = [];
-            snap.forEach(c => { 
-                let val = c.val();
-                val.key = c.key; 
-                dataArr.push(val); 
+
+            noResArea.style.display = "none";
+            let htmlContent = "";
+            let resultsArray = [];
+
+            snap.forEach(child => {
+                let val = child.val();
+                val.key = child.key;
+                resultsArray.push(val);
             });
-            dataArr.reverse(); // সর্বশেষ রেজাল্ট উপরে দেখাবে
 
-            dataArr.forEach((r) => {
-                let winnerListHtml = "";
-                let fullResultHtml = "";
-
+            // সর্বশেষ রেজাল্ট সবার আগে দেখাবে
+            resultsArray.reverse().forEach(r => {
+                let winnersHtml = "";
+                let playersTableHtml = "";
+                
+                // প্লেয়ার ডাটা থাকলে প্রসেস করবে
                 if(r.players) {
-                    // অবজেক্ট বা অ্যারে যাই হোক তাকে হ্যান্ডেল করা
-                    const playersArray = Array.isArray(r.players) ? r.players : Object.values(r.players);
+                    const players = Array.isArray(r.players) ? r.players : Object.values(r.players);
                     
-                    // পজিশন অনুযায়ী সাজানো (১, ২, ৩...)
-                    const sortedPlayers = playersArray.sort((a, b) => (parseInt(a.pos) || 99) - (parseInt(b.pos) || 99));
+                    // পজিশন অনুযায়ী সাজানো
+                    players.sort((a, b) => (parseInt(a.pos) || 99) - (parseInt(b.pos) || 99));
 
-                    sortedPlayers.forEach(p => {
-                        // Winner সেকশনে শুধু ১ নম্বর পজিশন বা 'Winner' টাইপ প্লেয়ারদের রাখা
+                    players.forEach(p => {
+                        // Winner সেকশন: শুধু যারা উইনার বা পজিশন ১
                         if(p.type === 'Winner' || p.pos == 1) {
-                            winnerListHtml += `
+                            winnersHtml += `
                             <div class="winner-row">
                                 <div class="p-info">
-                                    <i class="fas fa-crown" style="color:var(--y); font-size:12px;"></i>
+                                    <i class="fas fa-crown" style="color:var(--y);"></i>
                                     <span class="p-name">${p.name}</span>
                                 </div>
                                 <div class="p-prize">TK ${p.winning || 0}</div>
                             </div>`;
                         }
-                        
-                        // ফুল রেজাল্ট টেবিলে সবার ডাটা
-                        fullResultHtml += `
+
+                        // টেবিল সেকশন: সব প্লেয়ার যারা ইনপুট করা হয়েছে
+                        playersTableHtml += `
                         <tr>
-                            <td>${p.pos || '-'}. ${p.name}</td>
+                            <td><b>${p.pos || '-'}.</b> ${p.name}</td>
                             <td><span class="kill-badge">${p.kills || 0} KILLS</span></td>
-                            <td style="color:var(--y)">TK ${p.winning || 0}</td>
+                            <td style="color:var(--y); font-weight:600;">TK ${p.winning || 0}</td>
                         </tr>`;
                     });
                 }
 
-                h += `
+                // যদি প্লেয়ার ডাটা একদম না থাকে (খালি বক্স যেন না আসে)
+                if(winnersHtml === "" && playersTableHtml === "") return;
+
+                htmlContent += `
                 <div class="res-card">
                     <div class="res-header">
                         <span class="m-no">MATCH #${r.matchId || '00'}</span>
-                        <span class="m-time">${r.time ? new Date(r.time).toLocaleDateString() : 'Finished'}</span>
+                        <span class="m-time">${r.time ? new Date(r.time).toLocaleDateString() : 'FINISHED'}</span>
                     </div>
                     
-                    <span style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; display: block; text-align: center;">${r.matchTitle || 'Official Tournament Result'}</span>
+                    <div style="text-align:center; margin-bottom:15px;">
+                        <span style="font-size:13px; font-weight:600; color:#eee;">${r.matchTitle || 'OFFICIAL TOURNAMENT RESULT'}</span>
+                    </div>
 
                     <div class="winner-section">
                         <span class="section-tag">WINNERS & CHAMPIONS</span>
-                        ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">Calculating results...</p>'}
+                        ${winnersHtml}
                     </div>
 
                     <button class="full-result-btn" onclick="toggleTable('${r.key}')">
-                        <i class="fas fa-chevron-down"></i> View Full Result
+                        <i class="fas fa-list-ol" style="margin-right:8px;"></i> VIEW FULL RESULT
                     </button>
 
                     <div class="table-area" id="table-${r.key}">
                         <table>
                             <thead>
-                                <tr><th>POS. PLAYER</th><th>KILLS</th><th>WINNING</th></tr>
+                                <tr><th>PLAYER</th><th>KILLS</th><th>PRIZE</th></tr>
                             </thead>
                             <tbody>
-                                ${fullResultHtml}
+                                ${playersTableHtml}
                             </tbody>
                         </table>
                     </div>
                 </div>`;
             });
-            document.getElementById('rList').innerHTML = h;
+
+            listArea.innerHTML = htmlContent;
         });
 
+        // টেবিল ওপেন/ক্লোজ ফাংশন
         function toggleTable(key) {
             const el = document.getElementById('table-'+key);
             const btn = el.previousElementSibling;
             if(el.style.display === 'block') {
                 el.style.display = 'none';
-                btn.innerHTML = '<i class="fas fa-chevron-down"></i> View Full Result';
+                btn.style.background = "#1a1a1a";
+                btn.innerHTML = '<i class="fas fa-list-ol" style="margin-right:8px;"></i> VIEW FULL RESULT';
             } else {
                 el.style.display = 'block';
-                btn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Full Result';
+                btn.style.background = "#222";
+                btn.innerHTML = '<i class="fas fa-times" style="margin-right:8px;"></i> CLOSE RESULT';
             }
         }
     </script>
