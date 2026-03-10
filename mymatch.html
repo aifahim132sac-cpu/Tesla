@@ -12,12 +12,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --p: #00ff00; --b: #050505; --c: #121212; --y: #ffcc00; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
-        .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); }
+        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
+        .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
         
-        .my-card { background: var(--c); border-radius: 18px; padding: 18px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* ফাস্ট এনিমেশন */
+        .my-card { background: var(--c); border-radius: 18px; padding: 18px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
         
         .status-badge { font-size: 10px; background: rgba(0, 255, 0, 0.1); color: var(--p); padding: 4px 10px; border-radius: 50px; border: 1px solid var(--p); }
         
@@ -36,6 +37,10 @@
 
         .btn-rules { width: 100%; background: #222; color: #fff; border: none; padding: 10px; border-radius: 8px; font-family: 'Orbitron'; font-size: 11px; margin-top: 10px; cursor: pointer; }
         
+        /* Empty State UI */
+        #no-match { text-align: center; padding: 150px 20px; color: #444; display: none; }
+        #no-match i { font-size: 50px; margin-bottom: 15px; color: #222; }
+
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 14px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -45,8 +50,12 @@
 <body>
     <div class="header"><div class="title">MY MATCHES</div></div>
     
-    <div id="myList">
-        <p style="text-align:center; padding:50px; color:#444;">লোডিং হচ্ছে...</p>
+    <div id="myList"></div>
+
+    <div id="no-match">
+        <i class="fas fa-trophy"></i>
+        <p style="font-family: 'Orbitron'; letter-spacing: 1px;">NO MATCHES JOINED</p>
+        <p style="font-size: 12px; color: #555;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>
     </div>
 
     <nav class="nav">
@@ -67,29 +76,38 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
+        // লগইন চেক এবং ফাস্ট ডাটা লোড
         auth.onAuthStateChanged(user => { 
             if (user) { loadMyMatches(user.uid); } 
             else { window.location.href = "auth.html"; } 
         });
 
         function loadMyMatches(uid) {
+            const listArea = document.getElementById('myList');
+            const noMatchArea = document.getElementById('no-match');
+
             db.ref('users/' + uid + '/joinedMatches').on('value', (userSnap) => {
+                // যদি ইউজার কোনো ম্যাচে জয়েন না করে থাকে
                 if (!userSnap.exists()) {
-                    document.getElementById('myList').innerHTML = `<div style="text-align:center; margin-top:80px; color:#666;">আপনি কোনো ম্যাচে জয়েন করেননি।</div>`;
+                    listArea.innerHTML = "";
+                    noMatchArea.style.display = "block";
                     return;
                 }
 
+                noMatchArea.style.display = "none";
                 const joinedIds = Object.keys(userSnap.val());
 
                 db.ref('matches').on('value', (snap) => {
                     const allMatches = snap.val();
                     let h = "";
-                    joinedIds.forEach(id => {
+                    
+                    // লেটেস্ট ম্যাচগুলো আগে দেখানোর জন্য রিভার্স লুপ (ঐচ্ছিক)
+                    joinedIds.reverse().forEach(id => {
                         const m = allMatches[id];
                         if (m) {
                             const rId = m.roomId || "";
                             const rPass = m.roomPass || "";
-                            const isAvailable = (rId !== "" && rPass !== "");
+                            const isAvailable = (rId !== "" && rId !== "Updating..." && rPass !== "" && rPass !== "Updating...");
 
                             h += `<div class="my-card">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -104,7 +122,7 @@
                                     <div class="info-item"><span>Type</span>${m.mType}</div>
                                 </div>
 
-                                <div id="details-${id}" class="details-box">লোডিং ইউজার ডাটা...</div>
+                                <div id="details-${id}" class="details-box">লোডিং তথ্য...</div>
 
                                 <button class="btn-rules" onclick="showRules('${m.mRules}')">VIEW RULES</button>
 
@@ -125,8 +143,12 @@
                             fetchPlayerDetails(m.matchNo, uid, id);
                         }
                     });
-                    document.getElementById('myList').innerHTML = h;
+                    listArea.innerHTML = h;
+                }, (error) => {
+                    console.error("Matches Load Error: ", error);
                 });
+            }, (error) => {
+                console.error("User Matches Error: ", error);
             });
         }
 
@@ -139,7 +161,7 @@
                         dHtml += `<div class="p-row"><span>P${i+1}: ${p.name}</span><span>ID: ${p.gameId}</span></div>`;
                     });
                 } else {
-                    dHtml += `<div style="font-size:11px; color:#555;">তথ্য পাওয়া যায়নি।</div>`;
+                    dHtml += `<div style="font-size:11px; color:#555;">কোনো তথ্য পাওয়া যায়নি।</div>`;
                 }
                 const target = document.getElementById('details-' + divId);
                 if(target) target.innerHTML = dHtml;
