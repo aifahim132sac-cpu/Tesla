@@ -40,6 +40,12 @@
         .page { display: none; } .page.active { display: block; }
         .item-row { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 4px solid var(--neon); position: relative; }
         
+        /* Match Details Grid for Admin View */
+        .match-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; font-size: 12px; background: #0d1117; padding: 10px; border-radius: 10px; border: 1px solid #222; }
+        .info-item { display: flex; flex-direction: column; border-bottom: 1px solid #1a1f26; padding-bottom: 5px; }
+        .info-item span:first-child { color: var(--neon); font-size: 10px; text-transform: uppercase; font-weight: bold; }
+        .info-item span:last-child { color: #fff; }
+
         .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .stat-box { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 18px; text-align: center; cursor: pointer; transition: 0.3s; }
         .stat-box:active { transform: scale(0.95); background: #1c2128; }
@@ -115,6 +121,8 @@
                 <textarea id="mRules" placeholder="Enter Rules (Use <br> for new line)"></textarea>
                 <button class="btn btn-neon" onclick="postM()">Publish Live</button>
             </div>
+
+            <div class="section-tag" style="margin-top:30px;"><i class="fas fa-list-ul"></i> Managed Published Matches</div>
             <div id="mLive"></div>
         </div>
 
@@ -274,14 +282,48 @@
             db.ref('matches').push(mData).then(() => { Swal.fire("Live!"); });
         }
 
+        // Updated Match View for Admin to see all details
         db.ref('matches').on('value', s => {
-            let h = ""; s.forEach(c => { const m = c.val(); h += `<div class="item-row"><b>#${m.matchNo} - ${m.title}</b><div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:10px;"><button class="btn btn-gold" onclick="setR('${c.key}')">Room</button><button class="btn btn-blue" onclick="viewPlayers('${m.matchNo}')">Players</button><button class="btn btn-red" onclick="db.ref('matches/${c.key}').remove()">Delete</button></div></div>`; });
-            document.getElementById('mLive').innerHTML = h;
+            let h = ""; 
+            s.forEach(c => { 
+                const m = c.val(); 
+                // টাইমের ফরম্যাট সুন্দর করার জন্য
+                let timeStr = m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'N/A';
+                
+                h += `<div class="item-row" style="border-left-width: 8px;">
+                        <b style="font-size: 16px; color: var(--neon);">#${m.matchNo} - ${m.title}</b>
+                        
+                        <div class="match-info-grid">
+                            <div class="info-item"><span>Time:</span><span>${timeStr}</span></div>
+                            <div class="info-item"><span>Type:</span><span>${m.mType}</span></div>
+                            <div class="info-item"><span>Fee:</span><span>${m.mFee} TK</span></div>
+                            <div class="info-item"><span>Per Kill:</span><span>${m.mPk} TK</span></div>
+                            <div class="info-item"><span>Prize:</span><span>${m.mPrize} TK</span></div>
+                            <div class="info-item"><span>Slot:</span><span>${m.joined || 0} / ${m.mSlot}</span></div>
+                            <div class="info-item"><span>Room ID:</span><span style="color:var(--gold)">${m.roomId}</span></div>
+                            <div class="info-item"><span>Room Pass:</span><span style="color:var(--gold)">${m.roomPass}</span></div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:15px;">
+                            <button class="btn btn-gold" style="padding: 10px; font-size: 11px;" onclick="setR('${c.key}')"><i class="fas fa-key"></i> Room</button>
+                            <button class="btn btn-blue" style="padding: 10px; font-size: 11px;" onclick="viewPlayers('${m.matchNo}')"><i class="fas fa-users"></i> Players</button>
+                            <button class="btn btn-red" style="padding: 10px; font-size: 11px;" onclick="db.ref('matches/${c.key}').remove()"><i class="fas fa-trash-alt"></i> Delete</button>
+                        </div>
+                    </div>`; 
+            });
+            document.getElementById('mLive').innerHTML = h || `<p style="text-align:center; color:#555; margin-top:20px;">No published matches found.</p>`;
         });
 
         async function setR(id) {
-            const {value: v} = await Swal.fire({ title: 'Room Info', html: '<input id="swi" class="swal2-input" placeholder="ID"><input id="swp" class="swal2-input" placeholder="Pass">', preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] });
-            if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire("Updated"));
+            const {value: v} = await Swal.fire({ 
+                title: 'Set Room Info', 
+                html: '<input id="swi" class="swal2-input" placeholder="Room ID"><input id="swp" class="swal2-input" placeholder="Password">', 
+                background: '#0d1117',
+                color: '#fff',
+                confirmButtonColor: '#00ffaa',
+                preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] 
+            });
+            if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire({icon: 'success', title: 'Updated!', background: '#0d1117', color: '#fff'}));
         }
 
         // Updated viewPlayers for Solo/Duo/Squad with Full Profile UID
