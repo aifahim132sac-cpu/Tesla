@@ -15,12 +15,15 @@
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
         .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
+        
         .my-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .room-box { background: #000; border: 1px dashed var(--p); padding: 12px; border-radius: 10px; margin-top: 15px; text-align: center; }
         .r-val { background: #1a1a1a; padding: 10px; border-radius: 8px; font-size: 13px; color: var(--p); border: 1px solid #333; margin-top: 8px; font-family: 'Orbitron'; display: flex; justify-content: space-between; align-items: center; }
         .copy-btn { font-size: 14px; color: #777; cursor: pointer; transition: 0.3s; }
         .copy-btn:hover { color: var(--p); }
+        
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
@@ -47,9 +50,7 @@
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "teot-a3046",
-            storageBucket: "teot-a3046.firebasestorage.app",
-            messagingSenderId: "742786792386",
-            appId: "1:742786792386:web:0c4daffc8b227a9ebf745b"
+            storageBucket: "teot-a3046.appspot.com"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
@@ -58,70 +59,78 @@
             if (user) { 
                 loadMyMatches(user.uid); 
             } else { 
-                window.location.href = "index.html"; 
+                window.location.href = "auth.html"; 
             } 
         });
 
         function loadMyMatches(uid) {
-            // রিয়েল-টাইম লিসেনার (অ্যাডমিন থেকে আইডি দিলে সাথে সাথে আসবে)
             db.ref('matches').on('value', snap => {
-                db.ref('match_joins').on('value', joinSnap => {
-                    let h = "";
-                    let hasJoined = false;
-                    const matches = snap.val();
-                    const allJoins = joinSnap.val();
+                let h = "";
+                let hasJoined = false;
+                const matches = snap.val();
 
-                    if(matches && allJoins) {
-                        Object.keys(matches).forEach(matchId => {
-                            // চেক করছে এই ইউজার এই ম্যাচে জয়েন করেছে কিনা
-                            if(allJoins[matchId] && allJoins[matchId][uid]) {
-                                hasJoined = true;
-                                const m = matches[matchId];
-                                const isReady = (m.mRoomId && m.mRoomId !== "" && m.mRoomId !== "Pending");
+                if(matches) {
+                    Object.keys(matches).forEach(matchId => {
+                        const m = matches[matchId];
+                        
+                        if(m.joined && m.joined[uid]) {
+                            hasJoined = true;
 
-                                h += `<div class="my-card">
-                                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <span style="color:var(--p); font-family:Orbitron; font-size:10px;">MATCH #${m.matchNo}</span>
-                                        <span style="font-size:10px; color:#777;">${m.mType || 'SOLO'}</span>
-                                    </div>
-                                    <h3 style="margin:8px 0; font-size:16px;">${m.title}</h3>
-                                    <div class="room-box">
-                                        ${isReady ? 
-                                            `<div class="r-val"><span>ID: ${m.mRoomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.mRoomId}')"></i></div>
-                                             <div class="r-val"><span>PASS: ${m.mRoomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.mRoomPass}')"></i></div>` 
-                                            : `<div style="font-size:11px; color:#ffcc00; padding:10px;">রুম আইডি এবং পাসওয়ার্ড ম্যাচ শুরুর ৫-১০ মিনিট আগে এখানে দেওয়া হবে।</div>`
-                                        }
-                                    </div>
-                                </div>`;
-                            }
-                        });
-                    }
+                            // নতুন স্মার্ট লজিক: 
+                            // আইডি যদি ৪ অক্ষরের কম হয়, অথবা TBA/Pending থাকে, তবেই ওয়েটিং মেসেজ দেখাবে।
+                            const roomId = m.roomId ? m.roomId.toString().trim() : "";
+                            const isReady = (roomId.length >= 4 && 
+                                            roomId.toLowerCase() !== "pending" && 
+                                            roomId.toLowerCase() !== "tba");
 
-                    if(!hasJoined) {
-                        document.getElementById('myList').innerHTML = "<p style='text-align:center; margin-top:50px; color:#666;'>আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>";
-                    } else {
-                        document.getElementById('myList').innerHTML = h;
-                    }
-                });
+                            h += `<div class="my-card">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="color:var(--p); font-family:Orbitron; font-size:10px;">MATCH #${m.matchNo || 'N/A'}</span>
+                                    <span style="font-size:10px; color:#777; background:#222; padding:2px 8px; border-radius:4px;">${m.map || 'ERANGEL'}</span>
+                                </div>
+                                <h3 style="margin:8px 0; font-size:16px;">${m.title}</h3>
+                                <div style="font-size:11px; color:#aaa; margin-bottom:10px;">
+                                    <i class="far fa-clock"></i> ${m.time || 'TBA'} | <i class="fas fa-users"></i> ${m.type || 'SOLO'}
+                                </div>
+                                <div class="room-box">
+                                    ${isReady ? 
+                                        `<div class="r-val"><span>ID: ${m.roomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.roomId}')"></i></div>
+                                         <div class="r-val"><span>PASS: ${m.roomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.roomPass}')"></i></div>` 
+                                        : `<div style="font-size:12px; color:#ffcc00; padding:15px; line-height:1.6;">
+                                            <i class="fas fa-clock" style="font-size:18px; margin-bottom:8px;"></i><br>
+                                            রুম আইডি এবং পাসওয়ার্ড ম্যাচ শুরুর ৫-১০ মিনিট আগে এখানে দেওয়া হবে। একটু অপেক্ষা করুন।
+                                           </div>`
+                                    }
+                                </div>
+                            </div>`;
+                        }
+                    });
+                }
+
+                if(!hasJoined) {
+                    document.getElementById('myList').innerHTML = `
+                    <div style="text-align:center; margin-top:80px;">
+                        <i class="fas fa-ghost" style="font-size:50px; color:#222;"></i>
+                        <p style="color:#666; margin-top:15px;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>
+                    </div>`;
+                } else {
+                    document.getElementById('myList').innerHTML = h;
+                }
             });
         }
 
         function copyText(txt) {
-            const el = document.createElement('textarea');
-            el.value = txt;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: 'Copied!',
-                showConfirmButton: false,
-                timer: 1500,
-                background: '#111',
-                color: '#fff'
+            navigator.clipboard.writeText(txt).then(() => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Copied!',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    background: '#111',
+                    color: '#fff'
+                });
             });
         }
     </script>
