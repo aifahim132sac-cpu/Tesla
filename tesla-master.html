@@ -284,18 +284,41 @@
             if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire("Updated"));
         }
 
+        // Updated viewPlayers for Solo/Duo/Squad with Full Profile UID
         function viewPlayers(mNo) {
             db.ref('joinedPlayers/' + mNo).once('value', s => {
                 let list = "";
                 s.forEach(p => { 
                     const d = p.val();
-                    list += `<div style="background:#000; padding:10px; border-radius:10px; margin-bottom:5px; border:1px solid #333;">
-                        <small style="color:var(--neon)">Name:</small> ${d.name}<br>
-                        <small style="color:var(--gold)">Game ID:</small> ${d.gameId}<br>
-                        <small style="color:var(--blue)">App UID:</small> ${d.uid}
-                    </div>`; 
+                    // যদি Duo/Squad ডাটা থাকে (teamDetails)
+                    if(d.teamDetails && d.teamDetails.length > 0) {
+                        list += `<div style="background:#000; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #00ffaa; border-left: 5px solid #00ffaa;">
+                                    <p style="color:#00ffaa; font-weight:bold; margin:0 0 10px 0; font-family:'Orbitron'; font-size:12px;">TEAM LEADER: ${d.playerName}</p>`;
+                        
+                        d.teamDetails.forEach((member, index) => {
+                            list += `<div style="background:#111; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #333;">
+                                        <small style="color:#ffcc00">PLAYER ${index + 1}:</small> ${member.name}<br>
+                                        <small style="color:#00d2ff">GAME ID:</small> ${member.gameId}<br>
+                                        <small style="color:#00ffaa">FULL UID:</small> <span style="font-size:10px; color:#aaa; word-break: break-all;">${member.profileUid}</span>
+                                     </div>`;
+                        });
+                        list += `</div>`;
+                    } else {
+                        // Solo ম্যাচের সাধারণ ডাটা
+                        list += `<div style="background:#000; padding:12px; border-radius:12px; margin-bottom:10px; border:1px solid #333;">
+                                    <b style="color:#00ffaa">${d.playerName || d.name}</b><br>
+                                    <small style="color:#ffcc00">Game ID:</small> ${d.gameId}<br>
+                                    <small style="color:#00ffaa">Full UID:</small> <span style="font-size:10px; color:#aaa; word-break: break-all;">${d.profileUid || d.uid}</span>
+                                 </div>`;
+                    }
                 });
-                Swal.fire({title:'Players Match '+mNo, html: `<div style="text-align:left; max-height:400px; overflow-y:auto;">${list || 'None'}</div>`, background:'#0d1117', color:'#fff'});
+                Swal.fire({
+                    title: 'PLAYERS LIST - MATCH ' + mNo, 
+                    html: `<div style="text-align:left; max-height:450px; overflow-y:auto; padding-right:5px;">${list || 'কোনো প্লেয়ার জয়েন করেনি'}</div>`, 
+                    background: '#0d1117', 
+                    color: '#fff',
+                    width: '95%'
+                });
             });
         }
 
@@ -322,16 +345,29 @@
             await db.ref('payments/'+key).remove(); Swal.fire(status);
         }
 
+        // Updated loadPlayersForResult to handle multiple players per entry
         function loadPlayersForResult() {
             const mId = document.getElementById('resMid').value;
             db.ref('joinedPlayers/' + mId).once('value', snap => {
                 const area = document.getElementById('wRows'); area.innerHTML = "";
                 snap.forEach(p => {
-                    const pl = p.val(); const row = document.createElement('div'); row.className = "res-row";
-                    row.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" value="${pl.name}" readonly><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
-                    area.appendChild(row);
+                    const pl = p.val();
+                    // যদি টিম ডিটেইলস থাকে তবে লুপ চালিয়ে সবাইকে রেজাল্ট লিস্টে আনবে
+                    if(pl.teamDetails && pl.teamDetails.length > 0) {
+                        pl.teamDetails.forEach(member => {
+                            createResultRow(area, member.name);
+                        });
+                    } else {
+                        createResultRow(area, pl.playerName || pl.name);
+                    }
                 });
             });
+        }
+
+        function createResultRow(container, name) {
+            const row = document.createElement('div'); row.className = "res-row";
+            row.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" value="${name}" readonly><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
+            container.appendChild(row);
         }
 
         async function publishFinalResult() {
