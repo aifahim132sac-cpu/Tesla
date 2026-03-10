@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,58 +15,87 @@
         :root { --p: #00ff00; --b: #050505; --c: #121212; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 100px; }
         .header { padding: 20px; text-align: center; border-bottom: 2px solid var(--p); background: #000; position: relative; }
-        .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
+        .title { font-family: 'Orbitron'; color: var(--p); font-size: 18px; }
         .logout-btn { position: absolute; right: 20px; top: 22px; color: #ff4444; font-size: 20px; cursor: pointer; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 20px; }
+
+        .profile-wrap { position: relative; width: 110px; height: 110px; margin: 25px auto 10px; }
+        #profileImg { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--p); background: #111; }
+        .plus-btn { position: absolute; bottom: 5px; right: 5px; background: var(--p); color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid #000; font-size: 16px; }
+
+        .u-info { text-align: center; margin-bottom: 25px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 15px; }
         .s-box { background: var(--c); padding: 15px 5px; border-radius: 15px; border: 1px solid #222; text-align: center; }
-        .s-box label { font-size: 9px; color: #777; display: block; }
-        .val-p { color: var(--p); font-weight: 700; font-family: 'Orbitron'; font-size: 12px; }
-        .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px 15px; display: none; border: 1px solid #222; }
-        .form-sec.active { display: block; }
-        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; margin-top: 10px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--p); }
-        .submit-btn { width: 100%; padding: 15px; background: var(--p); color: #000; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; }
-        .submit-btn:active { transform: scale(0.98); }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
+        .s-box label { font-size: 9px; color: #777; display: block; margin-bottom: 5px; text-transform: uppercase; }
+        .val-p { color: var(--p); font-family: 'Orbitron'; font-size: 13px; }
+
+        .action-btns { padding: 20px 15px; display: flex; gap: 12px; }
+        .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px; display: none; border: 1px solid #222; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        select, input { width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; margin-top: 12px; box-sizing: border-box; outline: none; font-size: 14px; }
+        select:focus, input:focus { border-color: var(--p); }
+        
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; }
+        .btn-main:active { transform: scale(0.95); }
+
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
-        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <div class="title">PROFILE</div>
+        <div class="title">MY ACCOUNT</div>
         <i class="fas fa-sign-out-alt logout-btn" onclick="handleLogout()"></i>
     </div>
 
-    <div style="text-align:center; padding:20px;">
-        <h3 id="displayName" style="margin:0; font-family:'Orbitron';">Loading...</h3>
-        <p id="displayUid" style="color:#555; font-size:10px; margin-top:5px;">UID: ---</p>
+    <div class="profile-wrap">
+        <img id="profileImg" src="https://via.placeholder.com/150" alt="Avatar">
+        <label for="imgInput" class="plus-btn"><i class="fas fa-plus"></i></label>
+        <input type="file" id="imgInput" style="display:none" accept="image/*" onchange="uploadProfilePic(this)">
+    </div>
+
+    <div class="u-info">
+        <h3 id="userName" style="margin:0; font-family:'Orbitron';">Loading...</h3>
+        <p id="userUid" style="color:#555; font-size:11px; margin-top:5px; letter-spacing: 1px;">UID: ---</p>
     </div>
 
     <div class="stats-grid">
-        <div class="s-box"><label>Main Balance</label><b class="val-p" id="uDep">0 TK</b></div>
-        <div class="s-box"><label>Winning</label><b class="val-p" id="uBal" style="color:#ffcc00;">0 TK</b></div>
-        <div class="s-box"><label>Played</label><b id="uPlayed" style="font-family:'Orbitron';">0</b></div>
+        <div class="s-box"><label>Main Balance</label><b class="val-p" id="balMain">0 TK</b></div>
+        <div class="s-box"><label>Winning</label><b class="val-p" id="balWin" style="color:#ffcc00;">0 TK</b></div>
+        <div class="s-box"><label>Total Played</label><b id="playedCount" style="font-family:'Orbitron'; font-size:13px;">0</b></div>
     </div>
 
-    <div style="padding:0 15px; display:flex; gap:10px;">
-        <button style="flex:1" onclick="toggleTab('dep')" class="submit-btn">DEPOSIT</button>
-        <button style="flex:1; background:#222; color:#fff;" onclick="toggleTab('wit')" class="submit-btn">WITHDRAW</button>
+    <div class="action-btns">
+        <button style="flex:1" onclick="openTab('dep')" class="btn-main">DEPOSIT</button>
+        <button style="flex:1; background:#222; color:#fff;" onclick="openTab('wit')" class="btn-main">WITHDRAW</button>
     </div>
 
-    <div id="depSec" class="form-sec">
-        <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">বিকাশ/নগদ এ টাকা পাঠিয়ে ট্রানজেকশন স্ক্রিনশটের লিঙ্ক দিন।</p>
-        <input type="number" id="depAmt" placeholder="Amount (TK)">
-        <input type="text" id="depSS" placeholder="Imgbb / Imgur Link">
-        <button class="submit-btn" onclick="handleDeposit()">SUBMIT DEPOSIT</button>
+    <div id="depForm" class="form-sec">
+        <h4 style="margin:0 0 10px; color:var(--p);">Add Money</h4>
+        <select id="dMethod">
+            <option value="">Select Method</option>
+            <option value="Bkash Personal">bKash Personal</option>
+            <option value="Nagad Personal">Nagad Personal</option>
+        </select>
+        <input type="text" id="dSender" placeholder="Your Number (Sender)">
+        <input type="number" id="dAmount" placeholder="Amount (TK)">
+        <input type="text" id="dTrx" placeholder="Transaction ID (TrxID)">
+        <button class="btn-main" onclick="submitDeposit()">SUBMIT REQUEST</button>
     </div>
 
-    <div id="witSec" class="form-sec">
-        <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">মিনিমাম উইথড্র ১০০ টাকা।</p>
-        <input type="number" id="wAmt" placeholder="Amount (TK)">
-        <input type="text" id="wNum" placeholder="Phone Number">
-        <button class="submit-btn" style="background:#ffcc00;" onclick="sendWitRequest()">SUBMIT WITHDRAW</button>
+    <div id="witForm" class="form-sec">
+        <h4 style="margin:0 0 10px; color:#ffcc00;">Cash Out</h4>
+        <select id="wMethod">
+            <option value="">Select Method</option>
+            <option value="Bkash Personal">bKash Personal</option>
+            <option value="Nagad Personal">Nagad Personal</option>
+        </select>
+        <input type="text" id="wNumber" placeholder="Receiver Number">
+        <input type="number" id="wAmount" placeholder="Amount (TK)">
+        <button class="btn-main" style="background:#ffcc00" onclick="submitWithdraw()">SUBMIT REQUEST</button>
     </div>
 
     <div class="nav">
@@ -76,82 +106,109 @@
     </div>
 
     <script>
-        // আপনার নতুন সঠিক API Key এখানে বসানো হয়েছে
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046"
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com"
         };
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.database();
-        
-        let currentDep = 0;
+        const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
 
         auth.onAuthStateChanged(user => {
-            if (user) { 
-                db.ref('users/' + user.uid).on('value', s => {
-                    let u = s.val() || {}; 
-                    currentDep = u.deposit || 0;
-                    document.getElementById('displayName').innerText = u.name || "Player";
-                    document.getElementById('displayUid').innerText = "UID: " + user.uid.substring(0,10).toUpperCase();
-                    document.getElementById('uDep').innerText = currentDep + " TK";
-                    document.getElementById('uBal').innerText = (u.winning || 0) + " TK";
-                    document.getElementById('uPlayed').innerText = u.playedCount || 0;
+            if (user) {
+                db.ref('users/' + user.uid).on('value', snap => {
+                    const u = snap.val() || {};
+                    document.getElementById('userName').innerText = u.name || "Player";
+                    document.getElementById('userUid').innerText = "UID: " + user.uid.toUpperCase().substring(0,14);
+                    document.getElementById('balMain').innerText = (u.balance || 0) + " TK";
+                    document.getElementById('balWin').innerText = (u.winning || 0) + " TK";
+                    document.getElementById('playedCount').innerText = u.played || 0;
+                    if(u.profilePic) document.getElementById('profileImg').src = u.profilePic;
                 });
-            } else { 
-                window.location.href = "auth.html"; 
-            }
+            } else { window.location.href = "index.html"; }
         });
 
-        function toggleTab(t) { 
-            const d = document.getElementById('depSec'), w = document.getElementById('witSec');
-            if (t === 'dep') {
-                d.style.display = d.style.display === 'block' ? 'none' : 'block';
-                w.style.display = 'none';
-            } else if (t === 'wit') {
-                w.style.display = w.style.display === 'block' ? 'none' : 'block';
-                d.style.display = 'none';
-            } else {
-                d.style.display = 'none'; w.style.display = 'none';
-            }
+        async function uploadProfilePic(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const uid = auth.currentUser.uid;
+            const ref = storage.ref('profiles/' + uid);
+            Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await ref.put(file);
+                const url = await ref.getDownloadURL();
+                await db.ref('users/' + uid).update({ profilePic: url });
+                Swal.fire("Success", "Profile Picture Updated!", "success");
+            } catch(e) { Swal.fire("Error", "Upload failed", "error"); }
         }
 
-        function handleDeposit() {
-            const amt = document.getElementById('depAmt').value, ss = document.getElementById('depSS').value;
-            if(!amt || !ss) return Swal.fire({ icon: "error", title: "Oops!", text: "সবগুলো ঘর পূরণ করুন", background: "#111", color: "#fff" });
-            
-            db.ref('payments').push({ uid: auth.currentUser.uid, amount: amt, ssUrl: ss, status: "Pending", time: Date.now() });
-            Swal.fire({ icon: "success", title: "Sent!", text: "ডিপোজিট রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে!", confirmButtonColor: "#00ff00", background: "#111", color: "#fff" }); 
-            toggleTab('');
+        function openTab(t) {
+            const d = document.getElementById('depForm'), w = document.getElementById('witForm');
+            d.style.display = (t === 'dep' && d.style.display !== 'block') ? 'block' : 'none';
+            w.style.display = (t === 'wit' && w.style.display !== 'block') ? 'block' : 'none';
         }
 
-        function sendWitRequest() {
-            const amt = parseInt(document.getElementById('wAmt').value), num = document.getElementById('wNum').value;
-            if(!amt || !num) return Swal.fire({ icon: "error", title: "Oops!", text: "সঠিক তথ্য দিন", background: "#111", color: "#fff" });
-            if(amt < 100) return Swal.fire({ icon: "warning", title: "Limit", text: "মিনিমাম ১০০ টাকা উইথড্র করুন", background: "#111", color: "#fff" });
-            
-            // Winning Balance থেকে উইথড্র হবে (সাধারণত টুর্নামেন্ট অ্যাপে উইনিং ব্যালেন্স উইথড্র হয়)
-            // আপনি যদি মেইন ব্যালেন্স থেকে কাটতে চান তবে currentDep চেক করুন
-            if(amt > currentDep) return Swal.fire({ icon: "error", title: "Low Balance", text: "আপনার অ্যাকাউন্টে পর্যাপ্ত টাকা নেই", background: "#111", color: "#fff" });
+        // Updated Deposit Logic to match Admin Panel
+        function submitDeposit() {
+            const m = document.getElementById('dMethod').value;
+            const s = document.getElementById('dSender').value;
+            const a = parseFloat(document.getElementById('dAmount').value);
+            const t = document.getElementById('dTrx').value;
 
-            db.ref('withdrawRequests').push({ uid: auth.currentUser.uid, amount: amt, number: num, status: "Pending", time: Date.now() });
-            db.ref('users/' + auth.currentUser.uid).update({ deposit: currentDep - amt });
-            Swal.fire({ icon: "success", title: "Successful!", text: "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে!", confirmButtonColor: "#00ff00", background: "#111", color: "#fff" }); 
-            toggleTab('');
-        }
+            if(!m || !s || !a || !t) return Swal.fire("Error", "সবগুলো তথ্য দিন", "error");
 
-        function handleLogout() {
-            Swal.fire({
-                title: 'Logout?', text: "আপনি কি লগআউট করতে চান?", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#00ff00', cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes', cancelButtonText: 'No', background: '#111', color: '#fff'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    auth.signOut().then(() => { window.location.href = "index.html"; });
-                }
+            db.ref('payments').push({
+                uid: auth.currentUser.uid,
+                method: m,
+                number: s,
+                amount: a,
+                trxId: t,
+                type: "Deposit",
+                status: "Pending",
+                timestamp: Date.now()
+            }).then(() => {
+                Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে। অ্যাডমিন চেক করে ব্যালেন্স অ্যাড করবে।", "success");
+                openTab('');
             });
         }
+
+        // Updated Withdraw Logic with Balance Check
+        function submitWithdraw() {
+            const m = document.getElementById('wMethod').value;
+            const n = document.getElementById('wNumber').value;
+            const a = parseFloat(document.getElementById('wAmount').value);
+
+            if(!m || !n || !a) return Swal.fire("Error", "সবগুলো তথ্য দিন", "error");
+
+            db.ref('users/' + auth.currentUser.uid).once('value', snap => {
+                const u = snap.val() || {};
+                const winBal = u.winning || 0;
+
+                if (a > winBal) {
+                    return Swal.fire("Error", "আপনার পর্যাপ্ত উইনিং ব্যালেন্স নেই!", "error");
+                }
+                if (a < 50) {
+                    return Swal.fire("Error", "সর্বনিম্ন ৫০ টাকা উইথড্র করা যাবে।", "error");
+                }
+
+                db.ref('payments').push({
+                    uid: auth.currentUser.uid,
+                    method: m,
+                    number: n,
+                    amount: a,
+                    type: "Withdraw",
+                    status: "Pending",
+                    timestamp: Date.now()
+                }).then(() => {
+                    Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।", "success");
+                    openTab('');
+                });
+            });
+        }
+
+        function handleLogout() { auth.signOut(); }
     </script>
 </body>
 </html>
