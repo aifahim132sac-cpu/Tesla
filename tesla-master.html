@@ -416,26 +416,54 @@
 
         function deleteSingleHistory(key) { db.ref('adminHistory/money/' + key).remove(); }
 
+        // --- UPDATED PORTION FOR NAME(UID) ---
         function loadPlayersForResult() {
             const mId = document.getElementById('resMid').value;
+            if(!mId) return Swal.fire("Match No দিন!");
+            
             db.ref('joinedPlayers/' + mId).once('value', snap => {
-                const area = document.getElementById('wRows'); area.innerHTML = "";
+                const area = document.getElementById('wRows'); 
+                area.innerHTML = "";
+                
+                if(!snap.exists()) return Swal.fire("এই ম্যাচে কোনো প্লেয়ার নেই!");
+
                 snap.forEach(p => {
                     const pl = p.val();
+                    // নাম এবং আইডি একসাথে পাওয়ার জন্য
+                    let pName = pl.playerName || pl.name || "Unknown";
+                    let pId = pl.profileUid || pl.uid || "N/A";
+                    let displayName = `${pName} (${pId})`;
+
                     if(pl.teamDetails && pl.teamDetails.length > 0) {
-                        pl.teamDetails.forEach(member => { createResultRow(area, member.name); });
+                        pl.teamDetails.forEach(member => { 
+                            let mName = member.name || "Member";
+                            let mId = member.profileUid || "N/A";
+                            createResultRow(area, `${mName} (${mId})`); 
+                        });
                     } else {
-                        createResultRow(area, pl.playerName || pl.name);
+                        createResultRow(area, displayName);
                     }
                 });
             });
         }
 
         function createResultRow(container, name) {
-            const row = document.createElement('div'); row.className = "res-row";
-            row.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" value="${name}" readonly><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
+            const row = document.createElement('div'); 
+            row.className = "res-row";
+            // readonly সরানো হয়েছে যাতে প্রয়োজনে এডিট করা যায়
+            row.innerHTML = `
+                <input class="rPos" type="number" value="0">
+                <input class="rName" value="${name}" style="text-align:left; padding-left:5px; font-size:10px;">
+                <input class="rKill" type="number" value="0">
+                <input class="rWin" type="number" value="0">
+                <select class="rType">
+                    <option value="Normal">Normal</option>
+                    <option value="Winner">Winner</option>
+                </select>
+                <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold;">×</button>`;
             container.appendChild(row);
         }
+        // --- END OF UPDATED PORTION ---
 
         async function publishFinalResult() {
             const mId = document.getElementById('resMid').value; let res = [];
@@ -455,7 +483,7 @@
         });
 
         function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Saved")); }
-        function addW() { const d = document.createElement('div'); d.className = "res-row"; d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`; document.getElementById('wRows').appendChild(d); }
+        function addW() { const d = document.createElement('div'); d.className = "res-row"; d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name (UID)"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold;">×</button>`; document.getElementById('wRows').appendChild(d); }
         
         function clearAllHistory() { 
             Swal.fire({
