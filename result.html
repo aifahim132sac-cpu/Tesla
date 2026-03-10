@@ -69,6 +69,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // রিয়েল-টাইম ডাটা ফেচিং
         db.ref('results').on('value', snap => {
             let h = ""; 
             if(!snap.exists()) {
@@ -82,19 +83,21 @@
                 val.key = c.key; 
                 dataArr.push(val); 
             });
-            dataArr.reverse(); 
+            dataArr.reverse(); // সর্বশেষ রেজাল্ট উপরে দেখাবে
 
             dataArr.forEach((r) => {
                 let winnerListHtml = "";
                 let fullResultHtml = "";
 
                 if(r.players) {
-                    // Convert to array if it's an object from Firebase
+                    // অবজেক্ট বা অ্যারে যাই হোক তাকে হ্যান্ডেল করা
                     const playersArray = Array.isArray(r.players) ? r.players : Object.values(r.players);
                     
+                    // পজিশন অনুযায়ী সাজানো (১, ২, ৩...)
                     const sortedPlayers = playersArray.sort((a, b) => (parseInt(a.pos) || 99) - (parseInt(b.pos) || 99));
 
                     sortedPlayers.forEach(p => {
+                        // Winner সেকশনে শুধু ১ নম্বর পজিশন বা 'Winner' টাইপ প্লেয়ারদের রাখা
                         if(p.type === 'Winner' || p.pos == 1) {
                             winnerListHtml += `
                             <div class="winner-row">
@@ -106,6 +109,7 @@
                             </div>`;
                         }
                         
+                        // ফুল রেজাল্ট টেবিলে সবার ডাটা
                         fullResultHtml += `
                         <tr>
                             <td>${p.pos || '-'}. ${p.name}</td>
@@ -119,14 +123,14 @@
                 <div class="res-card">
                     <div class="res-header">
                         <span class="m-no">MATCH #${r.matchId || '00'}</span>
-                        <span class="m-time">${r.time ? new Date(r.time).toLocaleDateString() : ''}</span>
+                        <span class="m-time">${r.time ? new Date(r.time).toLocaleDateString() : 'Finished'}</span>
                     </div>
                     
                     <span style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; display: block; text-align: center;">${r.matchTitle || 'Official Tournament Result'}</span>
 
                     <div class="winner-section">
                         <span class="section-tag">WINNERS & CHAMPIONS</span>
-                        ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">Results are being updated</p>'}
+                        ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">Calculating results...</p>'}
                     </div>
 
                     <button class="full-result-btn" onclick="toggleTable('${r.key}')">
