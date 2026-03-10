@@ -70,9 +70,24 @@
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; transition: 0.3s; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
+
+        /* Block Overlay */
+        #blockLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
     </style>
 </head>
 <body>
+
+    <div id="blockLayer">
+        <div>
+            <i class="fas fa-user-slash" style="font-size: 60px; color: #ff3e3e; margin-bottom: 20px;"></i>
+            <h2 style="font-family: 'Orbitron'; color: #fff;">ACCOUNT BLOCKED</h2>
+            <p id="blockMsg" style="color: #aaa; font-size: 14px; margin-bottom: 25px;"></p>
+            <div style="background: #111; padding: 15px; border-radius: 12px; border: 1px solid #222;">
+                <small style="color: #555; display: block; margin-bottom: 5px;">SUPPORT WHATSAPP</small>
+                <a href="https://wa.me/8801774774830" style="color: var(--p); font-weight: bold; text-decoration: none; font-size: 18px;">01774774830</a>
+            </div>
+        </div>
+    </div>
 
     <div id="authModal">
         <div class="modal-content">
@@ -120,25 +135,18 @@
 
         let isLoginMode = true;
 
-        // --- BLOCK CHECKER ---
+        // --- BLOCK SYSTEM LOGIC (REAL-TIME) ---
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref('users/' + user.uid).on('value', snapshot => {
                     const userData = snapshot.val();
                     if (userData && userData.isBlocked === true) {
-                        Swal.fire({
-                            title: 'Your Account is Blocked!',
-                            html: `<div style="text-align:center;">
-                                     <p>Your UID: <b>${user.uid}</b></p>
-                                     <p style="color:#aaa; font-size:13px;">সেবা পেতে হোয়াটসঅ্যাপ নম্বর <b>01774774830</b> এই নম্বরে মেসেজ দিন।</p>
-                                   </div>`,
-                            icon: 'error',
-                            background: '#111',
-                            color: '#fff',
-                            allowOutsideClick: false,
-                            showConfirmButton: false
-                        });
-                        document.body.style.pointerEvents = "none"; // পুরো অ্যাপ লক
+                        document.getElementById('blockLayer').style.display = 'flex';
+                        document.getElementById('blockMsg').innerText = `Your UID: ${user.uid}\nঅ্যাকাউন্টটি ব্লক করা হয়েছে। বিস্তারিত জানতে যোগাযোগ করুন।`;
+                        // ইন্টারঅ্যাকশন বন্ধ করা
+                        document.querySelectorAll('.nav, .match-card, button').forEach(el => el.style.pointerEvents = 'none');
+                    } else {
+                        document.getElementById('blockLayer').style.display = 'none';
                     }
                 });
             }
