@@ -40,7 +40,6 @@
         .page { display: none; } .page.active { display: block; }
         .item-row { background: #000; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 4px solid var(--neon); position: relative; }
         
-        /* Match Details Grid for Admin View */
         .match-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; font-size: 12px; background: #0d1117; padding: 10px; border-radius: 10px; border: 1px solid #222; }
         .info-item { display: flex; flex-direction: column; border-bottom: 1px solid #1a1f26; padding-bottom: 5px; }
         .info-item span:first-child { color: var(--neon); font-size: 10px; text-transform: uppercase; font-weight: bold; }
@@ -140,7 +139,7 @@
                     <span><i class="fas fa-history"></i> Approval History</span>
                     <button class="btn btn-red" style="width: auto; padding: 5px 12px; font-size: 10px; height: auto;" onclick="clearAllHistory()">Clear All</button>
                 </div>
-                <div id="historyList"></div>
+                <div id="historyList" style="max-height: 400px; overflow-y: auto;"></div>
             </div>
         </div>
 
@@ -282,12 +281,10 @@
             db.ref('matches').push(mData).then(() => { Swal.fire("Live!"); });
         }
 
-        // Updated Match View for Admin to see all details
         db.ref('matches').on('value', s => {
             let h = ""; 
             s.forEach(c => { 
                 const m = c.val(); 
-                // টাইমের ফরম্যাট সুন্দর করার জন্য
                 let timeStr = m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'N/A';
                 
                 h += `<div class="item-row" style="border-left-width: 8px;">
@@ -326,13 +323,11 @@
             if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire({icon: 'success', title: 'Updated!', background: '#0d1117', color: '#fff'}));
         }
 
-        // Updated viewPlayers for Solo/Duo/Squad with Full Profile UID
         function viewPlayers(mNo) {
             db.ref('joinedPlayers/' + mNo).once('value', s => {
                 let list = "";
                 s.forEach(p => { 
                     const d = p.val();
-                    // যদি Duo/Squad ডাটা থাকে (teamDetails)
                     if(d.teamDetails && d.teamDetails.length > 0) {
                         list += `<div style="background:#000; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #00ffaa; border-left: 5px solid #00ffaa;">
                                     <p style="color:#00ffaa; font-weight:bold; margin:0 0 10px 0; font-family:'Orbitron'; font-size:12px;">TEAM LEADER: ${d.playerName}</p>`;
@@ -346,7 +341,6 @@
                         });
                         list += `</div>`;
                     } else {
-                        // Solo ম্যাচের সাধারণ ডাটা
                         list += `<div style="background:#000; padding:12px; border-radius:12px; margin-bottom:10px; border:1px solid #333;">
                                     <b style="color:#00ffaa">${d.playerName || d.name}</b><br>
                                     <small style="color:#ffcc00">Game ID:</small> ${d.gameId}<br>
@@ -375,30 +369,61 @@
             document.getElementById('withdrawList').innerHTML = witH || "None";
         });
 
+        // Money Logic - Withdraw এ ব্যালেন্স কাটবে
         async function processReq(key, uid, amt, type, status) {
             if(status === 'Approved') {
                 const uS = await db.ref('users/'+uid).once('value');
                 if(uS.exists()) {
                     const u = uS.val();
-                    if(type === 'Deposit') await db.ref('users/'+uid).update({ balance: (parseFloat(u.balance) || 0) + amt });
+                    let curBal = parseFloat(u.balance) || 0;
+                    let curWin = parseFloat(u.winning) || 0;
+                    
+                    if(type === 'Deposit') {
+                        await db.ref('users/'+uid).update({ balance: curBal + parseFloat(amt) });
+                    } else if(type === 'Withdraw') {
+                        if(curWin < amt) return Swal.fire("Low Winning Balance!", "ইউজারের পর্যাপ্ত উইনিং ব্যালেন্স নেই!", "error");
+                        await db.ref('users/'+uid).update({ winning: curWin - parseFloat(amt) });
+                    }
                 }
             }
             await db.ref('adminHistory/money').push({ uid, amount: amt, type, status, date: new Date().toLocaleString() });
-            await db.ref('payments/'+key).remove(); Swal.fire(status);
+            await db.ref('payments/'+key).remove(); 
+            Swal.fire({ title: status, icon: 'success', background: '#0d1117', color: '#fff' });
         }
 
-        // Updated loadPlayersForResult to handle multiple players per entry
+        // Approval History Display & Single Delete Logic
+        db.ref('adminHistory/money').on('value', snap => {
+            let h = "";
+            snap.forEach(child => {
+                const hi = child.val();
+                const key = child.key;
+                const color = hi.type === 'Deposit' ? '#00ffaa' : '#ff3e3e';
+                h += `<div style="background: #000; padding: 12px; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid ${color}; position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <b style="color:${color}; font-size: 14px;">${hi.type}</b>
+                            <span style="color: #ffcc00; font-weight: bold;">${hi.amount} TK</span>
+                        </div>
+                        <div style="font-size: 10px; color: #8b949e; margin-top: 5px;">
+                            ID: ${hi.uid} <br> ${hi.date}
+                        </div>
+                        <button onclick="deleteSingleHistory('${key}')" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #555; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                      </div>`;
+            });
+            document.getElementById('historyList').innerHTML = h || `<p style="text-align:center; color:#555; font-size:12px;">No transaction history found.</p>`;
+        });
+
+        function deleteSingleHistory(key) { db.ref('adminHistory/money/' + key).remove(); }
+
         function loadPlayersForResult() {
             const mId = document.getElementById('resMid').value;
             db.ref('joinedPlayers/' + mId).once('value', snap => {
                 const area = document.getElementById('wRows'); area.innerHTML = "";
                 snap.forEach(p => {
                     const pl = p.val();
-                    // যদি টিম ডিটেইলস থাকে তবে লুপ চালিয়ে সবাইকে রেজাল্ট লিস্টে আনবে
                     if(pl.teamDetails && pl.teamDetails.length > 0) {
-                        pl.teamDetails.forEach(member => {
-                            createResultRow(area, member.name);
-                        });
+                        pl.teamDetails.forEach(member => { createResultRow(area, member.name); });
                     } else {
                         createResultRow(area, pl.playerName || pl.name);
                     }
@@ -431,7 +456,20 @@
 
         function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Saved")); }
         function addW() { const d = document.createElement('div'); d.className = "res-row"; d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`; document.getElementById('wRows').appendChild(d); }
-        function clearAllHistory() { db.ref('adminHistory/money').remove(); }
+        
+        function clearAllHistory() { 
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "All history will be deleted!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff3e3e',
+                confirmButtonText: 'Yes, Delete All',
+                background: '#0d1117', color: '#fff'
+            }).then((res) => {
+                if(res.isConfirmed) db.ref('adminHistory/money').remove();
+            });
+        }
     </script>
 </body>
 </html>
