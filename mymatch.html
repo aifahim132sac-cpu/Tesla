@@ -16,6 +16,7 @@
         .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
         
+        /* ফাস্ট এনিমেশন */
         .my-card { background: var(--c); border-radius: 18px; padding: 18px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.4s ease-out; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -37,9 +38,11 @@
         .btn-rules { width: 100%; background: #222; color: #fff; border: none; padding: 10px; border-radius: 8px; font-family: 'Orbitron'; font-size: 11px; margin-top: 10px; cursor: pointer; transition: 0.3s; }
         .btn-rules:hover { background: #333; }
         
+        /* কাউন্টডাউন স্টাইল */
         .countdown-timer { color: var(--y); font-family: 'Orbitron'; font-size: 11px; margin-left: 10px; font-weight: bold; }
 
-        #no-match, #loading-state { text-align: center; padding: 100px 20px; color: #444; display: none; }
+        /* Empty & Loading State UI */
+        #no-match, #loading-state { text-align: center; padding: 100px 20px; color: #fff; display: none; }
         #no-match i, #loading-state i { font-size: 50px; margin-bottom: 15px; color: var(--p); opacity: 0.5; }
         .spinner { border: 4px solid rgba(0, 255, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--p); margin: 0 auto 15px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -62,7 +65,7 @@
 
     <div id="no-match">
         <i class="fas fa-trophy"></i>
-        <p style="font-family: 'Orbitron'; letter-spacing: 1px;">NO MATCHES JOINED</p>
+        <p style="font-family: 'Orbitron'; letter-spacing: 1px;">NOT JOINED IN ANY MATCH</p>
         <p style="font-size: 12px; color: #555;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>
     </div>
 
@@ -97,11 +100,10 @@
             const loadingArea = document.getElementById('loading-state');
 
             db.ref('users/' + uid + '/joinedMatches').on('value', (userSnap) => {
-                loadingArea.style.display = "none"; // লোডিং শেষ
-                
                 if (!userSnap.exists()) {
+                    loadingArea.style.display = "none";
                     listArea.innerHTML = "";
-                    noMatchArea.style.display = "block"; // জয়েন না থাকলে মেসেজ দেখাবে
+                    noMatchArea.style.display = "block";
                     return;
                 }
 
@@ -109,10 +111,11 @@
                 const joinedIds = Object.keys(userSnap.val());
 
                 db.ref('matches').on('value', (snap) => {
+                    loadingArea.style.display = "none";
                     const allMatches = snap.val();
                     if(!allMatches) return;
 
-                    // আগের সব টাইমার বন্ধ করা
+                    // আগের টাইমারগুলো পরিষ্কার করা
                     timerIntervals.forEach(clearInterval);
                     timerIntervals = [];
 
@@ -132,7 +135,7 @@
                                 </div>
                                 <h3 style="margin:12px 0 5px 0; font-size:17px;">${m.title}</h3>
                                 <div style="font-size:11px; color:#aaa; display:flex; align-items:center;">
-                                    <i class="far fa-clock"></i>&nbsp;${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'} 
+                                    <i class="far fa-clock"></i>&nbsp;${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'}
                                     <span class="countdown-timer" id="${timerId}"></span>
                                 </div>
 
@@ -158,12 +161,17 @@
                                 </div>
                             </div>`;
 
-                            if (m.mTimeSelect) startTimer(m.mTimeSelect, timerId);
+                            if (m.mTimeSelect) {
+                                setTimeout(() => startTimer(m.mTimeSelect, timerId), 100);
+                            }
                             setTimeout(() => fetchPlayerDetails(m.matchNo, uid, id), 100);
                         }
                     });
                     listArea.innerHTML = h;
                 });
+            }, (error) => {
+                loadingArea.style.display = "none";
+                noMatchArea.style.display = "block";
             });
         }
 
@@ -178,13 +186,13 @@
 
                 if (distance < 0) {
                     clearInterval(timerObj);
-                    element.innerHTML = "MATCH STARTED";
+                    element.innerHTML = "STARTED";
                     element.style.color = "#ff4444";
                 } else {
                     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    element.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+                    element.innerHTML = hours + "h " + minutes + "m " + seconds + "s";
                 }
             }, 1000);
             timerIntervals.push(timerObj);
@@ -199,7 +207,7 @@
                         dHtml += `<div class="p-row"><span>P${i+1}: ${p.name}</span><span>ID: ${p.gameId}</span></div>`;
                     });
                 } else {
-                    dHtml += `<div style="font-size:11px; color:#555;">প্লেয়ার ডাটা সিঙ্ক হচ্ছে...</div>`;
+                    dHtml += `<div style="font-size:11px; color:#555;">তথ্য পাওয়া যায়নি।</div>`;
                 }
                 const target = document.getElementById('details-' + divId);
                 if(target) target.innerHTML = dHtml;
@@ -212,17 +220,18 @@
                 text: rules || "No rules specified.",
                 icon: 'info',
                 confirmButtonColor: '#00ff00',
-                background: '#111', color: '#fff'
+                background: '#111',
+                color: '#fff'
             });
         }
 
         function copyText(txt) {
-            const tempInput = document.createElement('textarea');
-            tempInput.value = txt;
-            document.body.appendChild(tempInput);
-            tempInput.select();
+            const el = document.createElement('textarea');
+            el.value = txt;
+            document.body.appendChild(el);
+            el.select();
             document.execCommand('copy');
-            document.body.removeChild(tempInput);
+            document.body.removeChild(el);
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
         }
     </script>
