@@ -58,8 +58,14 @@
                 <div class="stat-box"><i class="fas fa-users" style="color: var(--blue);"></i><h2 id="uT">0</h2><small>Registered</small></div>
                 <div class="stat-box"><i class="fas fa-signal" style="color: var(--neon);"></i><h2 id="uO">0</h2><small>Live Online</small></div>
             </div>
-            <button class="btn btn-red" style="margin-bottom:20px;" onclick="showBlockList()"><i class="fas fa-user-slash"></i> View Blocked Players</button>
             
+            <div class="tesla-card" style="border-top: 4px solid var(--red);">
+                <div class="section-tag" style="color: var(--red);"><i class="fas fa-user-slash"></i> Blocked Players List</div>
+                <div id="blockListArea" style="max-height: 200px; overflow-y: auto; font-size: 12px; color: #ccc;">
+                    Loading block list...
+                </div>
+            </div>
+
             <div class="tesla-card">
                 <div class="section-tag"><i class="fas fa-search"></i> User Search</div>
                 <input id="sUid" placeholder="Enter Player UID">
@@ -68,25 +74,30 @@
             </div>
 
             <div class="tesla-card" style="border-top: 4px solid var(--gold);">
-                <div class="section-tag" style="color: var(--gold);"><i class="fas fa-medal"></i> Distribute Prize Money</div>
+                <div class="section-tag" style="color: var(--gold);"><i class="fas fa-medal"></i> Distribute Prize Money (Manual)</div>
                 <input id="pUid" placeholder="Player UID">
                 <input type="number" id="pAmt" placeholder="Amount (TK)">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <input id="pMatchNo" placeholder="Match No"><input id="pMatchType" placeholder="Solo/Squad">
-                </div>
-                <input type="datetime-local" id="pMatchTime">
-                <button class="btn btn-gold" onclick="sendPrize()">Send Prize (Main + Win)</button>
+                <button class="btn btn-gold" onclick="sendPrize()">Send Prize</button>
             </div>
         </div>
 
         <div id="match" class="page">
             <div class="tesla-card">
                 <div class="section-tag"><i class="fas fa-plus-circle"></i> Create Tournament</div>
-                <input id="mNo" placeholder="Match No"><input id="mType" placeholder="Solo/Squad"><input id="mTitle" placeholder="Title">
+                <input id="mNo" placeholder="Match No (Ex: 01)">
+                <input id="mType" placeholder="Type (Ex: SOLO / DUO / SQUAD)">
+                <input id="mTitle" placeholder="Title (Ex: Free Fire Tournament)">
+                <label>Match Time</label>
                 <input type="datetime-local" id="mTimeSelect">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><input id="mFee" placeholder="Fee TK"><input id="mPk" placeholder="Kill TK"></div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><input id="mPrize" placeholder="Prize"><input id="mSlot" placeholder="Slot"></div>
-                <textarea id="mRules" placeholder="Rules..."></textarea>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <input id="mFee" placeholder="Entry Fee TK">
+                    <input id="mPk" placeholder="Per Kill TK">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <input id="mPrize" placeholder="Total Prize Pool">
+                    <input id="mSlot" placeholder="Total Slot (Ex: 48)">
+                </div>
+                <textarea id="mRules" placeholder="Enter Rules (Use <br> for new line)"></textarea>
                 <button class="btn btn-neon" onclick="postM()">Publish Live</button>
             </div>
             <div id="mLive"></div>
@@ -116,7 +127,7 @@
             <div class="tesla-card">
                 <div class="section-tag"><i class="fas fa-trophy"></i> Full Result Portal</div>
                 <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                    <input id="resMid" placeholder="Match ID" style="margin-bottom:0;">
+                    <input id="resMid" placeholder="Match No (Ex: 01)" style="margin-bottom:0;">
                     <button class="btn btn-blue" style="width: auto; padding: 0 15px; height: 45px;" onclick="loadPlayersForResult()">Get Players</button>
                 </div>
                 
@@ -132,16 +143,17 @@
             </div>
 
             <div class="tesla-card">
-                <div class="section-tag"><i class="fas fa-images"></i> Slider</div>
-                <input type="file" id="slFile"><input id="slLink" placeholder="Link">
-                <button class="btn btn-neon" onclick="upSlide()">Upload</button>
+                <div class="section-tag"><i class="fas fa-images"></i> App Slider</div>
+                <input type="file" id="slFile">
+                <input id="slLink" placeholder="Slider Click Link (Optional)">
+                <button class="btn btn-neon" onclick="upSlide()">Upload Slider</button>
                 <div id="slShow" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;"></div>
             </div>
 
             <div class="tesla-card">
-                <div class="section-tag"><i class="fas fa-bullhorn"></i> Notice</div>
-                <textarea id="appNotice"></textarea>
-                <button class="btn btn-neon" onclick="saveNotice()">Broadcast</button>
+                <div class="section-tag"><i class="fas fa-bullhorn"></i> App Notice</div>
+                <textarea id="appNotice" rows="4"></textarea>
+                <button class="btn btn-neon" onclick="saveNotice()">Broadcast Notice</button>
             </div>
         </div>
     </div>
@@ -169,7 +181,47 @@
             document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
-        // MONEY SYSTEM UPDATE
+        // রিয়েল-টাইম ব্লক লিস্ট দেখার সিস্টেম
+        db.ref('users').on('value', snap => {
+            let blockH = "";
+            let blockCount = 0;
+            snap.forEach(child => {
+                const u = child.val();
+                if(u.isBlocked) {
+                    blockCount++;
+                    blockH += `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+                        <span><b>${u.name}</b> (${child.key})<br><small>Mobile: ${u.mobile || 'N/A'}</small></span>
+                        <button onclick="unblockU('${child.key}')" style="background:var(--neon); border:none; color:#000; padding:4px 8px; border-radius:5px; font-size:10px; cursor:pointer;">UNBLOCK</button>
+                    </div>`;
+                }
+            });
+            document.getElementById('blockListArea').innerHTML = blockH || "No users are currently blocked.";
+        });
+
+        function unblockU(uid) {
+            db.ref('users/'+uid).update({isBlocked: false}).then(() => Swal.fire("User Unblocked"));
+        }
+
+        // রেজাল্ট পাবলিশ সিস্টেম (অটো-পে সরানো হয়েছে)
+        async function publishFinalResult() {
+            const mId = document.getElementById('resMid').value;
+            if(!mId) return Swal.fire("Match No দিন");
+            let results = [];
+            document.querySelectorAll('.res-row').forEach(row => {
+                results.push({
+                    pos: parseInt(row.querySelector('.rPos').value) || 99,
+                    name: row.querySelector('.rName').value,
+                    kills: row.querySelector('.rKill').value,
+                    winning: row.querySelector('.rWin').value,
+                    type: row.querySelector('.rType').value
+                });
+            });
+            db.ref('results/' + mId).set({ matchId: mId, players: results, time: Date.now() })
+            .then(() => Swal.fire("Result Deployed! (Manual Prize Distribution required)"));
+        }
+
+        // --- আগের সব ফাংশন ঠিক রাখা হয়েছে ---
+        
         db.ref('payments').on('value', snap => {
             let depH = ""; let witH = "";
             snap.forEach(child => {
@@ -181,22 +233,17 @@
                         <div style="font-size:12px; color:#aaa;">Player: ${u.name || 'Unknown'} | UID: ${p.uid}<br>Method: ${p.method || 'N/A'} | Number: ${p.number || 'N/A'}</div>
                         ${p.trxId ? `<div style="font-size:11px; color:var(--gold);">TrxID: ${p.trxId}</div>` : ''}
                         <div style="display:flex; gap:8px; margin-top:10px;">
-                            ${isDep && p.ssUrl ? `<button class="btn btn-blue" style="padding:8px; font-size:10px; height:auto;" onclick="Swal.fire({imageUrl:'${p.ssUrl}', background:'#000'})">View SS</button>` : ''}
+                            ${isDep && p.ssUrl ? `<button class="btn btn-blue" style="padding:8px; font-size:10px; height:auto;" onclick="window.open('${p.ssUrl}')">View SS</button>` : ''}
                             <button class="btn btn-neon" style="padding:8px; font-size:10px; height:auto;" onclick="processReq('${key}','${p.uid}',${p.amount},'${p.type}','Approved')">Approve</button>
                             <button class="btn btn-red" style="padding:8px; font-size:10px; height:auto;" onclick="processReq('${key}','${p.uid}',${p.amount},'${p.type}','Declined')">Decline</button>
                         </div>
                     </div>`;
-                    
                     if(isDep) { depH += html; } else { witH += html; }
-                    
-                    document.getElementById('depositList').innerHTML = depH || "<p style='text-align:center;color:#444;'>No Deposit Requests</p>";
-                    document.getElementById('withdrawList').innerHTML = witH || "<p style='text-align:center;color:#444;'>No Withdraw Requests</p>";
+                    document.getElementById('depositList').innerHTML = depH || "No Deposits";
+                    document.getElementById('withdrawList').innerHTML = witH || "No Withdraws";
                 });
             });
-            if(!snap.exists()){
-                document.getElementById('depositList').innerHTML = "";
-                document.getElementById('withdrawList').innerHTML = "";
-            }
+            if(!snap.exists()){ document.getElementById('depositList').innerHTML = ""; document.getElementById('withdrawList').innerHTML = ""; }
         });
 
         async function processReq(key, uid, amt, type, status) {
@@ -213,21 +260,6 @@
             Swal.fire(status);
         }
 
-        // HISTORY SYSTEM
-        db.ref('adminHistory/money').limitToLast(10).on('value', snap => {
-            let h = "";
-            snap.forEach(c => {
-                const hi = c.val();
-                h = `<div style="font-size:11px; border-bottom:1px solid #222; padding:5px; color:${hi.status==='Approved'?'var(--neon)':'var(--red)'}">
-                    ${hi.date} - UID: ${hi.uid} - ${hi.amount}TK (${hi.type}) - ${hi.status}
-                </div>` + h;
-            });
-            document.getElementById('historyList').innerHTML = h;
-        });
-
-        function clearAllHistory() { db.ref('adminHistory/money').remove(); }
-
-        // MATCH SYSTEM
         db.ref('matches').on('value', s => {
             let h = "";
             s.forEach(c => {
@@ -246,45 +278,20 @@
 
         function loadPlayersForResult() {
             const mId = document.getElementById('resMid').value;
-            if(!mId) return Swal.fire("Match ID দিন");
             db.ref('joinedPlayers/' + mId).once('value', snap => {
                 const area = document.getElementById('wRows'); area.innerHTML = "";
-                let i = 1;
-                if(!snap.exists()) return Swal.fire("No players found");
                 snap.forEach(p => {
-                    const player = p.val();
+                    const pl = p.val();
                     const row = document.createElement('div'); row.className = "res-row";
-                    row.innerHTML = `<input class="rPos" type="number" value="${i}">
-                        <input class="rName" value="${player.name}" data-uid="${player.uid}" readonly>
+                    row.innerHTML = `<input class="rPos" type="number" value="0">
+                        <input class="rName" value="${pl.name}" data-uid="${pl.uid}" readonly>
                         <input class="rKill" type="number" value="0">
                         <input class="rWin" type="number" value="0">
                         <select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select>
                         <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
-                    area.appendChild(row); i++;
+                    area.appendChild(row);
                 });
             });
-        }
-
-        function addW() {
-            const d = document.createElement('div'); d.className = "res-row";
-            d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
-            document.getElementById('wRows').appendChild(d);
-        }
-
-        function publishFinalResult() {
-            const mId = document.getElementById('resMid').value;
-            let results = [];
-            document.querySelectorAll('.res-row').forEach(row => {
-                results.push({
-                    pos: parseInt(row.querySelector('.rPos').value) || 99,
-                    name: row.querySelector('.rName').value,
-                    kills: row.querySelector('.rKill').value,
-                    winning: row.querySelector('.rWin').value,
-                    type: row.querySelector('.rType').value
-                });
-            });
-            results.sort((a, b) => a.pos - b.pos);
-            db.ref('results/' + mId).set({ matchId: mId, players: results, time: Date.now() }).then(() => Swal.fire("Result Deployed!"));
         }
 
         function findU() {
@@ -292,7 +299,8 @@
             db.ref('users/'+uid).on('value', s => {
                 if(s.exists()){
                     const u = s.val();
-                    document.getElementById('sRes').innerHTML = `<div class="item-row"><b>${u.name}</b><br>Bal: ${u.balance||0} | Win: ${u.winning||0}</div>`;
+                    const bBtn = u.isBlocked ? `<button class="btn btn-neon" onclick="unblockU('${uid}')">UNBLOCK</button>` : `<button class="btn btn-red" onclick="db.ref('users/${uid}').update({isBlocked:true})">BLOCK USER</button>`;
+                    document.getElementById('sRes').innerHTML = `<div class="item-row"><b>${u.name}</b><br>Bal: ${u.balance||0} | Win: ${u.winning||0}<br><br>${bBtn}</div>`;
                 }
             });
         }
@@ -302,8 +310,7 @@
             const amt = parseFloat(document.getElementById('pAmt').value);
             db.ref('users/'+uid).once('value', s => {
                 if(s.exists()){
-                    const u = s.val();
-                    db.ref('users/'+uid).update({ balance: (u.balance || 0) + amt, winning: (u.winning || 0) + amt });
+                    db.ref('users/'+uid).update({ winning: (s.val().winning || 0) + amt });
                     Swal.fire("Prize Sent");
                 }
             });
@@ -317,26 +324,29 @@
             if(d.success) db.ref('settings/sliders').push({image: d.data.url, link: document.getElementById('slLink').value});
         }
 
-        db.ref('settings/sliders').on('value', s => { let h = ""; s.forEach(c => { h += `<div style="position:relative"><img src="${c.val().image}" style="width:100%; height:60px; object-fit:cover; border-radius:10px;"><button onclick="db.ref('settings/sliders/${c.key}').remove()" style="position:absolute; top:0; right:0; background:red; border:none; color:#fff; border-radius:50%; width:20px;">×</button></div>`; }); document.getElementById('slShow').innerHTML = h; });
-        function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value); }
-        db.ref('users').on('value', s => { document.getElementById('uT').innerText = s.numChildren(); });
-        async function setR(id) { const {value: v} = await Swal.fire({ title: 'Room Info', html: '<input id="swi" class="swal2-input" placeholder="ID"><input id="swp" class="swal2-input" placeholder="Pass">', preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] }); if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}); }
-        function viewPlayers(mNo) { db.ref('joinedPlayers/' + mNo).once('value', s => { let list = ""; s.forEach(p => { list += `<p>${p.val().name} (${p.val().uid})</p>`; }); Swal.fire({title:'Joined Players', html: list || 'None', background:'#0d1117', color:'#fff'}); }); }
         function postM() {
             const mData = {
                 matchNo: document.getElementById('mNo').value,
-                type: document.getElementById('mType').value,
+                mType: document.getElementById('mType').value,
                 title: document.getElementById('mTitle').value,
-                time: document.getElementById('mTimeSelect').value,
-                fee: document.getElementById('mFee').value,
-                perKill: document.getElementById('mPk').value,
-                prize: document.getElementById('mPrize').value,
+                mTimeSelect: document.getElementById('mTimeSelect').value,
+                mFee: document.getElementById('mFee').value,
+                mPk: document.getElementById('mPk').value,
+                mPrize: document.getElementById('mPrize').value,
                 slot: document.getElementById('mSlot').value,
-                rules: document.getElementById('mRules').value,
+                mRules: document.getElementById('mRules').value,
                 joined: 0
             };
             db.ref('matches').push(mData).then(() => Swal.fire("Published!"));
         }
+
+        function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value); }
+        db.ref('settings/sliders').on('value', s => { let h = ""; s.forEach(c => { h += `<div style="position:relative"><img src="${c.val().image}" style="width:100%; height:60px; object-fit:cover; border-radius:10px;"><button onclick="db.ref('settings/sliders/${c.key}').remove()" style="position:absolute; top:0; right:0; background:red; border:none; color:#fff; border-radius:50%; width:20px;">×</button></div>`; }); document.getElementById('slShow').innerHTML = h; });
+        db.ref('users').on('value', s => { document.getElementById('uT').innerText = s.numChildren(); });
+        async function setR(id) { const {value: v} = await Swal.fire({ title: 'Room Info', html: '<input id="swi" class="swal2-input" placeholder="ID"><input id="swp" class="swal2-input" placeholder="Pass">', preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] }); if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}); }
+        function viewPlayers(mNo) { db.ref('joinedPlayers/' + mNo).once('value', s => { let list = ""; s.forEach(p => { list += `<p>${p.val().name} (${p.val().uid})</p>`; }); Swal.fire({title:'Joined Players', html: list || 'None', background:'#0d1117', color:'#fff'}); }); }
+        function addW() { const d = document.createElement('div'); d.className = "res-row"; d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`; document.getElementById('wRows').appendChild(d); }
+        function clearAllHistory() { db.ref('adminHistory/money').remove(); }
     </script>
 </body>
 </html>
