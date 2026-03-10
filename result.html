@@ -59,13 +59,14 @@
     </nav>
 
     <script>
-        const config = {
+        const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
             databaseURL: "https://teot-a3046-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teot-a3046"
+            projectId: "teot-a3046",
+            storageBucket: "teot-a3046.appspot.com"
         };
-        firebase.initializeApp(config);
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         db.ref('results').on('value', snap => {
@@ -81,19 +82,20 @@
                 val.key = c.key; 
                 dataArr.push(val); 
             });
-            dataArr.reverse(); // সর্বশেষ রেজাল্ট উপরে দেখাবে
+            dataArr.reverse(); 
 
             dataArr.forEach((r) => {
                 let winnerListHtml = "";
                 let fullResultHtml = "";
 
                 if(r.players) {
-                    // প্লেয়ারদের পজিশন অনুযায়ী সাজানো
-                    const sortedPlayers = r.players.sort((a, b) => (parseInt(a.pos) || 99) - (parseInt(b.pos) || 99));
+                    // Convert to array if it's an object from Firebase
+                    const playersArray = Array.isArray(r.players) ? r.players : Object.values(r.players);
+                    
+                    const sortedPlayers = playersArray.sort((a, b) => (parseInt(a.pos) || 99) - (parseInt(b.pos) || 99));
 
                     sortedPlayers.forEach(p => {
-                        // উইনার কার্ডের জন্য লজিক
-                        if(p.type === 'Winner') {
+                        if(p.type === 'Winner' || p.pos == 1) {
                             winnerListHtml += `
                             <div class="winner-row">
                                 <div class="p-info">
@@ -104,7 +106,6 @@
                             </div>`;
                         }
                         
-                        // টেবিলের জন্য লজিক
                         fullResultHtml += `
                         <tr>
                             <td>${p.pos || '-'}. ${p.name}</td>
@@ -117,15 +118,15 @@
                 h += `
                 <div class="res-card">
                     <div class="res-header">
-                        <span class="m-no">MATCH #${r.matchId}</span>
+                        <span class="m-no">MATCH #${r.matchId || '00'}</span>
                         <span class="m-time">${r.time ? new Date(r.time).toLocaleDateString() : ''}</span>
                     </div>
                     
-                    <span style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; display: block; text-align: center;">Official Tournament Result</span>
+                    <span style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; display: block; text-align: center;">${r.matchTitle || 'Official Tournament Result'}</span>
 
                     <div class="winner-section">
                         <span class="section-tag">WINNERS & CHAMPIONS</span>
-                        ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">No winners listed yet</p>'}
+                        ${winnerListHtml || '<p style="font-size:10px; text-align:center; color:#444;">Results are being updated</p>'}
                     </div>
 
                     <button class="full-result-btn" onclick="toggleTable('${r.key}')">
