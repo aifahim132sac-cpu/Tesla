@@ -54,7 +54,6 @@
         .g-label { font-size: 9px; color: #777; text-transform: uppercase; }
         .g-val { font-size: 12px; font-weight: 700; color: #fff; font-family: 'Orbitron'; }
 
-        /* ID/PASS Section Design */
         .id-pass-box { background: #000; border: 1px dashed var(--p); border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center; }
         .id-label { font-size: 10px; color: #777; margin-bottom: 5px; display: block; }
         .id-content { font-size: 13px; color: var(--p); font-weight: bold; }
@@ -121,6 +120,30 @@
 
         let isLoginMode = true;
 
+        // --- BLOCK CHECKER ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.ref('users/' + user.uid).on('value', snapshot => {
+                    const userData = snapshot.val();
+                    if (userData && userData.isBlocked === true) {
+                        Swal.fire({
+                            title: 'Your Account is Blocked!',
+                            html: `<div style="text-align:center;">
+                                     <p>Your UID: <b>${user.uid}</b></p>
+                                     <p style="color:#aaa; font-size:13px;">সেবা পেতে হোয়াটসঅ্যাপ নম্বর <b>01774774830</b> এই নম্বরে মেসেজ দিন।</p>
+                                   </div>`,
+                            icon: 'error',
+                            background: '#111',
+                            color: '#fff',
+                            allowOutsideClick: false,
+                            showConfirmButton: false
+                        });
+                        document.body.style.pointerEvents = "none"; // পুরো অ্যাপ লক
+                    }
+                });
+            }
+        });
+
         function openAuth() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
 
@@ -145,11 +168,17 @@
                 if(isLoginMode) {
                     await auth.signInWithEmailAndPassword(email, pass);
                     closeAuth();
-                    location.reload(); // রিলোড দিলে জয়েন করা ম্যাচের আইডি-পাস দেখাবে
                 } else {
                     if(!name) return Swal.fire("Error", "Enter Name", "error");
                     const res = await auth.createUserWithEmailAndPassword(email, pass);
-                    await db.ref('users/' + res.user.uid).set({ name: name, email: email, deposit: 0, winning: 0, playedCount: 0, uid: res.user.uid });
+                    await db.ref('users/' + res.user.uid).set({ 
+                        name: name, 
+                        email: email, 
+                        balance: 0, 
+                        winning: 0, 
+                        uid: res.user.uid,
+                        isBlocked: false 
+                    });
                     closeAuth();
                 }
             } catch(e) { Swal.fire({ icon: 'error', title: 'Oops!', text: e.message, background: '#111', color: '#fff' }); }
@@ -164,19 +193,16 @@
         }
 
         db.ref('settings/sliders').on('value', snap => {
-            let h = ""; snap.forEach(c => { h += `<img src="${c.val()}" class="slide">`; });
+            let h = ""; snap.forEach(c => { h += `<img src="${c.val().image}" class="slide">`; });
             document.getElementById('sliderTrack').innerHTML = h;
             initSlider();
         });
 
         db.ref('settings/notice').on('value', snap => { document.getElementById('noticeMsg').innerText = snap.val() || "Welcome!"; });
 
-        // Match Rendering
         db.ref('matches').on('value', async snap => {
             let h = "";
             const currentUid = auth.currentUser ? auth.currentUser.uid : null;
-
-            // সব জয়েন ডেটা একবারেই আনা হচ্ছে যাতে রেন্ডারিং ফাস্ট হয়
             let allJoins = {};
             if(currentUid) {
                 const joinsSnap = await db.ref('match_joins').once('value');
@@ -186,27 +212,25 @@
             snap.forEach(c => {
                 const m = c.val();
                 const mId = c.key;
-                const total = parseInt(m.totalSlots) || 48, joined = parseInt(m.joinedCount) || 0, percent = (joined/total)*100;
-                
-                // চেক করা হচ্ছে ইউজার জয়েন করেছে কিনা
+                const total = parseInt(m.slot) || 48, joined = parseInt(m.joined) || 0, percent = (joined/total)*100;
                 const isJoined = currentUid && allJoins[mId] && allJoins[mId][currentUid];
 
                 h += `<div class="match-card">
-                    <div class="match-header"><span class="match-mode">${m.mode}</span><span>#${m.matchNo}</span></div>
+                    <div class="match-header"><span class="match-mode">${m.type}</span><span>#${m.matchNo}</span></div>
                     <div class="match-body">
-                        <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.name}</div>
-                        <div class="timer-box" data-time="${m.startTime}">Loading...</div>
+                        <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.title}</div>
+                        <div class="timer-box" data-time="${m.time}">Loading...</div>
                         <div class="m-grid">
-                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.totalPrize} TK</div></div>
-                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">--</div></div>
-                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.entryFee} TK</div></div>
+                            <div class="g-box"><div class="g-label">Total Prize</div><div class="g-val">${m.prize} TK</div></div>
+                            <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.pk} TK</div></div>
+                            <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.fee} TK</div></div>
                         </div>
 
                         ${isJoined ? `
                         <div class="id-pass-box">
                             <span class="id-label">ROOM ID & PASSWORD</span>
-                            <div class="id-content">${m.roomId}</div>
-                            ${m.roomPass ? `<div class="id-content" style="margin-top:5px; color:#fff;">Password: ${m.roomPass}</div>` : ''}
+                            <div class="id-content">ID: ${m.roomId || 'Wait...'}</div>
+                            <div class="id-content" style="margin-top:5px; color:#fff;">Pass: ${m.roomPass || 'Wait...'}</div>
                         </div>
                         ` : ''}
 
@@ -216,7 +240,7 @@
                         </div></div>
                         <div class="btn-row">
                             <button class="btn btn-rules" onclick="showRules('${mId}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${mId}', '${m.mode}', ${m.entryFee}, ${joined}, ${total})">${isJoined ? 'JOINED' : (joined >= total ? 'FULL' : 'JOIN')}</button>
+                            <button class="btn btn-join" onclick="handleJoin('${mId}', '${m.type}', ${m.fee}, ${joined}, ${total})">${isJoined ? 'JOINED' : (joined >= total ? 'FULL' : 'JOIN')}</button>
                         </div>
                     </div>
                 </div>`;
@@ -251,7 +275,7 @@
                     for(let i=1; i<=pCount; i++) {
                         let n = document.getElementById(`pName${i}`).value, u = document.getElementById(`pUid${i}`).value;
                         if(!n || !u) { Swal.showValidationMessage('সবগুলো ঘর পূরণ করুন'); return false; }
-                        d.push({ name: n, gameUid: u });
+                        d.push({ name: n, gameId: u });
                     }
                     return d;
                 }
@@ -261,10 +285,11 @@
                 const uid = auth.currentUser.uid;
                 db.ref('users/' + uid).once('value', async s => {
                     const u = s.val();
-                    if((u.deposit || 0) < fee) return Swal.fire({ icon: "error", title: "Low Balance", text: "ম্যাচে জয়েন করতে টাকা ডিপোজিট করুন।", background: '#111', color: '#fff' });
+                    if((u.balance || 0) < fee) return Swal.fire({ icon: "error", title: "Low Balance", text: "ম্যাচে জয়েন করতে টাকা ডিপোজিট করুন।", background: '#111', color: '#fff' });
                     
-                    await db.ref('users/' + uid).update({ deposit: u.deposit - fee });
-                    await db.ref('matches/' + id).update({ joinedCount: joined + 1 });
+                    await db.ref('users/' + uid).update({ balance: u.balance - fee });
+                    await db.ref('matches/' + id).update({ joined: joined + 1 });
+                    await db.ref('matchJoined/' + id + '/' + uid).set({ name: u.name, gameId: pData[0].gameId, time: Date.now() });
                     await db.ref('match_joins/' + id + '/' + uid).set({ players: pData, time: Date.now() });
                     Swal.fire({ icon: "success", title: "Joined!", background: '#111', color: '#fff' });
                 });
