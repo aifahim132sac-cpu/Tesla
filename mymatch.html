@@ -16,7 +16,6 @@
         .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
         
-        /* ফাস্ট এনিমেশন */
         .my-card { background: var(--c); border-radius: 18px; padding: 18px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.4s ease-out; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -38,7 +37,8 @@
         .btn-rules { width: 100%; background: #222; color: #fff; border: none; padding: 10px; border-radius: 8px; font-family: 'Orbitron'; font-size: 11px; margin-top: 10px; cursor: pointer; transition: 0.3s; }
         .btn-rules:hover { background: #333; }
         
-        /* Empty & Loading State UI */
+        .countdown-timer { color: var(--y); font-family: 'Orbitron'; font-size: 11px; margin-left: 10px; font-weight: bold; }
+
         #no-match, #loading-state { text-align: center; padding: 100px 20px; color: #444; display: none; }
         #no-match i, #loading-state i { font-size: 50px; margin-bottom: 15px; color: var(--p); opacity: 0.5; }
         .spinner { border: 4px solid rgba(0, 255, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--p); margin: 0 auto 15px; animation: spin 1s linear infinite; }
@@ -84,6 +84,8 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
+        let timerIntervals = [];
+
         auth.onAuthStateChanged(user => { 
             if (user) { loadMyMatches(user.uid); } 
             else { window.location.href = "auth.html"; } 
@@ -94,33 +96,34 @@
             const noMatchArea = document.getElementById('no-match');
             const loadingArea = document.getElementById('loading-state');
 
-            // ইউজারের জয়েন করা ম্যাচের লিস্ট রিড করা
             db.ref('users/' + uid + '/joinedMatches').on('value', (userSnap) => {
-                loadingArea.style.display = "none";
+                loadingArea.style.display = "none"; // লোডিং শেষ
                 
                 if (!userSnap.exists()) {
                     listArea.innerHTML = "";
-                    noMatchArea.style.display = "block";
+                    noMatchArea.style.display = "block"; // জয়েন না থাকলে মেসেজ দেখাবে
                     return;
                 }
 
                 noMatchArea.style.display = "none";
                 const joinedIds = Object.keys(userSnap.val());
 
-                // মূল ম্যাচ ডাটাবেজ রিড করা
                 db.ref('matches').on('value', (snap) => {
                     const allMatches = snap.val();
                     if(!allMatches) return;
 
+                    // আগের সব টাইমার বন্ধ করা
+                    timerIntervals.forEach(clearInterval);
+                    timerIntervals = [];
+
                     let h = "";
-                    
-                    // লেটেস্ট ম্যাচ আগে দেখানোর জন্য
                     joinedIds.slice().reverse().forEach(id => {
                         const m = allMatches[id];
                         if (m) {
                             const rId = m.roomId || "";
                             const rPass = m.roomPass || "";
                             const isAvailable = (rId !== "" && rId !== "Updating..." && rPass !== "" && rPass !== "Updating...");
+                            const timerId = `timer-${id}`;
 
                             h += `<div class="my-card">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -128,7 +131,10 @@
                                     <span style="color:var(--p); font-family:Orbitron; font-size:11px;">#${m.matchNo}</span>
                                 </div>
                                 <h3 style="margin:12px 0 5px 0; font-size:17px;">${m.title}</h3>
-                                <div style="font-size:11px; color:#aaa;"><i class="far fa-clock"></i> ${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'}</div>
+                                <div style="font-size:11px; color:#aaa; display:flex; align-items:center;">
+                                    <i class="far fa-clock"></i>&nbsp;${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'} 
+                                    <span class="countdown-timer" id="${timerId}"></span>
+                                </div>
 
                                 <div class="match-info-grid">
                                     <div class="info-item"><span>Entry Fee</span>৳${m.mFee}</div>
@@ -152,13 +158,36 @@
                                 </div>
                             </div>`;
 
-                            // প্লেয়ার ডিটেইলস ফেচ করা
+                            if (m.mTimeSelect) startTimer(m.mTimeSelect, timerId);
                             setTimeout(() => fetchPlayerDetails(m.matchNo, uid, id), 100);
                         }
                     });
                     listArea.innerHTML = h;
                 });
             });
+        }
+
+        function startTimer(targetTime, elementId) {
+            const countDownDate = new Date(targetTime).getTime();
+            const timerObj = setInterval(function() {
+                const now = new Date().getTime();
+                const distance = countDownDate - now;
+                const element = document.getElementById(elementId);
+                
+                if (!element) return;
+
+                if (distance < 0) {
+                    clearInterval(timerObj);
+                    element.innerHTML = "MATCH STARTED";
+                    element.style.color = "#ff4444";
+                } else {
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    element.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+                }
+            }, 1000);
+            timerIntervals.push(timerObj);
         }
 
         function fetchPlayerDetails(matchNo, uid, divId) {
@@ -183,25 +212,18 @@
                 text: rules || "No rules specified.",
                 icon: 'info',
                 confirmButtonColor: '#00ff00',
-                background: '#111',
-                color: '#fff'
+                background: '#111', color: '#fff'
             });
         }
 
         function copyText(txt) {
-            if (!navigator.clipboard) {
-                // পুরানো ব্রাউজারের জন্য ব্যাকআপ পদ্ধতি
-                const el = document.createElement('textarea');
-                el.value = txt;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                return Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
-            }
-            navigator.clipboard.writeText(txt).then(() => {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
-            });
+            const tempInput = document.createElement('textarea');
+            tempInput.value = txt;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
         }
     </script>
 </body>
