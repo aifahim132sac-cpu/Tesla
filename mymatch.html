@@ -42,7 +42,6 @@
     </div>
 
     <script>
-        // আপনার নতুন আপডেট করা কনফিগ
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
@@ -59,60 +58,70 @@
             if (user) { 
                 loadMyMatches(user.uid); 
             } else { 
-                window.location.href = "auth.html"; 
+                window.location.href = "index.html"; 
             } 
         });
 
         function loadMyMatches(uid) {
-            // ইউজার কোন কোন ম্যাচে জয়েন করেছে সেটা 'match_joins' অথবা আপনার দেওয়া 'user_matches' নোড থেকে চেক করবে
-            db.ref('user_matches/' + uid).on('value', snap => {
-                let h = ""; 
-                if(!snap.exists()) { 
-                    document.getElementById('myList').innerHTML = "<p style='text-align:center; margin-top:50px; color:#666;'>আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>"; 
-                    return; 
-                }
-                
-                let matchKeys = Object.keys(snap.val());
-                let loadedCount = 0;
+            // রিয়েল-টাইম লিসেনার (অ্যাডমিন থেকে আইডি দিলে সাথে সাথে আসবে)
+            db.ref('matches').on('value', snap => {
+                db.ref('match_joins').on('value', joinSnap => {
+                    let h = "";
+                    let hasJoined = false;
+                    const matches = snap.val();
+                    const allJoins = joinSnap.val();
 
-                matchKeys.forEach(matchId => {
-                    db.ref('matches/' + matchId).on('value', ms => {
-                        let m = ms.val(); 
-                        if(m) {
-                            let isReady = (m.roomId && m.roomId !== "Pending" && m.roomId !== "");
-                            h += `<div class="my-card">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="color:var(--p); font-family:Orbitron; font-size:10px;">MATCH #${m.matchNo}</span>
-                                    <span style="font-size:10px; color:#777;">${m.mode}</span>
-                                </div>
-                                <h3 style="margin:8px 0; font-size:16px;">${m.name}</h3>
-                                <div class="room-box">
-                                    ${isReady ? 
-                                        `<div class="r-val"><span>ID: ${m.roomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.roomId}')"></i></div>
-                                         <div class="r-val"><span>PASS: ${m.roomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.roomPass}')"></i></div>` 
-                                        : `<div style="font-size:11px; color:#ffcc00; padding:10px;">রুম আইডি এবং পাসওয়ার্ড ম্যাচ শুরুর ৫-১০ মিনিট আগে এখানে দেওয়া হবে।</div>`
-                                    }
-                                </div>
-                            </div>`;
-                        }
-                        loadedCount++;
-                        if(loadedCount === matchKeys.length) {
-                            document.getElementById('myList').innerHTML = h;
-                        }
-                    });
+                    if(matches && allJoins) {
+                        Object.keys(matches).forEach(matchId => {
+                            // চেক করছে এই ইউজার এই ম্যাচে জয়েন করেছে কিনা
+                            if(allJoins[matchId] && allJoins[matchId][uid]) {
+                                hasJoined = true;
+                                const m = matches[matchId];
+                                const isReady = (m.mRoomId && m.mRoomId !== "" && m.mRoomId !== "Pending");
+
+                                h += `<div class="my-card">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="color:var(--p); font-family:Orbitron; font-size:10px;">MATCH #${m.matchNo}</span>
+                                        <span style="font-size:10px; color:#777;">${m.mType || 'SOLO'}</span>
+                                    </div>
+                                    <h3 style="margin:8px 0; font-size:16px;">${m.title}</h3>
+                                    <div class="room-box">
+                                        ${isReady ? 
+                                            `<div class="r-val"><span>ID: ${m.mRoomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.mRoomId}')"></i></div>
+                                             <div class="r-val"><span>PASS: ${m.mRoomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${m.mRoomPass}')"></i></div>` 
+                                            : `<div style="font-size:11px; color:#ffcc00; padding:10px;">রুম আইডি এবং পাসওয়ার্ড ম্যাচ শুরুর ৫-১০ মিনিট আগে এখানে দেওয়া হবে।</div>`
+                                        }
+                                    </div>
+                                </div>`;
+                            }
+                        });
+                    }
+
+                    if(!hasJoined) {
+                        document.getElementById('myList').innerHTML = "<p style='text-align:center; margin-top:50px; color:#666;'>আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>";
+                    } else {
+                        document.getElementById('myList').innerHTML = h;
+                    }
                 });
             });
         }
 
         function copyText(txt) {
-            navigator.clipboard.writeText(txt);
+            const el = document.createElement('textarea');
+            el.value = txt;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
             Swal.fire({
                 toast: true,
                 position: 'top-end',
                 icon: 'success',
                 title: 'Copied!',
                 showConfirmButton: false,
-                timer: 1500
+                timer: 1500,
+                background: '#111',
+                color: '#fff'
             });
         }
     </script>
