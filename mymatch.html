@@ -65,7 +65,7 @@
 
     <div id="no-match">
         <i class="fas fa-trophy"></i>
-        <p style="font-family: 'Orbitron'; letter-spacing: 1px;">NOT JOINED IN ANY MATCH</p>
+        <p style="font-family: 'Orbitron'; letter-spacing: 1px; color: var(--p);">NOT JOINED IN ANY MATCH</p>
         <p style="font-size: 12px; color: #555;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p>
     </div>
 
@@ -99,30 +99,42 @@
             const noMatchArea = document.getElementById('no-match');
             const loadingArea = document.getElementById('loading-state');
 
+            // ১. ইউজারের জয়েনিং লিস্ট চেক করা
             db.ref('users/' + uid + '/joinedMatches').on('value', (userSnap) => {
+                
                 if (!userSnap.exists()) {
                     loadingArea.style.display = "none";
                     listArea.innerHTML = "";
-                    noMatchArea.style.display = "block";
+                    noMatchArea.style.display = "block"; // লিস্ট না থাকলে সরাসরি মেসেজ দেখাবে
                     return;
                 }
 
+                // যদি জয়েনিং লিস্ট থাকে, তবে মেসেজ হাইড করবে
                 noMatchArea.style.display = "none";
                 const joinedIds = Object.keys(userSnap.val());
 
+                // ২. ম্যাচের মেইন তথ্যগুলো আনা
                 db.ref('matches').on('value', (snap) => {
                     loadingArea.style.display = "none";
                     const allMatches = snap.val();
-                    if(!allMatches) return;
+                    
+                    if(!allMatches) {
+                        noMatchArea.style.display = "block";
+                        listArea.innerHTML = "";
+                        return;
+                    }
 
-                    // আগের টাইমারগুলো পরিষ্কার করা
+                    // টাইমারগুলো রিসেট করা
                     timerIntervals.forEach(clearInterval);
                     timerIntervals = [];
 
                     let h = "";
+                    let matchFound = false;
+
                     joinedIds.slice().reverse().forEach(id => {
                         const m = allMatches[id];
                         if (m) {
+                            matchFound = true;
                             const rId = m.roomId || "";
                             const rPass = m.roomPass || "";
                             const isAvailable = (rId !== "" && rId !== "Updating..." && rPass !== "" && rPass !== "Updating...");
@@ -167,7 +179,15 @@
                             setTimeout(() => fetchPlayerDetails(m.matchNo, uid, id), 100);
                         }
                     });
-                    listArea.innerHTML = h;
+
+                    // যদি লুপ শেষে কোনো ভ্যালিড ম্যাচ ডাটা না পায়
+                    if(!matchFound) {
+                        noMatchArea.style.display = "block";
+                        listArea.innerHTML = "";
+                    } else {
+                        noMatchArea.style.display = "none";
+                        listArea.innerHTML = h;
+                    }
                 });
             }, (error) => {
                 loadingArea.style.display = "none";
