@@ -11,30 +11,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #121212; }
+        :root { --p: #00ff00; --b: #050505; --c: #121212; --y: #ffcc00; }
         body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 90px; }
         .header { padding: 20px; background: #000; text-align: center; border-bottom: 2px solid var(--p); }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 18px; }
         
-        .my-card { background: var(--c); border-radius: 15px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
+        .my-card { background: var(--c); border-radius: 18px; padding: 18px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .room-box { background: #000; border: 1px dashed var(--p); padding: 12px; border-radius: 10px; margin-top: 15px; text-align: center; }
-        .r-val { background: #1a1a1a; padding: 10px; border-radius: 8px; font-size: 13px; color: var(--p); border: 1px solid #333; margin-top: 8px; font-family: 'Orbitron'; display: flex; justify-content: space-between; align-items: center; }
-        .copy-btn { font-size: 14px; color: #777; cursor: pointer; transition: 0.3s; }
-        .copy-btn:hover { color: var(--p); }
+        .status-badge { font-size: 10px; background: rgba(0, 255, 0, 0.1); color: var(--p); padding: 4px 10px; border-radius: 50px; border: 1px solid var(--p); }
         
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
+        .match-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .info-item { background: #000; padding: 10px; border-radius: 10px; border: 1px solid #222; font-size: 12px; }
+        .info-item span { display: block; color: #777; font-size: 9px; text-transform: uppercase; }
+
+        .details-box { background: #0a0a0a; border: 1px solid #333; border-radius: 12px; padding: 12px; margin: 15px 0; }
+        .p-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 12px; }
+        .p-row:last-child { border: none; }
+        
+        .room-box { background: rgba(0, 255, 0, 0.03); border: 1px dashed var(--p); padding: 15px; border-radius: 12px; margin-top: 15px; text-align: center; }
+        .r-val { background: #1a1a1a; padding: 12px; border-radius: 8px; font-size: 14px; color: var(--p); border: 1px solid #333; margin-top: 10px; font-family: 'Orbitron'; display: flex; justify-content: space-between; align-items: center; }
+        .copy-btn { font-size: 16px; color: #777; cursor: pointer; transition: 0.3s; }
+        .copy-btn:hover { color: var(--p); }
+
+        .btn-rules { width: 100%; background: #222; color: #fff; border: none; padding: 10px; border-radius: 8px; font-family: 'Orbitron'; font-size: 11px; margin-top: 10px; cursor: pointer; }
+        
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 14px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
-        .n-i i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
-    <div class="header"><div class="title">MY JOINED MATCHES</div></div>
+    <div class="header"><div class="title">MY MATCHES</div></div>
     
     <div id="myList">
-        <p style="text-align:center; padding:50px; color:#444;">ম্যাচ চেক করা হচ্ছে...</p>
+        <p style="text-align:center; padding:50px; color:#444;">লোডিং হচ্ছে...</p>
     </div>
 
     <nav class="nav">
@@ -45,7 +57,6 @@
     </nav>
 
     <script>
-        // আপনার Firebase Config সব ফাইলে এক থাকা জরুরি
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
@@ -61,72 +72,94 @@
             else { window.location.href = "auth.html"; } 
         });
 
-        async function loadMyMatches(uid) {
-            // ইউজারের জয়েন করা ম্যাচের লিস্ট রিয়েল-টাইমে ট্র্যাক করা
+        function loadMyMatches(uid) {
             db.ref('users/' + uid + '/joinedMatches').on('value', (userSnap) => {
                 if (!userSnap.exists()) {
-                    document.getElementById('myList').innerHTML = `<div style="text-align:center; margin-top:80px;"><i class="fas fa-ghost" style="font-size:50px; color:#222;"></i><p style="color:#666; margin-top:15px;">আপনি এখনো কোনো ম্যাচে জয়েন করেননি।</p></div>`;
+                    document.getElementById('myList').innerHTML = `<div style="text-align:center; margin-top:80px; color:#666;">আপনি কোনো ম্যাচে জয়েন করেননি।</div>`;
                     return;
                 }
 
-                const matchIds = Object.keys(userSnap.val());
+                const joinedIds = Object.keys(userSnap.val());
 
-                // মূল ম্যাচ লিস্ট থেকে ডাটা নিয়ে আসা (রিয়েল-টাইম .on ব্যবহার করা হয়েছে)
                 db.ref('matches').on('value', (snap) => {
                     const allMatches = snap.val();
-                    if (!allMatches) return;
-
                     let h = "";
-                    // জয়েন করা আইডিগুলো দিয়ে লুপ চালানো
-                    matchIds.forEach(id => {
+                    joinedIds.forEach(id => {
                         const m = allMatches[id];
                         if (m) {
-                            const roomId = m.roomId ? m.roomId.toString().trim() : "";
-                            const roomPass = m.roomPass ? m.roomPass.toString().trim() : "";
-                            
-                            // রুম আইডি যদি ফাঁকা না থাকে বা "Pending/TBA" না হয়
-                            const isReady = (roomId.length > 0 && roomId.toLowerCase() !== "pending" && roomId.toLowerCase() !== "tba");
+                            const rId = m.roomId || "";
+                            const rPass = m.roomPass || "";
+                            const isAvailable = (rId !== "" && rPass !== "");
 
                             h += `<div class="my-card">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="color:var(--p); font-family:Orbitron; font-size:10px;">MATCH #${m.matchNo || 'N/A'}</span>
-                                    <span style="font-size:10px; color:#777; background:#222; padding:2px 8px; border-radius:4px;">${m.mType || 'SOLO'}</span>
+                                    <span class="status-badge">JOINED</span>
+                                    <span style="color:var(--p); font-family:Orbitron; font-size:11px;">#${m.matchNo}</span>
                                 </div>
-                                <h3 style="margin:8px 0; font-size:16px;">${m.title}</h3>
-                                <div style="font-size:11px; color:#aaa; margin-bottom:10px;">
-                                    <i class="far fa-clock"></i> ${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'}
+                                <h3 style="margin:12px 0 5px 0; font-size:17px;">${m.title}</h3>
+                                <div style="font-size:11px; color:#aaa;"><i class="far fa-clock"></i> ${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'}</div>
+
+                                <div class="match-info-grid">
+                                    <div class="info-item"><span>Entry Fee</span>৳${m.mFee}</div>
+                                    <div class="info-item"><span>Type</span>${m.mType}</div>
                                 </div>
+
+                                <div id="details-${id}" class="details-box">লোডিং ইউজার ডাটা...</div>
+
+                                <button class="btn-rules" onclick="showRules('${m.mRules}')">VIEW RULES</button>
+
                                 <div class="room-box">
-                                    ${isReady ? 
-                                        `<div class="r-val"><span>Room ID: ${roomId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${roomId}')"></i></div>
-                                         <div class="r-val"><span>Pass: ${roomPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${roomPass}')"></i></div>` 
-                                        : `<div style="font-size:12px; color:#ffcc00; padding:15px; line-height:1.6;">
-                                            <i class="fas fa-clock" style="font-size:18px; margin-bottom:8px;"></i><br>
-                                            ম্যাচ শুরুর ১০-১৫ মিনিট আগে আইডি এবং পাসওয়ার্ড এখানে দেওয়া হবে। একটু অপেক্ষা করুন।
+                                    ${isAvailable ? 
+                                        `<div style="font-size:11px; color:var(--p); margin-bottom:5px; font-family:Orbitron;">ROOM INFORMATION</div>
+                                         <div class="r-val"><span>ID: ${rId}</span> <i class="far fa-copy copy-btn" onclick="copyText('${rId}')"></i></div>
+                                         <div class="r-val"><span>PASS: ${rPass}</span> <i class="far fa-copy copy-btn" onclick="copyText('${rPass}')"></i></div>` 
+                                        : `<div style="font-size:12px; color:var(--y); padding:10px;">
+                                            <i class="fas fa-info-circle"></i><br>
+                                            ম্যাচ শুরুর ৫-১০ মিনিট আগে এখানে রুম আইডি ও পাসওয়ার্ড দেওয়া হবে।
                                            </div>`
                                     }
                                 </div>
                             </div>`;
+
+                            // প্লেয়ার ডিটেইলস ফেচ করা
+                            fetchPlayerDetails(m.matchNo, uid, id);
                         }
                     });
-                    
-                    document.getElementById('myList').innerHTML = h || `<div style="text-align:center; margin-top:80px;"><p style="color:#666;">ম্যাচ লোড করা সম্ভব হচ্ছে না।</p></div>`;
+                    document.getElementById('myList').innerHTML = h;
                 });
+            });
+        }
+
+        function fetchPlayerDetails(matchNo, uid, divId) {
+            db.ref('joinedPlayers/' + matchNo + '/' + uid).on('value', snap => {
+                const data = snap.val();
+                let dHtml = `<div style="color:var(--p); font-size:10px; margin-bottom:8px; font-family:Orbitron;">YOUR REGISTERED INFO</div>`;
+                if(data && data.details) {
+                    data.details.forEach((p, i) => {
+                        dHtml += `<div class="p-row"><span>P${i+1}: ${p.name}</span><span>ID: ${p.gameId}</span></div>`;
+                    });
+                } else {
+                    dHtml += `<div style="font-size:11px; color:#555;">তথ্য পাওয়া যায়নি।</div>`;
+                }
+                const target = document.getElementById('details-' + divId);
+                if(target) target.innerHTML = dHtml;
+            });
+        }
+
+        function showRules(rules) {
+            Swal.fire({
+                title: 'Match Rules',
+                text: rules || "No rules specified.",
+                icon: 'info',
+                confirmButtonColor: '#00ff00',
+                background: '#111',
+                color: '#fff'
             });
         }
 
         function copyText(txt) {
             navigator.clipboard.writeText(txt).then(() => {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: 'Copied!',
-                    showConfirmButton: false,
-                    timer: 1500,
-                    background: '#111',
-                    color: '#fff'
-                });
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied!', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff' });
             });
         }
     </script>
