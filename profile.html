@@ -29,8 +29,12 @@
         .val-p { color: var(--p); font-family: 'Orbitron'; font-size: 13px; }
 
         .action-btns { padding: 20px 15px; display: flex; gap: 12px; }
-        .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px; display: none; border: 1px solid #222; animation: fadeIn 0.4s; }
+        .form-sec { background: var(--c); padding: 20px; border-radius: 20px; margin: 0 15px 20px; display: none; border: 1px solid #222; animation: fadeIn 0.4s; position: relative; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ক্লোজ বাটনের স্টাইল */
+        .close-form { position: absolute; top: 15px; right: 15px; color: #ff4444; font-size: 18px; cursor: pointer; transition: 0.3s; }
+        .close-form:hover { transform: scale(1.2); }
 
         select, input { width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; margin-top: 12px; box-sizing: border-box; outline: none; font-size: 14px; }
         select:focus, input:focus { border-color: var(--p); }
@@ -45,6 +49,10 @@
         
         .edit-name-icon { color: var(--p); margin-left: 8px; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .edit-name-icon:hover { transform: scale(1.2); }
+
+        /* হোয়াটসঅ্যাপ হেল্পলাইন স্টাইল */
+        .helpline-box { margin: 20px 15px; padding: 20px; background: #0a0a0a; border-radius: 20px; border: 1px solid #222; text-align: center; }
+        .wa-link { color: #25d366; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -80,6 +88,7 @@
     </div>
 
     <div id="depForm" class="form-sec">
+        <i class="fas fa-times-circle close-form" onclick="openTab('')"></i>
         <h4 style="margin:0 0 10px; color:var(--p);">Add Money</h4>
         <div id="adminNotice" style="font-size: 10px; background: #000; padding: 10px; border-radius: 8px; margin-bottom: 10px; color: #aaa; border: 1px solid #222;">
             অ্যাডমিন নাম্বার: <span id="adminPhone" style="color: var(--p);">...</span> (টাকা পাঠিয়ে নিচের তথ্য দিন)
@@ -96,6 +105,7 @@
     </div>
 
     <div id="witForm" class="form-sec">
+        <i class="fas fa-times-circle close-form" onclick="openTab('')"></i>
         <h4 style="margin:0 0 10px; color:#ffcc00;">Cash Out</h4>
         <select id="wMethod">
             <option value="">Select Method</option>
@@ -105,6 +115,14 @@
         <input type="text" id="wNumber" placeholder="Receiver Number">
         <input type="number" id="wAmount" placeholder="Amount (TK)">
         <button class="btn-main" style="background:#ffcc00" onclick="submitWithdraw()">SUBMIT REQUEST</button>
+    </div>
+
+    <div class="helpline-box">
+        <p style="margin:0; font-size:12px; color:#777;">যেকোনো প্রয়োজনে যোগাযোগ করুন</p>
+        <a href="https://wa.me/8801774774830" class="wa-link">
+            <i class="fab fa-whatsapp" style="font-size: 20px;"></i> 01774774830
+        </a>
+        <p style="margin:5px 0 0; font-size:10px; color:#555;">ধন্যবাদ আমাদের সাথে থাকার জন্য</p>
     </div>
 
     <div class="nav">
@@ -175,7 +193,6 @@
             const file = input.files[0];
             if(!file) return;
 
-            // Updated API Key and Loading System
             const apiKey = "bb6ae5282e75af49c1e446d17733e498"; 
             
             Swal.fire({ 
@@ -216,8 +233,13 @@
 
         function openTab(t) {
             const d = document.getElementById('depForm'), w = document.getElementById('witForm');
-            d.style.display = (t === 'dep' && d.style.display !== 'block') ? 'block' : 'none';
-            w.style.display = (t === 'wit' && w.style.display !== 'block') ? 'block' : 'none';
+            // সব ট্যাব আগে বন্ধ করা হচ্ছে
+            d.style.display = 'none';
+            w.style.display = 'none';
+
+            // নির্দিষ্ট ট্যাব খোলা হচ্ছে
+            if(t === 'dep') d.style.display = 'block';
+            if(t === 'wit') w.style.display = 'block';
         }
 
         function submitDeposit() {
