@@ -38,7 +38,7 @@
         .btn-main { width: 100%; padding: 16px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; }
         .btn-main:active { transform: scale(0.95); }
 
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
         .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
@@ -75,6 +75,9 @@
 
     <div id="depForm" class="form-sec">
         <h4 style="margin:0 0 10px; color:var(--p);">Add Money</h4>
+        <div id="adminNotice" style="font-size: 10px; background: #000; padding: 10px; border-radius: 8px; margin-bottom: 10px; color: #aaa; border: 1px solid #222;">
+            অ্যাডমিন নাম্বার: <span id="adminPhone" style="color: var(--p);">...</span> (টাকা পাঠিয়ে নিচের তথ্য দিন)
+        </div>
         <select id="dMethod">
             <option value="">Select Method</option>
             <option value="Bkash Personal">bKash Personal</option>
@@ -116,10 +119,13 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
 
+        let currentUserData = {};
+
         auth.onAuthStateChanged(user => {
             if (user) {
                 db.ref('users/' + user.uid).on('value', snap => {
                     const u = snap.val() || {};
+                    currentUserData = u; // Store for later use
                     document.getElementById('userName').innerText = u.name || "Player";
                     document.getElementById('userUid').innerText = "UID: " + user.uid.toUpperCase().substring(0,14);
                     document.getElementById('balMain').innerText = (u.balance || 0) + " TK";
@@ -127,7 +133,12 @@
                     document.getElementById('playedCount').innerText = u.played || 0;
                     if(u.profilePic) document.getElementById('profileImg').src = u.profilePic;
                 });
-            } else { window.location.href = "index.html"; }
+                
+                // Load Admin Number
+                db.ref('settings/adminNumber').on('value', s => {
+                    document.getElementById('adminPhone').innerText = s.val() || "Check Admin Panel";
+                });
+            } else { window.location.href = "auth.html"; }
         });
 
         async function uploadProfilePic(input) {
@@ -150,7 +161,6 @@
             w.style.display = (t === 'wit' && w.style.display !== 'block') ? 'block' : 'none';
         }
 
-        // Updated Deposit Logic to match Admin Panel
         function submitDeposit() {
             const m = document.getElementById('dMethod').value;
             const s = document.getElementById('dSender').value;
@@ -161,20 +171,21 @@
 
             db.ref('payments').push({
                 uid: auth.currentUser.uid,
+                name: currentUserData.name || "Unknown",
                 method: m,
                 number: s,
                 amount: a,
                 trxId: t,
                 type: "Deposit",
                 status: "Pending",
+                time: new Date().toLocaleString(),
                 timestamp: Date.now()
             }).then(() => {
-                Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে। অ্যাডমিন চেক করে ব্যালেন্স অ্যাড করবে।", "success");
+                Swal.fire("Success", "ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে।", "success");
                 openTab('');
             });
         }
 
-        // Updated Withdraw Logic with Balance Check
         function submitWithdraw() {
             const m = document.getElementById('wMethod').value;
             const n = document.getElementById('wNumber').value;
@@ -182,33 +193,28 @@
 
             if(!m || !n || !a) return Swal.fire("Error", "সবগুলো তথ্য দিন", "error");
 
-            db.ref('users/' + auth.currentUser.uid).once('value', snap => {
-                const u = snap.val() || {};
-                const winBal = u.winning || 0;
+            const winBal = currentUserData.winning || 0;
 
-                if (a > winBal) {
-                    return Swal.fire("Error", "আপনার পর্যাপ্ত উইনিং ব্যালেন্স নেই!", "error");
-                }
-                if (a < 50) {
-                    return Swal.fire("Error", "সর্বনিম্ন ৫০ টাকা উইথড্র করা যাবে।", "error");
-                }
+            if (a > winBal) return Swal.fire("Error", "আপনার পর্যাপ্ত উইনিং ব্যালেন্স নেই!", "error");
+            if (a < 50) return Swal.fire("Error", "সর্বনিম্ন ৫০ টাকা উইথড্র করা যাবে।", "error");
 
-                db.ref('payments').push({
-                    uid: auth.currentUser.uid,
-                    method: m,
-                    number: n,
-                    amount: a,
-                    type: "Withdraw",
-                    status: "Pending",
-                    timestamp: Date.now()
-                }).then(() => {
-                    Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।", "success");
-                    openTab('');
-                });
+            db.ref('payments').push({
+                uid: auth.currentUser.uid,
+                name: currentUserData.name || "Unknown",
+                method: m,
+                number: n,
+                amount: a,
+                type: "Withdraw",
+                status: "Pending",
+                time: new Date().toLocaleString(),
+                timestamp: Date.now()
+            }).then(() => {
+                Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে। অ্যাডমিন চেক করে টাকা পাঠিয়ে দিবে।", "success");
+                openTab('');
             });
         }
 
-        function handleLogout() { auth.signOut(); }
+        function handleLogout() { auth.signOut().then(() => window.location.href = "auth.html"); }
     </script>
 </body>
 </html>
