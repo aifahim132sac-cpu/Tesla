@@ -179,22 +179,34 @@
             if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
             if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
             
+            // Solo, Duo, Squad অনুযায়ী প্লেয়ার সংখ্যা নির্ধারণ
             let pCount = 1; 
             let mLow = mode ? mode.toLowerCase() : "";
-            if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
+            if(mLow.includes('duo')) pCount = 2; 
+            else if(mLow.includes('squad')) pCount = 4;
             
-            let html = `<p style="color:#aaa; font-size:12px; margin-bottom:20px;">আপনার গেমের সঠিক তথ্য দিন।</p>`;
+            let html = `<p style="color:#aaa; font-size:12px; margin-bottom:20px;">আপনার গেমের সঠিক তথ্য দিন।</p>
+                        <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">`; // Scrollable container for squad
+            
             for(let i=1; i<=pCount; i++) {
                 html += `
-                <div class="join-input-box">
-                    <label>PLAYER ${i} NAME</label>
-                    <input id="pName${i}" class="swal-custom-input" placeholder="Enter In-Game Name">
-                </div>
-                <div class="join-input-box">
-                    <label>PLAYER ${i} GAME UID</label>
-                    <input id="pUid${i}" class="swal-custom-input" placeholder="Paste Full Game UID">
+                <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                    <h4 style="color:var(--p); font-size:12px; font-family:'Orbitron'; margin:0 0 10px 0;">PLAYER ${i}</h4>
+                    <div class="join-input-box">
+                        <label>IN-GAME NAME</label>
+                        <input id="pName${i}" class="swal-custom-input" placeholder="Ex: TeslaBoss">
+                    </div>
+                    <div class="join-input-box">
+                        <label>GAME UID / ID</label>
+                        <input id="pId${i}" class="swal-custom-input" placeholder="Ex: 123456789">
+                    </div>
+                    <div class="join-input-box">
+                        <label>FULL PROFILE UID (APP)</label>
+                        <input id="pFullUid${i}" class="swal-custom-input" placeholder="Paste Full Profile UID">
+                    </div>
                 </div>`;
             }
+            html += `</div>`;
 
             const { value: pData } = await Swal.fire({
                 title: 'JOIN MATCH', 
@@ -204,6 +216,7 @@
                 confirmButtonColor: '#00ff00', 
                 background: '#111', 
                 color: '#fff',
+                width: '95%',
                 customClass: {
                     title: 'm-title',
                     confirmButton: 'auth-btn'
@@ -211,9 +224,15 @@
                 preConfirm: () => {
                     let d = [];
                     for(let i=1; i<=pCount; i++) {
-                        let n = document.getElementById(`pName${i}`).value, u = document.getElementById(`pUid${i}`).value;
-                        if(!n || !u) { Swal.showValidationMessage('সবগুলো ঘর পূরণ করুন'); return false; }
-                        d.push({ name: n, gameId: u });
+                        let n = document.getElementById(`pName${i}`).value;
+                        let g = document.getElementById(`pId${i}`).value;
+                        let f = document.getElementById(`pFullUid${i}`).value;
+                        
+                        if(!n || !g || !f) { 
+                            Swal.showValidationMessage(`Player ${i}-এর সব তথ্য দিন`); 
+                            return false; 
+                        }
+                        d.push({ name: n, gameId: g, profileUid: f });
                     }
                     return d;
                 }
@@ -235,19 +254,30 @@
                     Swal.fire({title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
                     try {
+                        // ইউজারের ব্যালেন্স আপডেট
                         await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (parseInt(u.played) || 0) + 1 });
                         await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
+                        
+                        // ম্যাচের জয়েন সংখ্যা আপডেট
                         await matchRef.update({ joined: joined + 1 });
                         
-                        const joinData = { name: pData[0].name, allPlayers: pData, uid: uid, time: Date.now() };
-                        await matchRef.child('joined/' + uid).set(joinData);
+                        // ম্যাচের ভেতরে ডাটা সেভ
+                        await matchRef.child('joined/' + uid).set({
+                            leaderName: pData[0].name,
+                            teamPlayers: pData,
+                            joinedBy: uid,
+                            time: Date.now()
+                        });
                         await matchRef.child('joined_players/' + uid).set(true);
 
+                        // অ্যাডমিন প্যানেলের জন্য আলাদাভাবে ডাটা পাঠানো (যাতে আপনি সহজে দেখতে পারেন)
                         await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
-                            name: pData[0].name,
-                            uid: uid,
+                            playerName: pData[0].name,
                             gameId: pData[0].gameId,
-                            details: pData,
+                            profileUid: pData[0].profileUid, // ফুল প্রোফাইল ইউআইডি
+                            teamDetails: pData,
+                            appUid: uid,
+                            matchType: mode,
                             joinedAt: new Date().toLocaleString()
                         });
 
