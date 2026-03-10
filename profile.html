@@ -35,7 +35,7 @@
         select, input { width: 100%; padding: 14px; background: #000; border: 1px solid #333; color: #fff; border-radius: 12px; margin-top: 12px; box-sizing: border-box; outline: none; font-size: 14px; }
         select:focus, input:focus { border-color: var(--p); }
         
-        .btn-main { width: 100%; padding: 166px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; padding: 16px; }
+        .btn-main { width: 100%; padding: 16px; background: var(--p); color: #000; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; font-family: 'Orbitron'; transition: 0.3s; }
         .btn-main:active { transform: scale(0.95); }
 
         .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 12px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
@@ -43,7 +43,6 @@
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
         
-        /* Edit icon style */
         .edit-name-icon { color: var(--p); margin-left: 8px; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .edit-name-icon:hover { transform: scale(1.2); }
     </style>
@@ -56,7 +55,7 @@
     </div>
 
     <div class="profile-wrap">
-        <img id="profileImg" src="https://via.placeholder.com/150" alt="Avatar">
+        <img id="profileImg" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Avatar">
         <label for="imgInput" class="plus-btn"><i class="fas fa-plus"></i></label>
         <input type="file" id="imgInput" style="display:none" accept="image/*" onchange="uploadProfilePic(this)">
     </div>
@@ -124,21 +123,27 @@
             storageBucket: "teot-a3046.appspot.com"
         };
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(), db = firebase.database(), storage = firebase.storage();
+        const auth = firebase.auth(), db = firebase.database();
 
         let currentUserData = {};
 
         auth.onAuthStateChanged(user => {
             if (user) {
+                // .on ব্যবহার করা হয়েছে রিয়েল-টাইম আপডেটের জন্য
                 db.ref('users/' + user.uid).on('value', snap => {
                     const u = snap.val() || {};
                     currentUserData = u;
                     document.getElementById('userName').innerText = u.name || "Player";
                     document.getElementById('userUid').innerText = "UID: " + user.uid.toUpperCase().substring(0,14);
+                    
+                    // Undefined ঠেকাতে || 0 ব্যবহার করা হয়েছে
                     document.getElementById('balMain').innerText = (u.balance || 0) + " TK";
                     document.getElementById('balWin').innerText = (u.winning || 0) + " TK";
                     document.getElementById('playedCount').innerText = u.played || 0;
-                    if(u.profilePic) document.getElementById('profileImg').src = u.profilePic;
+                    
+                    if(u.profilePic) {
+                        document.getElementById('profileImg').src = u.profilePic;
+                    }
                 });
                 
                 db.ref('settings/adminNumber').on('value', s => {
@@ -147,7 +152,6 @@
             } else { window.location.href = "auth.html"; }
         });
 
-        // Name Editing Function
         function editUserName() {
             Swal.fire({
                 title: 'নাম পরিবর্তন করুন',
@@ -169,12 +173,10 @@
             });
         }
 
-        // Fast Upload using ImgBB API
         async function uploadProfilePic(input) {
             const file = input.files[0];
             if(!file) return;
 
-            // Using ImgBB to bypass Firebase Storage limitations
             const apiKey = "c98616196231908d132e4cc3503f19e4"; 
             
             Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -191,6 +193,7 @@
                 
                 if(data.success) {
                     const url = data.data.url;
+                    // সরাসরি ডাটাবেজে ছবির লিংক সেভ করা হচ্ছে
                     await db.ref('users/' + auth.currentUser.uid).update({ profilePic: url });
                     Swal.fire("Success", "প্রোফাইল পিকচার আপডেট হয়েছে!", "success");
                 } else {
@@ -255,7 +258,7 @@
                 time: new Date().toLocaleString(),
                 timestamp: Date.now()
             }).then(() => {
-                Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে। অ্যাডমিন চেক করে টাকা পাঠিয়ে দিবে।", "success");
+                Swal.fire("Success", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।", "success");
                 openTab('');
             });
         }
