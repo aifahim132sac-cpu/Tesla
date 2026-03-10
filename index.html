@@ -109,6 +109,7 @@
                 const total = parseInt(m.slot) || 48;
                 const joined = parseInt(m.joined) || 0;
                 const percent = (joined/total)*100;
+                // চেক করার জন্য joined_players নোড ব্যবহার করা হয়েছে
                 const isJoined = currentUid && m.joined_players && m.joined_players[currentUid];
 
                 h += `<div class="match-card">
@@ -151,7 +152,7 @@
             // ২. স্লট খালি আছে কি না চেক
             if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
             
-            // ৩. গেম মোড অনুযায়ী প্লেয়ার সংখ্যা নির্ধারণ
+            // ৩. গেম মোড অনুযায়ী ইনপুট বক্স জেনারেট
             let pCount = 1; 
             let mLow = mode ? mode.toLowerCase() : "";
             if(mLow.includes('duo')) pCount = 2; else if(mLow.includes('squad')) pCount = 4;
@@ -178,6 +179,7 @@
             if(pData) {
                 db.ref('users/' + uid).once('value', async s => {
                     const u = s.val() || {};
+                    // এখানে balance এবং winning নতুন নাম ব্যবহার করা হয়েছে
                     const balance = parseFloat(u.balance) || 0;
                     const winning = parseFloat(u.winning) || 0;
                     const totalBal = balance + winning;
@@ -185,26 +187,33 @@
 
                     if(totalBal < matchFee) return Swal.fire("Low Balance!", "আপনার পর্যাপ্ত টাকা নেই। দয়া করে ডিপোজিট করুন।", "error");
                     
-                    // ব্যালেন্স কাটার লজিক (প্রথমে মেইন ব্যালেন্স থেকে, পরে উইনিং থেকে)
+                    // --- টাকা কাটার নতুন লজিক (প্রথমে মেইন ব্যালেন্স থেকে, পরে উইনিং থেকে) ---
                     let nB = balance, nW = winning;
-                    if(nB >= matchFee) nB -= matchFee; else { let r = matchFee - nB; nB = 0; nW -= r; }
+                    if(nB >= matchFee) {
+                        nB -= matchFee; 
+                    } else {
+                        let r = matchFee - nB;
+                        nB = 0;
+                        nW -= r;
+                    }
 
                     Swal.fire({title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
                     try {
-                        // ১. ইউজার প্রোফাইল আপডেট
+                        // ১. ইউজার প্রোফাইল আপডেট (টাকা কাটা এবং ম্যাচের সংখ্যা বাড়ানো)
                         await db.ref('users/' + uid).update({ 
                             balance: nB, 
                             winning: nW, 
                             played: (parseInt(u.played) || 0) + 1 
                         });
                         
+                        // ২. ইউজারের নিজস্ব নোডে ম্যাচ জয়েনিং কনফার্ম করা
                         await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
 
-                        // ২. ম্যাচের প্লেয়ার সংখ্যা আপডেট (অ্যাটমিক ট্রানজেকশন ভালো হতো, তবে সিম্পল রাখার জন্য আপডেট করা হলো)
+                        // ৩. ম্যাচের মূল তথ্য আপডেট (স্লট বাড়ানো)
                         await matchRef.update({ joined: joined + 1 });
                         
-                        // ৩. ম্যাচের ভেতরে ডাটা সেভ
+                        // ৪. ম্যাচের ভেতরে প্লেয়ার ডাটা সেভ
                         const joinData = { 
                             name: pData[0].name, 
                             allPlayers: pData, 
@@ -214,7 +223,7 @@
                         await matchRef.child('joined/' + uid).set(joinData);
                         await matchRef.child('joined_players/' + uid).set(true);
 
-                        // ৪. অ্যাডমিন প্যানেলে (tesla-master.html) প্লেয়ার লিস্ট দেখানোর জন্য ডাটা পাঠানো
+                        // ৫. অ্যাডমিন প্যানেলের জন্য আলাদা নোডে ডাটা পাঠানো
                         await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
                             name: pData[0].name,
                             uid: uid,
