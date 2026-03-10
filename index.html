@@ -138,7 +138,6 @@
             startCountdowns();
         });
 
-        // আপডেট করা জয়েন ফাংশন
         async function handleJoin(id, mode, fee, joined, total, matchNo) {
             if(!auth.currentUser) return window.location.href = "auth.html";
             
@@ -183,13 +182,22 @@
                     let nB = u.balance, nW = u.winning;
                     if(nB >= fee) nB -= fee; else { let r = fee - nB; nB = 0; nW -= r; }
 
-                    // ডাটাবেজ আপডেট
-                    await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (u.played || 0) + 1 });
+                    // ১. ইউজারের প্রোফাইল আপডেট (ব্যালেন্স এবং জয়েন করা ম্যাচ লিস্ট)
+                    await db.ref('users/' + uid).update({ 
+                        balance: nB, 
+                        winning: nW, 
+                        played: (u.played || 0) + 1 
+                    });
+                    
+                    // এটিই My Match লিস্ট দেখানোর জন্য সবচেয়ে গুরুত্বপূর্ণ লাইন
+                    await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
+
+                    // ২. ম্যাচের ভেতর প্লেয়ার কাউন্ট আপডেট
                     await matchRef.update({ joined: joined + 1 });
                     
-                    // ইউজার এবং অ্যাডমিন উভয়ের জন্য ডাটা সেভ
+                    // ৩. ম্যাচের ভেতরে জয়েন করা প্লেয়ারদের ডিটেইলস সেভ
                     const joinData = { 
-                        name: pData[0].name, // প্রথম প্লেয়ারের নাম মেইন হিসেবে থাকবে
+                        name: pData[0].name, 
                         allPlayers: pData, 
                         uid: uid, 
                         time: Date.now() 
@@ -198,7 +206,7 @@
                     await matchRef.child('joined/' + uid).set(joinData);
                     await matchRef.child('joined_players/' + uid).set(true);
 
-                    // অ্যাডমিন প্যানেলে প্লেয়ার লিস্ট দেখানোর জন্য স্পেশাল পাথ
+                    // ৪. অ্যাডমিন প্যানেলে প্লেয়ার লিস্ট দেখানোর জন্য
                     await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
                         name: pData[0].name,
                         uid: uid,
