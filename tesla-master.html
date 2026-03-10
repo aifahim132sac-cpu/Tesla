@@ -87,8 +87,15 @@
                 <input id="mNo" placeholder="Match No (Ex: 01)">
                 <input id="mType" placeholder="Type (Ex: SOLO / DUO / SQUAD)">
                 <input id="mTitle" placeholder="Title (Ex: Free Fire Tournament)">
+                
                 <label>Match Time</label>
                 <input type="datetime-local" id="mTimeSelect">
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <input id="mRoomId" placeholder="Room ID (Optional)">
+                    <input id="mRoomPass" placeholder="Room Password (Optional)">
+                </div>
+
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                     <input id="mFee" placeholder="Entry Fee TK">
                     <input id="mPk" placeholder="Per Kill TK">
@@ -181,118 +188,23 @@
             document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
-        // রিয়েল-টাইম ব্লক লিস্ট দেখার সিস্টেম
+        // --- User Management ---
         db.ref('users').on('value', snap => {
             let blockH = "";
-            let blockCount = 0;
             snap.forEach(child => {
                 const u = child.val();
                 if(u.isBlocked) {
-                    blockCount++;
                     blockH += `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
-                        <span><b>${u.name}</b> (${child.key})<br><small>Mobile: ${u.mobile || 'N/A'}</small></span>
+                        <span><b>${u.name}</b> (${child.key})</span>
                         <button onclick="unblockU('${child.key}')" style="background:var(--neon); border:none; color:#000; padding:4px 8px; border-radius:5px; font-size:10px; cursor:pointer;">UNBLOCK</button>
                     </div>`;
                 }
             });
             document.getElementById('blockListArea').innerHTML = blockH || "No users are currently blocked.";
+            document.getElementById('uT').innerText = snap.numChildren();
         });
 
-        function unblockU(uid) {
-            db.ref('users/'+uid).update({isBlocked: false}).then(() => Swal.fire("User Unblocked"));
-        }
-
-        // রেজাল্ট পাবলিশ সিস্টেম (অটো-পে সরানো হয়েছে)
-        async function publishFinalResult() {
-            const mId = document.getElementById('resMid').value;
-            if(!mId) return Swal.fire("Match No দিন");
-            let results = [];
-            document.querySelectorAll('.res-row').forEach(row => {
-                results.push({
-                    pos: parseInt(row.querySelector('.rPos').value) || 99,
-                    name: row.querySelector('.rName').value,
-                    kills: row.querySelector('.rKill').value,
-                    winning: row.querySelector('.rWin').value,
-                    type: row.querySelector('.rType').value
-                });
-            });
-            db.ref('results/' + mId).set({ matchId: mId, players: results, time: Date.now() })
-            .then(() => Swal.fire("Result Deployed! (Manual Prize Distribution required)"));
-        }
-
-        // --- আগের সব ফাংশন ঠিক রাখা হয়েছে ---
-        
-        db.ref('payments').on('value', snap => {
-            let depH = ""; let witH = "";
-            snap.forEach(child => {
-                const p = child.val(); const key = child.key; const isDep = p.type === 'Deposit';
-                db.ref('users/'+p.uid).once('value', uSnap => {
-                    const u = uSnap.val() || {};
-                    const html = `<div class="item-row" style="border-left-color:${isDep?'var(--neon)':'var(--red)'}">
-                        <div style="display:flex; justify-content:space-between"><b>${p.amount} TK</b><small>${new Date(p.timestamp || Date.now()).toLocaleString()}</small></div>
-                        <div style="font-size:12px; color:#aaa;">Player: ${u.name || 'Unknown'} | UID: ${p.uid}<br>Method: ${p.method || 'N/A'} | Number: ${p.number || 'N/A'}</div>
-                        ${p.trxId ? `<div style="font-size:11px; color:var(--gold);">TrxID: ${p.trxId}</div>` : ''}
-                        <div style="display:flex; gap:8px; margin-top:10px;">
-                            ${isDep && p.ssUrl ? `<button class="btn btn-blue" style="padding:8px; font-size:10px; height:auto;" onclick="window.open('${p.ssUrl}')">View SS</button>` : ''}
-                            <button class="btn btn-neon" style="padding:8px; font-size:10px; height:auto;" onclick="processReq('${key}','${p.uid}',${p.amount},'${p.type}','Approved')">Approve</button>
-                            <button class="btn btn-red" style="padding:8px; font-size:10px; height:auto;" onclick="processReq('${key}','${p.uid}',${p.amount},'${p.type}','Declined')">Decline</button>
-                        </div>
-                    </div>`;
-                    if(isDep) { depH += html; } else { witH += html; }
-                    document.getElementById('depositList').innerHTML = depH || "No Deposits";
-                    document.getElementById('withdrawList').innerHTML = witH || "No Withdraws";
-                });
-            });
-            if(!snap.exists()){ document.getElementById('depositList').innerHTML = ""; document.getElementById('withdrawList').innerHTML = ""; }
-        });
-
-        async function processReq(key, uid, amt, type, status) {
-            if(status === 'Approved') {
-                const uS = await db.ref('users/'+uid).once('value');
-                if(uS.exists()) {
-                    const u = uS.val();
-                    if(type === 'Deposit') await db.ref('users/'+uid).update({ balance: (u.balance || 0) + amt });
-                    else await db.ref('users/'+uid).update({ winning: (u.winning || 0) - amt });
-                }
-            }
-            await db.ref('adminHistory/money').push({ uid, amount: amt, type, status, date: new Date().toLocaleString() });
-            await db.ref('payments/'+key).remove();
-            Swal.fire(status);
-        }
-
-        db.ref('matches').on('value', s => {
-            let h = "";
-            s.forEach(c => {
-                const m = c.val();
-                h += `<div class="item-row">
-                    <b>#${m.matchNo} - ${m.title}</b> (${m.joined || 0}/${m.slot})
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px;">
-                        <button class="btn btn-gold" style="padding:10px; font-size:10px;" onclick="setR('${c.key}')">Room Info</button>
-                        <button class="btn btn-blue" style="padding:10px; font-size:10px;" onclick="viewPlayers('${m.matchNo}')">Players</button>
-                        <button class="btn btn-red" style="padding:10px; font-size:10px;" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('mLive').innerHTML = h;
-        });
-
-        function loadPlayersForResult() {
-            const mId = document.getElementById('resMid').value;
-            db.ref('joinedPlayers/' + mId).once('value', snap => {
-                const area = document.getElementById('wRows'); area.innerHTML = "";
-                snap.forEach(p => {
-                    const pl = p.val();
-                    const row = document.createElement('div'); row.className = "res-row";
-                    row.innerHTML = `<input class="rPos" type="number" value="0">
-                        <input class="rName" value="${pl.name}" data-uid="${pl.uid}" readonly>
-                        <input class="rKill" type="number" value="0">
-                        <input class="rWin" type="number" value="0">
-                        <select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select>
-                        <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
-                    area.appendChild(row);
-                });
-            });
-        }
+        function unblockU(uid) { db.ref('users/'+uid).update({isBlocked: false}); }
 
         function findU() {
             const uid = document.getElementById('sUid').value;
@@ -300,20 +212,134 @@
                 if(s.exists()){
                     const u = s.val();
                     const bBtn = u.isBlocked ? `<button class="btn btn-neon" onclick="unblockU('${uid}')">UNBLOCK</button>` : `<button class="btn btn-red" onclick="db.ref('users/${uid}').update({isBlocked:true})">BLOCK USER</button>`;
-                    document.getElementById('sRes').innerHTML = `<div class="item-row"><b>${u.name}</b><br>Bal: ${u.balance||0} | Win: ${u.winning||0}<br><br>${bBtn}</div>`;
+                    document.getElementById('sRes').innerHTML = `<div class="item-row"><b>${u.name}</b><br>Balance: ${u.balance||0} | Winning: ${u.winning||0}<br><br>${bBtn}</div>`;
                 }
             });
         }
 
         function sendPrize() {
-            const uid = document.getElementById('pUid').value;
+            const uid = document.getElementById('pUid').value.trim();
             const amt = parseFloat(document.getElementById('pAmt').value);
+            if(!uid || !amt) return Swal.fire("Error", "UID এবং টাকার পরিমাণ দিন");
             db.ref('users/'+uid).once('value', s => {
                 if(s.exists()){
-                    db.ref('users/'+uid).update({ winning: (s.val().winning || 0) + amt });
-                    Swal.fire("Prize Sent");
+                    db.ref('users/'+uid).update({ winning: (parseFloat(s.val().winning) || 0) + amt });
+                    Swal.fire("Prize Sent to Winning Balance!");
+                    document.getElementById('pAmt').value = "";
                 }
             });
+        }
+
+        // --- Match Management ---
+        function postM() {
+            const mData = {
+                matchNo: document.getElementById('mNo').value,
+                mType: document.getElementById('mType').value,
+                title: document.getElementById('mTitle').value,
+                mTimeSelect: document.getElementById('mTimeSelect').value,
+                roomId: document.getElementById('mRoomId').value || "Updating...",
+                roomPass: document.getElementById('mRoomPass').value || "Updating...",
+                mFee: document.getElementById('mFee').value,
+                mPk: document.getElementById('mPk').value,
+                mPrize: document.getElementById('mPrize').value,
+                slot: document.getElementById('mSlot').value,
+                mRules: document.getElementById('mRules').value,
+                joined: 0
+            };
+            if(!mData.matchNo) return Swal.fire("Match No দিন");
+            db.ref('matches').push(mData).then(() => {
+                Swal.fire("Match Live!");
+                document.querySelectorAll('#match input').forEach(i => i.value = "");
+            });
+        }
+
+        db.ref('matches').on('value', s => {
+            let h = "";
+            s.forEach(c => {
+                const m = c.val();
+                h += `<div class="item-row">
+                    <b>#${m.matchNo} - ${m.title}</b>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:10px;">
+                        <button class="btn btn-gold" style="padding:10px; font-size:9px;" onclick="setR('${c.key}')">Room Info</button>
+                        <button class="btn btn-blue" style="padding:10px; font-size:9px;" onclick="viewPlayers('${m.matchNo}')">Players</button>
+                        <button class="btn btn-red" style="padding:10px; font-size:9px;" onclick="db.ref('matches/${c.key}').remove()">Delete</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('mLive').innerHTML = h;
+        });
+
+        async function setR(id) {
+            const {value: v} = await Swal.fire({
+                title: 'Room ID & Pass',
+                html: '<input id="swi" class="swal2-input" placeholder="Room ID"><input id="swp" class="swal2-input" placeholder="Password">',
+                preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value]
+            });
+            if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire("Updated"));
+        }
+
+        function viewPlayers(mNo) {
+            db.ref('joinedPlayers/' + mNo).once('value', s => {
+                let list = "";
+                s.forEach(p => { list += `<p style="font-size:12px; border-bottom:1px solid #222; padding:5px;">${p.val().name} | ID: ${p.val().gameId} | UID: ${p.val().uid}</p>`; });
+                Swal.fire({title:'Joined Players', html: list || 'No players joined yet', background:'#0d1117', color:'#fff'});
+            });
+        }
+
+        // --- Money Management ---
+        db.ref('payments').on('value', snap => {
+            let depH = ""; let witH = "";
+            snap.forEach(child => {
+                const p = child.val(); const key = child.key; const isDep = p.type === 'Deposit';
+                const html = `<div class="item-row" style="border-left-color:${isDep?'var(--neon)':'var(--red)'}">
+                    <div style="display:flex; justify-content:space-between"><b>${p.amount} TK</b><small>${p.time || ''}</small></div>
+                    <div style="font-size:12px; color:#aaa;">Player: ${p.name || 'Unknown'}<br>Method: ${p.method} | No: ${p.number}</div>
+                    ${p.trxId ? `<div style="font-size:11px; color:var(--gold);">TrxID: ${p.trxId}</div>` : ''}
+                    <div style="display:flex; gap:8px; margin-top:10px;">
+                        <button class="btn btn-neon" style="padding:8px; font-size:10px; height:auto;" onclick="processReq('${key}','${p.uid}',${p.amount},'${p.type}','Approved')">Approve</button>
+                        <button class="btn btn-red" style="padding:8px; font-size:10px; height:auto;" onclick="processReq('${key}','${p.uid}',${p.amount},'${p.type}','Declined')">Decline</button>
+                    </div>
+                </div>`;
+                if(isDep) { depH += html; } else { witH += html; }
+            });
+            document.getElementById('depositList').innerHTML = depH || "No Deposits";
+            document.getElementById('withdrawList').innerHTML = witH || "No Withdraws";
+        });
+
+        async function processReq(key, uid, amt, type, status) {
+            if(status === 'Approved') {
+                const uS = await db.ref('users/'+uid).once('value');
+                if(uS.exists()) {
+                    const u = uS.val();
+                    if(type === 'Deposit') await db.ref('users/'+uid).update({ balance: (parseFloat(u.balance) || 0) + amt });
+                }
+            }
+            await db.ref('adminHistory/money').push({ uid, amount: amt, type, status, date: new Date().toLocaleString() });
+            await db.ref('payments/'+key).remove();
+            Swal.fire(status);
+        }
+
+        // --- System & Result ---
+        function loadPlayersForResult() {
+            const mId = document.getElementById('resMid').value;
+            db.ref('joinedPlayers/' + mId).once('value', snap => {
+                const area = document.getElementById('wRows'); area.innerHTML = "";
+                snap.forEach(p => {
+                    const pl = p.val();
+                    const row = document.createElement('div'); row.className = "res-row";
+                    row.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" value="${pl.name}" readonly><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`;
+                    area.appendChild(row);
+                });
+            });
+        }
+
+        async function publishFinalResult() {
+            const mId = document.getElementById('resMid').value;
+            let results = [];
+            document.querySelectorAll('.res-row').forEach(row => {
+                results.push({ pos: row.querySelector('.rPos').value, name: row.querySelector('.rName').value, kills: row.querySelector('.rKill').value, winning: row.querySelector('.rWin').value, type: row.querySelector('.rType').value });
+            });
+            db.ref('results/' + mId).set({ matchId: mId, players: results, time: Date.now() }).then(() => Swal.fire("Result Deployed!"));
         }
 
         async function upSlide() { 
@@ -324,27 +350,12 @@
             if(d.success) db.ref('settings/sliders').push({image: d.data.url, link: document.getElementById('slLink').value});
         }
 
-        function postM() {
-            const mData = {
-                matchNo: document.getElementById('mNo').value,
-                mType: document.getElementById('mType').value,
-                title: document.getElementById('mTitle').value,
-                mTimeSelect: document.getElementById('mTimeSelect').value,
-                mFee: document.getElementById('mFee').value,
-                mPk: document.getElementById('mPk').value,
-                mPrize: document.getElementById('mPrize').value,
-                slot: document.getElementById('mSlot').value,
-                mRules: document.getElementById('mRules').value,
-                joined: 0
-            };
-            db.ref('matches').push(mData).then(() => Swal.fire("Published!"));
-        }
+        db.ref('settings/sliders').on('value', s => { 
+            let h = ""; s.forEach(c => { h += `<div style="position:relative"><img src="${c.val().image}" style="width:100%; height:60px; object-fit:cover; border-radius:10px;"><button onclick="db.ref('settings/sliders/${c.key}').remove()" style="position:absolute; top:0; right:0; background:red; border:none; color:#fff; border-radius:50%; width:20px;">×</button></div>`; }); 
+            document.getElementById('slShow').innerHTML = h; 
+        });
 
-        function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value); }
-        db.ref('settings/sliders').on('value', s => { let h = ""; s.forEach(c => { h += `<div style="position:relative"><img src="${c.val().image}" style="width:100%; height:60px; object-fit:cover; border-radius:10px;"><button onclick="db.ref('settings/sliders/${c.key}').remove()" style="position:absolute; top:0; right:0; background:red; border:none; color:#fff; border-radius:50%; width:20px;">×</button></div>`; }); document.getElementById('slShow').innerHTML = h; });
-        db.ref('users').on('value', s => { document.getElementById('uT').innerText = s.numChildren(); });
-        async function setR(id) { const {value: v} = await Swal.fire({ title: 'Room Info', html: '<input id="swi" class="swal2-input" placeholder="ID"><input id="swp" class="swal2-input" placeholder="Pass">', preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] }); if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}); }
-        function viewPlayers(mNo) { db.ref('joinedPlayers/' + mNo).once('value', s => { let list = ""; s.forEach(p => { list += `<p>${p.val().name} (${p.val().uid})</p>`; }); Swal.fire({title:'Joined Players', html: list || 'None', background:'#0d1117', color:'#fff'}); }); }
+        function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Notice Saved")); }
         function addW() { const d = document.createElement('div'); d.className = "res-row"; d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">×</button>`; document.getElementById('wRows').appendChild(d); }
         function clearAllHistory() { db.ref('adminHistory/money').remove(); }
     </script>
