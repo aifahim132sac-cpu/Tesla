@@ -49,9 +49,11 @@
         .stat-box { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 18px; text-align: center; cursor: pointer; transition: 0.3s; }
         .stat-box:active { transform: scale(0.95); background: #1c2128; }
 
-        .res-grid-header { display: grid; grid-template-columns: 60px 2fr 80px 80px 100px 40px; background: #1a1f26; padding: 10px; border-radius: 8px 8px 0 0; font-size: 10px; color: var(--gold); font-weight: bold; border: 1px solid #333; text-align: center; }
-        .res-row { display: grid; grid-template-columns: 60px 2fr 80px 80px 100px 40px; gap: 5px; background: #000; padding: 8px; border: 1px solid #222; border-top: none; align-items: center; }
-        .res-row input, .res-row select { margin-bottom: 0; padding: 6px; font-size: 11px; text-align: center; }
+        /* Updated Grid for Result Portal */
+        .res-grid-header { display: grid; grid-template-columns: 50px 1fr 60px 70px 90px 40px; background: #1a1f26; padding: 10px; border-radius: 8px 8px 0 0; font-size: 10px; color: var(--gold); font-weight: bold; border: 1px solid #333; text-align: center; }
+        .res-row { display: grid; grid-template-columns: 50px 1fr 60px 70px 90px 40px; gap: 5px; background: #000; padding: 8px; border: 1px solid #222; border-top: none; align-items: center; }
+        .res-row input, .res-row select { margin-bottom: 0; padding: 6px; font-size: 10px; text-align: center; background: #0d1117; border: 1px solid #333; border-radius: 5px; color: white; }
+        .rName { text-align: left !important; padding-left: 5px !important; }
 
         .user-list-item { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; position: relative; }
         .user-list-item b { color: var(--neon); font-size: 16px; }
@@ -156,9 +158,20 @@
                     </div>
                     <div id="wRows"></div>
                 </div>
-                <button class="btn btn-gold" style="font-size:10px; padding:10px; margin-top:10px;" onclick="addW()">+ Manual Entry</button>
-                <button class="btn btn-neon" style="margin-top:20px;" onclick="publishFinalResult()">Deploy Result</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-gold" style="font-size:10px; padding:10px;" onclick="addW()">+ Manual Entry</button>
+                    <button class="btn btn-red" style="font-size:10px; padding:10px;" onclick="document.getElementById('wRows').innerHTML='' ">Clear List</button>
+                </div>
+                <button class="btn btn-neon" style="margin-top:20px;" onclick="publishFinalResult()">Deploy & Upload Result</button>
             </div>
+
+            <div class="tesla-card" style="border-top: 4px solid var(--red);">
+                <div class="section-tag" style="color: var(--red);"><i class="fas fa-trash-alt"></i> Manage Published Results</div>
+                <div id="publishedResultsList" style="max-height: 250px; overflow-y: auto;">
+                    <p style="text-align:center; color:#555; font-size:12px;">Loading results list...</p>
+                </div>
+            </div>
+
             <div class="tesla-card">
                 <div class="section-tag"><i class="fas fa-images"></i> App Slider</div>
                 <input type="file" id="slFile">
@@ -369,7 +382,6 @@
             document.getElementById('withdrawList').innerHTML = witH || "None";
         });
 
-        // Money Logic - Withdraw এ ব্যালেন্স কাটবে
         async function processReq(key, uid, amt, type, status) {
             if(status === 'Approved') {
                 const uS = await db.ref('users/'+uid).once('value');
@@ -391,7 +403,6 @@
             Swal.fire({ title: status, icon: 'success', background: '#0d1117', color: '#fff' });
         }
 
-        // Approval History Display & Single Delete Logic
         db.ref('adminHistory/money').on('value', snap => {
             let h = "";
             snap.forEach(child => {
@@ -429,7 +440,6 @@
 
                 snap.forEach(p => {
                     const pl = p.val();
-                    // নাম এবং আইডি একসাথে পাওয়ার জন্য
                     let pName = pl.playerName || pl.name || "Unknown";
                     let pId = pl.profileUid || pl.uid || "N/A";
                     let displayName = `${pName} (${pId})`;
@@ -450,25 +460,84 @@
         function createResultRow(container, name) {
             const row = document.createElement('div'); 
             row.className = "res-row";
-            // readonly সরানো হয়েছে যাতে প্রয়োজনে এডিট করা যায়
             row.innerHTML = `
                 <input class="rPos" type="number" value="0">
-                <input class="rName" value="${name}" style="text-align:left; padding-left:5px; font-size:10px;">
+                <input class="rName" value="${name}" placeholder="Name (UID)">
                 <input class="rKill" type="number" value="0">
                 <input class="rWin" type="number" value="0">
                 <select class="rType">
                     <option value="Normal">Normal</option>
                     <option value="Winner">Winner</option>
                 </select>
-                <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold;">×</button>`;
+                <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold; font-size:18px;">×</button>`;
             container.appendChild(row);
         }
-        // --- END OF UPDATED PORTION ---
 
         async function publishFinalResult() {
-            const mId = document.getElementById('resMid').value; let res = [];
-            document.querySelectorAll('.res-row').forEach(row => { res.push({ pos: row.querySelector('.rPos').value, name: row.querySelector('.rName').value, kills: row.querySelector('.rKill').value, winning: row.querySelector('.rWin').value, type: row.querySelector('.rType').value }); });
-            db.ref('results/' + mId).set({ matchId: mId, players: res, time: Date.now() }).then(() => Swal.fire("Deployed!"));
+            const mId = document.getElementById('resMid').value;
+            if(!mId) return Swal.fire("Match No দিন!");
+
+            let resPlayers = [];
+            const rows = document.querySelectorAll('.res-row');
+            if(rows.length === 0) return Swal.fire("প্লেয়ার লিস্ট খালি!");
+
+            rows.forEach(row => {
+                resPlayers.push({
+                    pos: row.querySelector('.rPos').value,
+                    name: row.querySelector('.rName').value,
+                    kills: row.querySelector('.rKill').value,
+                    winning: row.querySelector('.rWin').value,
+                    type: row.querySelector('.rType').value
+                });
+            });
+
+            db.ref('results/' + mId).set({
+                matchId: mId,
+                players: resPlayers,
+                time: Date.now(),
+                publishDate: new Date().toLocaleString()
+            }).then(() => {
+                Swal.fire({title: "Result Deployed!", icon: "success", background: '#0d1117', color: '#fff'});
+                document.getElementById('wRows').innerHTML = "";
+            });
+        }
+
+        // --- Result Deletion Logic ---
+        db.ref('results').on('value', snap => {
+            let html = "";
+            if(!snap.exists()){
+                html = `<p style="text-align:center; color:#555; font-size:12px;">No results published yet.</p>`;
+            } else {
+                snap.forEach(child => {
+                    const res = child.val();
+                    const key = child.key;
+                    html += `
+                        <div style="background: #000; padding: 12px; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <b style="color: var(--gold);">Match #${res.matchId}</b>
+                                <div style="font-size: 10px; color: #8b949e;">${res.publishDate || ''}</div>
+                            </div>
+                            <button onclick="deleteResult('${key}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold;">
+                                <i class="fas fa-trash"></i> DELETE
+                            </button>
+                        </div>`;
+                });
+            }
+            document.getElementById('publishedResultsList').innerHTML = html;
+        });
+
+        function deleteResult(mId) {
+            Swal.fire({
+                title: 'Delete Result?',
+                text: "Match #" + mId + " এর রেজাল্ট কি ডিলিট করতে চান?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff3e3e',
+                confirmButtonText: 'Yes, Delete',
+                background: '#0d1117', color: '#fff'
+            }).then((res) => {
+                if(res.isConfirmed) db.ref('results/' + mId).remove();
+            });
         }
 
         async function upSlide() { 
@@ -483,7 +552,11 @@
         });
 
         function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Saved")); }
-        function addW() { const d = document.createElement('div'); d.className = "res-row"; d.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" placeholder="Name (UID)"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold;">×</button>`; document.getElementById('wRows').appendChild(d); }
+        
+        function addW() { 
+            const area = document.getElementById('wRows');
+            createResultRow(area, ""); 
+        }
         
         function clearAllHistory() { 
             Swal.fire({
