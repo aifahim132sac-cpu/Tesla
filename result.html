@@ -15,7 +15,6 @@
         .header { padding: 20px; text-align: center; background: #000; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
         .title { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 16px; letter-spacing: 2px; }
         
-        /* দ্রুত লোডিং এনিমেশন */
         .res-card { background: var(--c); border-radius: 20px; padding: 15px; margin: 15px; border: 1px solid #222; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
@@ -31,6 +30,21 @@
         .p-name { font-size: 13px; font-weight: 500; }
         .p-prize { color: var(--y); font-size: 12px; font-weight: bold; }
 
+        /* Match Details Styling */
+        .match-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: #080808;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #222;
+        }
+        .info-box { font-size: 10px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px; }
+        .info-label { color: #777; display: block; text-transform: uppercase; font-size: 9px; }
+        .info-value { color: var(--p); font-weight: 600; }
+
         .full-result-btn { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 12px; cursor: pointer; transition: 0.2s; font-weight: 500; }
         .full-result-btn:active { transform: scale(0.98); background: #222; }
 
@@ -40,7 +54,6 @@
         td { padding: 12px 10px; border-bottom: 1px solid #111; }
         .kill-badge { background: var(--r); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
 
-        /* No Result UI */
         #no-res { text-align: center; padding: 150px 20px; color: #444; display: none; }
         #no-res i { font-size: 50px; margin-bottom: 15px; color: #222; }
 
@@ -79,7 +92,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // রিয়েল-টাইম এবং ফাস্ট লোডিং সিস্টেম
         db.ref('results').on('value', snap => {
             const listArea = document.getElementById('rList');
             const noResArea = document.getElementById('no-res');
@@ -100,20 +112,15 @@
                 resultsArray.push(val);
             });
 
-            // সর্বশেষ রেজাল্ট সবার আগে দেখাবে
             resultsArray.reverse().forEach(r => {
                 let winnersHtml = "";
                 let playersTableHtml = "";
                 
-                // প্লেয়ার ডাটা থাকলে প্রসেস করবে
                 if(r.players) {
                     const players = Array.isArray(r.players) ? r.players : Object.values(r.players);
-                    
-                    // পজিশন অনুযায়ী সাজানো
                     players.sort((a, b) => (parseInt(a.pos) || 99) - (parseInt(b.pos) || 99));
 
                     players.forEach(p => {
-                        // Winner সেকশন: শুধু যারা উইনার বা পজিশন ১
                         if(p.type === 'Winner' || p.pos == 1) {
                             winnersHtml += `
                             <div class="winner-row">
@@ -125,7 +132,6 @@
                             </div>`;
                         }
 
-                        // টেবিল সেকশন: সব প্লেয়ার যারা ইনপুট করা হয়েছে
                         playersTableHtml += `
                         <tr>
                             <td><b>${p.pos || '-'}.</b> ${p.name}</td>
@@ -135,23 +141,33 @@
                     });
                 }
 
-                // যদি প্লেয়ার ডাটা একদম না থাকে (খালি বক্স যেন না আসে)
                 if(winnersHtml === "" && playersTableHtml === "") return;
 
                 htmlContent += `
                 <div class="res-card">
                     <div class="res-header">
                         <span class="m-no">MATCH #${r.matchId || '00'}</span>
-                        <span class="m-time">${r.time ? new Date(r.time).toLocaleDateString() : 'FINISHED'}</span>
+                        <span class="m-time">${r.publishDate || 'FINISHED'}</span>
                     </div>
                     
                     <div style="text-align:center; margin-bottom:15px;">
-                        <span style="font-size:13px; font-weight:600; color:#eee;">${r.matchTitle || 'OFFICIAL TOURNAMENT RESULT'}</span>
+                        <span style="font-size:14px; font-weight:bold; color:var(--p); text-transform:uppercase;">${r.matchTitle || 'TOURNAMENT RESULT'}</span>
                     </div>
 
                     <div class="winner-section">
                         <span class="section-tag">WINNERS & CHAMPIONS</span>
                         ${winnersHtml}
+                    </div>
+
+                    <div class="match-info-grid">
+                        <div class="info-box"><span class="info-label">Type</span><span class="info-value">${r.matchType || 'N/A'}</span></div>
+                        <div class="info-box"><span class="info-label">Date</span><span class="info-value">${r.publishDate || 'N/A'}</span></div>
+                        <div class="info-box"><span class="info-label">Entry Fee</span><span class="info-value">TK ${r.entryFee || '0'}</span></div>
+                        <div class="info-box"><span class="info-label">Per Kill</span><span class="info-value">TK ${r.perKill || '0'}</span></div>
+                        <div class="info-box" style="grid-column: span 2; border:none; text-align:center;">
+                            <span class="info-label">Total Prize Pool</span>
+                            <span class="info-value" style="color:var(--y); font-size:14px;">TK ${r.totalPrize || '0'}</span>
+                        </div>
                     </div>
 
                     <button class="full-result-btn" onclick="toggleTable('${r.key}')">
@@ -174,7 +190,6 @@
             listArea.innerHTML = htmlContent;
         });
 
-        // টেবিল ওপেন/ক্লোজ ফাংশন
         function toggleTable(key) {
             const el = document.getElementById('table-'+key);
             const btn = el.previousElementSibling;
