@@ -23,7 +23,7 @@
         .section-tag { font-family: 'Orbitron'; color: var(--neon); font-size: 13px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #333; padding-bottom: 8px; text-transform: uppercase; }
         
         label { display: block; font-size: 11px; color: var(--neon); margin: 10px 0 5px 5px; font-weight: bold; }
-        input, textarea, select { width: 100%; padding: 14px; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+        input, textarea, select { width: 100%; padding: 14px; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; transition: 0.3s; }
         input:focus { border-color: var(--neon); outline: none; }
         
         .btn { width: 100%; padding: 16px; border: none; border-radius: 15px; font-weight: 900; cursor: pointer; font-family: 'Orbitron'; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
@@ -49,10 +49,10 @@
         .stat-box { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 18px; text-align: center; cursor: pointer; transition: 0.3s; }
         .stat-box:active { transform: scale(0.95); background: #1c2128; }
 
-        .res-grid-header { display: grid; grid-template-columns: 50px 1fr 60px 70px 90px 40px; background: #1a1f26; padding: 10px; border-radius: 8px 8px 0 0; font-size: 10px; color: var(--gold); font-weight: bold; border: 1px solid #333; text-align: center; }
-        .res-row { display: grid; grid-template-columns: 50px 1fr 60px 70px 90px 40px; gap: 5px; background: #000; padding: 8px; border: 1px solid #222; border-top: none; align-items: center; }
-        .res-row input, .res-row select { margin-bottom: 0; padding: 6px; font-size: 10px; text-align: center; background: #0d1117; border: 1px solid #333; border-radius: 5px; color: white; }
-        .rName { text-align: left !important; padding-left: 5px !important; }
+        .res-row { display: flex; flex-direction: column; background: #0d1117; padding: 15px; border: 1px solid #333; border-radius: 12px; margin-bottom: 12px; position: relative; gap: 5px; }
+        .rName { width: 100% !important; height: 45px !important; background: #000 !important; border: 1px solid var(--neon) !important; color: var(--neon) !important; padding-left: 10px !important; font-weight: bold !important; font-size: 14px !important; }
+        .small-input-group { display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 5px; }
+        .res-row input, .res-row select { margin-bottom: 0 !important; padding: 8px 4px !important; font-size: 11px !important; text-align: center; background: #000 !important; border: 1px solid #333 !important; border-radius: 5px; color: white !important; height: 35px; }
 
         .user-list-item { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; position: relative; }
         .user-list-item b { color: var(--neon); font-size: 16px; }
@@ -63,7 +63,6 @@
         .modal-custom-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .modal-custom-header h2 { margin: 0; font-size: 18px; font-family: 'Orbitron'; color: var(--neon); }
         .close-modal-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.3s; }
-        .close-modal-btn:hover { color: var(--red); }
         .modal-search-bar { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); border-radius: 10px; color: #fff; margin-bottom: 15px; }
     </style>
 </head>
@@ -151,14 +150,15 @@
                     <input id="resMid" placeholder="Match No (Ex: 01)" style="margin-bottom:0;">
                     <input id="resManualDate" placeholder="Publish Date/Time (Auto-fills)" style="margin-bottom:0;">
                 </div>
-                <button class="btn btn-blue" style="width: 100%; margin-bottom:15px; height: 45px;" onclick="loadPlayersForResult()">Get Players & Fetch Time</button>
-                
-                <div style="overflow-x: auto;">
-                    <div class="res-grid-header">
-                        <span>POS #</span><span>NAME (UID)</span><span>KILLS</span><span>WIN TK</span><span>TYPE</span><span></span>
-                    </div>
-                    <div id="wRows"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <input id="resMatchTitle" placeholder="Match Title (Auto)" style="margin-bottom:0; background: #000; border: 1px solid #444;" readonly>
+                    <input id="resMatchType" placeholder="Match Type (Auto)" style="margin-bottom:0; background: #000; border: 1px solid #444;" readonly>
                 </div>
+
+                <button class="btn btn-blue" style="width: 100%; margin-bottom:15px; height: 45px;" onclick="loadPlayersForResult()">Get Players & Match Info</button>
+                
+                <div id="wRows"></div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                     <button class="btn btn-gold" style="font-size:10px; padding:10px;" onclick="addW()">+ Manual Entry</button>
                     <button class="btn btn-red" style="font-size:10px; padding:10px;" onclick="document.getElementById('wRows').innerHTML='' ">Clear List</button>
@@ -209,6 +209,22 @@
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             document.getElementById(id).classList.add('active'); el.classList.add('active');
+        }
+
+        // --- EMPTY CHECKER LOGIC ---
+        function checkEmpty(ids) {
+            let empty = false;
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if(!el.value.trim()) { 
+                    el.style.borderColor = "red"; 
+                    empty = true; 
+                } else { 
+                    el.style.borderColor = "#333"; 
+                }
+            });
+            if(empty) Swal.fire({ icon: 'error', title: 'Oops...', text: 'সবগুলো ঘর পূরণ করুন!', background: '#0d1117', color: '#fff' });
+            return empty;
         }
 
         db.ref('users').on('value', snap => {
@@ -276,6 +292,7 @@
         function unblockU(uid) { db.ref('users/'+uid).update({isBlocked: false}).then(()=>Swal.close()); }
 
         function findU() {
+            if(checkEmpty(['sUid'])) return;
             const uid = document.getElementById('sUid').value;
             db.ref('users/'+uid).on('value', s => {
                 if(s.exists()){
@@ -286,11 +303,13 @@
         }
 
         function sendPrize() {
+            if(checkEmpty(['pUid', 'pAmt'])) return;
             const uid = document.getElementById('pUid').value; const amt = parseFloat(document.getElementById('pAmt').value);
-            if(uid && amt) db.ref('users/'+uid).once('value', s => { if(s.exists()) db.ref('users/'+uid).update({ winning: (parseFloat(s.val().winning) || 0) + amt }); Swal.fire("Sent"); });
+            db.ref('users/'+uid).once('value', s => { if(s.exists()) { db.ref('users/'+uid).update({ winning: (parseFloat(s.val().winning) || 0) + amt }); Swal.fire("Sent"); } else { Swal.fire("UID Not Found"); } });
         }
 
         function postM() {
+            if(checkEmpty(['mNo', 'mType', 'mTitle', 'mTimeSelect', 'mFee', 'mPk', 'mPrize', 'mSlot', 'mRules'])) return;
             const mData = { matchNo: document.getElementById('mNo').value, mType: document.getElementById('mType').value, title: document.getElementById('mTitle').value, mTimeSelect: document.getElementById('mTimeSelect').value, roomId: document.getElementById('mRoomId').value || "Updating...", roomPass: document.getElementById('mRoomPass').value || "Updating...", mFee: document.getElementById('mFee').value, mPk: document.getElementById('mPk').value, mPrize: document.getElementById('mPrize').value, slot: document.getElementById('mSlot').value, mRules: document.getElementById('mRules').value, joined: 0 };
             db.ref('matches').push(mData).then(() => { Swal.fire("Live!"); });
         }
@@ -327,7 +346,12 @@
                 title: 'Set Room Info', 
                 html: '<input id="swi" class="swal2-input" placeholder="Room ID"><input id="swp" class="swal2-input" placeholder="Password">', 
                 background: '#0d1117', color: '#fff', confirmButtonColor: '#00ffaa',
-                preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] 
+                preConfirm: () => {
+                    const rId = document.getElementById('swi').value;
+                    const rPass = document.getElementById('swp').value;
+                    if(!rId || !rPass) { Swal.showValidationMessage('Room ID এবং Password দিন!'); return false; }
+                    return [rId, rPass];
+                }
             });
             if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire({icon: 'success', title: 'Updated!', background: '#0d1117', color: '#fff'}));
         }
@@ -392,21 +416,28 @@
 
         function deleteSingleHistory(key) { db.ref('adminHistory/money/' + key).remove(); }
 
-        // --- UPDATED RESULT LOGIC (AUTO-FETCH TIME) ---
         function loadPlayersForResult() {
+            if(checkEmpty(['resMid'])) return;
             const mId = document.getElementById('resMid').value;
             const dateInput = document.getElementById('resManualDate');
-            if(!mId) return Swal.fire("Match No দিন!");
+            const titleInput = document.getElementById('resMatchTitle');
+            const typeInput = document.getElementById('resMatchType');
             
-            // Fetching Date/Time automatically from the match list
             db.ref('matches').once('value', snap => {
-                let foundTime = "";
+                let matchFound = false;
                 snap.forEach(child => {
-                    if(child.val().matchNo == mId) {
-                        foundTime = child.val().mTimeSelect ? child.val().mTimeSelect.replace('T', ' ') : "";
+                    const m = child.val();
+                    if(m.matchNo == mId) {
+                        dateInput.value = m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : "";
+                        titleInput.value = m.title || "N/A";
+                        typeInput.value = m.mType || "N/A";
+                        matchFound = true;
                     }
                 });
-                if(foundTime) { dateInput.value = foundTime; }
+                if(!matchFound) {
+                    titleInput.value = ""; typeInput.value = "";
+                    Swal.fire("ম্যাচ পাওয়া যায়নি!");
+                }
             });
 
             db.ref('joinedPlayers/' + mId).once('value', snap => {
@@ -415,7 +446,9 @@
                 snap.forEach(p => {
                     const pl = p.val();
                     if(pl.teamDetails && pl.teamDetails.length > 0) {
-                        pl.teamDetails.forEach(member => { createResultRow(area, `${member.name || "Member"} (${member.profileUid || "N/A"})`); });
+                        pl.teamDetails.forEach(member => { 
+                            createResultRow(area, `${member.name} (${member.profileUid})`); 
+                        });
                     } else {
                         createResultRow(area, `${pl.playerName || pl.name} (${pl.profileUid || pl.uid})`);
                     }
@@ -425,25 +458,67 @@
 
         function createResultRow(container, name) {
             const row = document.createElement('div'); row.className = "res-row";
-            row.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" value="${name}" placeholder="Name (UID)"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold; font-size:18px;">×</button>`;
+            row.innerHTML = `
+                <label style="color:var(--gold); font-size:9px;">PLAYER NAME (UID)</label>
+                <input class="rName" value="${name}" placeholder="Name (UID)">
+                <div class="small-input-group">
+                    <input class="rPos" type="number" value="0" placeholder="Pos">
+                    <input class="rKill" type="number" value="0" placeholder="Kill">
+                    <input class="rWin" type="number" value="0" placeholder="Win">
+                    <select class="rType">
+                        <option value="Normal">Normal</option>
+                        <option value="Winner">Winner</option>
+                    </select>
+                </div>
+                <button onclick="this.parentElement.remove()" style="position:absolute; top:8px; right:10px; color:var(--red); background:none; border:none; font-size:20px; font-weight:bold;">×</button>
+            `;
             container.appendChild(row);
         }
 
         function addW() { createResultRow(document.getElementById('wRows'), ""); }
 
         async function publishFinalResult() {
+            if(checkEmpty(['resMid'])) return;
             const mId = document.getElementById('resMid').value;
             const manualDate = document.getElementById('resManualDate').value;
-            if(!mId) return Swal.fire("Match No দিন!");
+            const mTitle = document.getElementById('resMatchTitle').value;
+            const mType = document.getElementById('resMatchType').value;
+
             let resPlayers = [];
             const rows = document.querySelectorAll('.res-row');
             if(rows.length === 0) return Swal.fire("প্লেয়ার লিস্ট খালি!");
+
+            let rowEmpty = false;
             rows.forEach(row => {
-                resPlayers.push({ pos: row.querySelector('.rPos').value, name: row.querySelector('.rName').value, kills: row.querySelector('.rKill').value, winning: row.querySelector('.rWin').value, type: row.querySelector('.rType').value });
+                let fullName = row.querySelector('.rName').value;
+                let pos = row.querySelector('.rPos').value;
+                if(!fullName || pos === "") { rowEmpty = true; row.style.borderColor = "red"; }
+                
+                let cleanName = fullName.split(' (')[0].trim();
+                resPlayers.push({ 
+                    pos: pos, 
+                    name: cleanName, 
+                    kills: row.querySelector('.rKill').value, 
+                    winning: row.querySelector('.rWin').value, 
+                    type: row.querySelector('.rType').value 
+                });
             });
+
+            if(rowEmpty) return Swal.fire("প্লেয়ারের নাম বা পজিশন খালি রাখা যাবে না!");
+
             const pDate = manualDate || new Date().toLocaleString();
-            db.ref('results/' + mId).set({ matchId: mId, players: resPlayers, time: Date.now(), publishDate: pDate })
-            .then(() => { Swal.fire({title: "Result Deployed!", icon: "success", background: '#0d1117', color: '#fff'}); document.getElementById('wRows').innerHTML = ""; });
+            db.ref('results/' + mId).set({ 
+                matchId: mId, 
+                matchTitle: mTitle,
+                matchType: mType,
+                players: resPlayers, 
+                time: Date.now(), 
+                publishDate: pDate 
+            })
+            .then(() => { 
+                Swal.fire({title: "Result Deployed!", icon: "success", background: '#0d1117', color: '#fff'}); 
+                document.getElementById('wRows').innerHTML = ""; 
+            });
         }
 
         db.ref('results').on('value', snap => {
@@ -459,12 +534,13 @@
         });
 
         function deleteResult(mId) {
-            Swal.fire({ title: 'Delete Result?', text: "Match #" + mId + " এর রেজাল্ট কি ডিলিট করতে চান?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3e3e', confirmButtonText: 'Yes, Delete', background: '#0d1117', color: '#fff' })
+            Swal.fire({ title: 'Delete Result?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3e3e', confirmButtonText: 'Yes, Delete', background: '#0d1117', color: '#fff' })
             .then((res) => { if(res.isConfirmed) db.ref('results/' + mId).remove(); });
         }
 
         async function upSlide() { 
-            const f = document.getElementById('slFile').files[0]; if(!f) return; const fd = new FormData(); fd.append('image', f); 
+            const f = document.getElementById('slFile').files[0]; if(!f) return Swal.fire("Select a file!"); 
+            const fd = new FormData(); fd.append('image', f); 
             const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:fd}); const d = await res.json(); 
             if(d.success) db.ref('settings/sliders').push({image: d.data.url, link: document.getElementById('slLink').value});
         }
@@ -474,9 +550,13 @@
             document.getElementById('slShow').innerHTML = h; 
         });
 
-        function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Saved")); }
+        function saveNotice() { 
+            if(checkEmpty(['appNotice'])) return;
+            db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Saved")); 
+        }
+
         function clearAllHistory() { 
-            Swal.fire({ title: 'Are you sure?', text: "All history will be deleted!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3e3e', confirmButtonText: 'Yes, Delete All', background: '#0d1117', color: '#fff' })
+            Swal.fire({ title: 'Are you sure?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3e3e', confirmButtonText: 'Yes, Delete All', background: '#0d1117', color: '#fff' })
             .then((res) => { if(res.isConfirmed) db.ref('adminHistory/money').remove(); });
         }
     </script>
