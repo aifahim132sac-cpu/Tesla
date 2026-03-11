@@ -125,8 +125,19 @@
         });
 
         db.ref('settings/notice').on('value', s => { document.getElementById('noticeMsg').innerText = s.val() || "Welcome!"; });
+        
+        // স্লাইডার আপডেট (লিঙ্ক সাপোর্ট সহ)
         db.ref('settings/sliders').on('value', snap => {
-            let h = ""; snap.forEach(c => { h += `<img src="${c.val().image}" class="slide">`; });
+            let h = ""; 
+            snap.forEach(c => { 
+                const sData = c.val();
+                const link = sData.link || ""; // যদি লিঙ্ক থাকে
+                if(link) {
+                    h += `<img src="${sData.image}" class="slide" onclick="window.location.href='${link}'" style="cursor:pointer;">`;
+                } else {
+                    h += `<img src="${sData.image}" class="slide">`;
+                }
+            });
             document.getElementById('sliderTrack').innerHTML = h;
             initSlider();
         });
@@ -179,14 +190,13 @@
             if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
             if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
             
-            // Solo, Duo, Squad অনুযায়ী প্লেয়ার সংখ্যা নির্ধারণ
             let pCount = 1; 
             let mLow = mode ? mode.toLowerCase() : "";
             if(mLow.includes('duo')) pCount = 2; 
             else if(mLow.includes('squad')) pCount = 4;
             
             let html = `<p style="color:#aaa; font-size:12px; margin-bottom:20px;">আপনার গেমের সঠিক তথ্য দিন।</p>
-                        <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">`; // Scrollable container for squad
+                        <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">`; 
             
             for(let i=1; i<=pCount; i++) {
                 html += `
@@ -217,21 +227,14 @@
                 background: '#111', 
                 color: '#fff',
                 width: '95%',
-                customClass: {
-                    title: 'm-title',
-                    confirmButton: 'auth-btn'
-                },
+                customClass: { title: 'm-title', confirmButton: 'auth-btn' },
                 preConfirm: () => {
                     let d = [];
                     for(let i=1; i<=pCount; i++) {
                         let n = document.getElementById(`pName${i}`).value;
                         let g = document.getElementById(`pId${i}`).value;
                         let f = document.getElementById(`pFullUid${i}`).value;
-                        
-                        if(!n || !g || !f) { 
-                            Swal.showValidationMessage(`Player ${i}-এর সব তথ্য দিন`); 
-                            return false; 
-                        }
+                        if(!n || !g || !f) { Swal.showValidationMessage(`Player ${i}-এর সব তথ্য দিন`); return false; }
                         d.push({ name: n, gameId: g, profileUid: f });
                     }
                     return d;
@@ -254,14 +257,9 @@
                     Swal.fire({title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
                     try {
-                        // ইউজারের ব্যালেন্স আপডেট
                         await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (parseInt(u.played) || 0) + 1 });
                         await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
-                        
-                        // ম্যাচের জয়েন সংখ্যা আপডেট
                         await matchRef.update({ joined: joined + 1 });
-                        
-                        // ম্যাচের ভেতরে ডাটা সেভ
                         await matchRef.child('joined/' + uid).set({
                             leaderName: pData[0].name,
                             teamPlayers: pData,
@@ -269,18 +267,15 @@
                             time: Date.now()
                         });
                         await matchRef.child('joined_players/' + uid).set(true);
-
-                        // অ্যাডমিন প্যানেলের জন্য আলাদাভাবে ডাটা পাঠানো (যাতে আপনি সহজে দেখতে পারেন)
                         await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
                             playerName: pData[0].name,
                             gameId: pData[0].gameId,
-                            profileUid: pData[0].profileUid, // ফুল প্রোফাইল ইউআইডি
+                            profileUid: pData[0].profileUid,
                             teamDetails: pData,
                             appUid: uid,
                             matchType: mode,
                             joinedAt: new Date().toLocaleString()
                         });
-
                         Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
                     } catch (err) {
                         Swal.fire("Error!", "সার্ভারে সমস্যা হচ্ছে, পরে চেষ্টা করুন।", "error");
