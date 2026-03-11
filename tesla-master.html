@@ -177,7 +177,7 @@
                 <div class="section-tag"><i class="fas fa-images"></i> App Slider</div>
                 <input type="file" id="slFile">
                 <input id="slLink" placeholder="Slider Click Link (Optional)">
-                <button class="btn btn-neon" onclick="upSlide()">Upload Slider</button>
+                <button class="btn btn-neon" id="upBtn" onclick="upSlide()">Upload Slider</button>
                 <div id="slShow" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;"></div>
             </div>
             <div class="tesla-card">
@@ -538,11 +538,46 @@
             .then((res) => { if(res.isConfirmed) db.ref('results/' + mId).remove(); });
         }
 
+        // --- UPDATED SLIDER UPLOAD LOGIC ---
         async function upSlide() { 
-            const f = document.getElementById('slFile').files[0]; if(!f) return Swal.fire("Select a file!"); 
-            const fd = new FormData(); fd.append('image', f); 
-            const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:fd}); const d = await res.json(); 
-            if(d.success) db.ref('settings/sliders').push({image: d.data.url, link: document.getElementById('slLink').value});
+            const f = document.getElementById('slFile').files[0]; 
+            const link = document.getElementById('slLink').value;
+            const btn = document.getElementById('upBtn');
+
+            if(!f) return Swal.fire("Select a file!"); 
+
+            // আপলোডিং শুরু
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            btn.disabled = true;
+
+            const fd = new FormData(); 
+            fd.append('image', f); 
+
+            try {
+                const res = await fetch('https://api.imgbb.com/1/upload?key=bb6ae5282e75af49c1e446d17733e498', {method:'POST', body:fd}); 
+                const d = await res.json(); 
+                
+                if(d.success) {
+                    await db.ref('settings/sliders').push({
+                        image: d.data.url, 
+                        link: link
+                    });
+
+                    // সাকসেস মেসেজ ও ইনপুট ক্লিয়ার
+                    Swal.fire({ icon: 'success', title: 'Slider Uploaded!', background: '#0d1117', color: '#fff' });
+                    document.getElementById('slFile').value = "";
+                    document.getElementById('slLink').value = "";
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Upload Failed!', background: '#0d1117', color: '#fff' });
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire({ icon: 'error', title: 'Network Error!', background: '#0d1117', color: '#fff' });
+            } finally {
+                // বাটন আগের অবস্থায় ফিরিয়ে আনা
+                btn.innerHTML = 'Upload Slider';
+                btn.disabled = false;
+            }
         }
 
         db.ref('settings/sliders').on('value', s => { 
