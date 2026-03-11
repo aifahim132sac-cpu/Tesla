@@ -147,10 +147,12 @@
         <div id="sys" class="page">
             <div class="tesla-card">
                 <div class="section-tag"><i class="fas fa-trophy"></i> Full Result Portal</div>
-                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                     <input id="resMid" placeholder="Match No (Ex: 01)" style="margin-bottom:0;">
-                    <button class="btn btn-blue" style="width: auto; padding: 0 15px; height: 45px;" onclick="loadPlayersForResult()">Get Players</button>
+                    <input id="resManualDate" placeholder="Publish Date/Time (Auto-fills)" style="margin-bottom:0;">
                 </div>
+                <button class="btn btn-blue" style="width: 100%; margin-bottom:15px; height: 45px;" onclick="loadPlayersForResult()">Get Players & Fetch Time</button>
+                
                 <div style="overflow-x: auto;">
                     <div class="res-grid-header">
                         <span>POS #</span><span>NAME (UID)</span><span>KILLS</span><span>WIN TK</span><span>TYPE</span><span></span>
@@ -298,10 +300,8 @@
             s.forEach(c => { 
                 const m = c.val(); 
                 let timeStr = m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'N/A';
-                
                 h += `<div class="item-row" style="border-left-width: 8px;">
                         <b style="font-size: 16px; color: var(--neon);">#${m.matchNo} - ${m.title}</b>
-                        
                         <div class="match-info-grid">
                             <div class="info-item"><span>Time:</span><span>${timeStr}</span></div>
                             <div class="info-item"><span>Type:</span><span>${m.mType}</span></div>
@@ -312,7 +312,6 @@
                             <div class="info-item"><span>Room ID:</span><span style="color:var(--gold)">${m.roomId}</span></div>
                             <div class="info-item"><span>Room Pass:</span><span style="color:var(--gold)">${m.roomPass}</span></div>
                         </div>
-
                         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:15px;">
                             <button class="btn btn-gold" style="padding: 10px; font-size: 11px;" onclick="setR('${c.key}')"><i class="fas fa-key"></i> Room</button>
                             <button class="btn btn-blue" style="padding: 10px; font-size: 11px;" onclick="viewPlayers('${m.matchNo}')"><i class="fas fa-users"></i> Players</button>
@@ -327,9 +326,7 @@
             const {value: v} = await Swal.fire({ 
                 title: 'Set Room Info', 
                 html: '<input id="swi" class="swal2-input" placeholder="Room ID"><input id="swp" class="swal2-input" placeholder="Password">', 
-                background: '#0d1117',
-                color: '#fff',
-                confirmButtonColor: '#00ffaa',
+                background: '#0d1117', color: '#fff', confirmButtonColor: '#00ffaa',
                 preConfirm: () => [document.getElementById('swi').value, document.getElementById('swp').value] 
             });
             if(v) db.ref('matches/'+id).update({roomId: v[0], roomPass: v[1]}).then(()=>Swal.fire({icon: 'success', title: 'Updated!', background: '#0d1117', color: '#fff'}));
@@ -341,32 +338,16 @@
                 s.forEach(p => { 
                     const d = p.val();
                     if(d.teamDetails && d.teamDetails.length > 0) {
-                        list += `<div style="background:#000; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #00ffaa; border-left: 5px solid #00ffaa;">
-                                    <p style="color:#00ffaa; font-weight:bold; margin:0 0 10px 0; font-family:'Orbitron'; font-size:12px;">TEAM LEADER: ${d.playerName}</p>`;
-                        
+                        list += `<div style="background:#000; padding:15px; border-radius:15px; margin-bottom:15px; border:1px solid #00ffaa; border-left: 5px solid #00ffaa;"><p style="color:#00ffaa; font-weight:bold; margin:0 0 10px 0; font-family:'Orbitron'; font-size:12px;">TEAM LEADER: ${d.playerName}</p>`;
                         d.teamDetails.forEach((member, index) => {
-                            list += `<div style="background:#111; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #333;">
-                                        <small style="color:#ffcc00">PLAYER ${index + 1}:</small> ${member.name}<br>
-                                        <small style="color:#00d2ff">GAME ID:</small> ${member.gameId}<br>
-                                        <small style="color:#00ffaa">FULL UID:</small> <span style="font-size:10px; color:#aaa; word-break: break-all;">${member.profileUid}</span>
-                                     </div>`;
+                            list += `<div style="background:#111; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #333;"><small style="color:#ffcc00">PLAYER ${index + 1}:</small> ${member.name}<br><small style="color:#00d2ff">GAME ID:</small> ${member.gameId}<br><small style="color:#00ffaa">FULL UID:</small> <span style="font-size:10px; color:#aaa; word-break: break-all;">${member.profileUid}</span></div>`;
                         });
                         list += `</div>`;
                     } else {
-                        list += `<div style="background:#000; padding:12px; border-radius:12px; margin-bottom:10px; border:1px solid #333;">
-                                    <b style="color:#00ffaa">${d.playerName || d.name}</b><br>
-                                    <small style="color:#ffcc00">Game ID:</small> ${d.gameId}<br>
-                                    <small style="color:#00ffaa">Full UID:</small> <span style="font-size:10px; color:#aaa; word-break: break-all;">${d.profileUid || d.uid}</span>
-                                 </div>`;
+                        list += `<div style="background:#000; padding:12px; border-radius:12px; margin-bottom:10px; border:1px solid #333;"><b style="color:#00ffaa">${d.playerName || d.name}</b><br><small style="color:#ffcc00">Game ID:</small> ${d.gameId}<br><small style="color:#00ffaa">Full UID:</small> <span style="font-size:10px; color:#aaa; word-break: break-all;">${d.profileUid || d.uid}</span></div>`;
                     }
                 });
-                Swal.fire({
-                    title: 'PLAYERS LIST - MATCH ' + mNo, 
-                    html: `<div style="text-align:left; max-height:450px; overflow-y:auto; padding-right:5px;">${list || 'কোনো প্লেয়ার জয়েন করেনি'}</div>`, 
-                    background: '#0d1117', 
-                    color: '#fff',
-                    width: '95%'
-                });
+                Swal.fire({ title: 'PLAYERS LIST - MATCH ' + mNo, html: `<div style="text-align:left; max-height:450px; overflow-y:auto; padding-right:5px;">${list || 'কোনো প্লেয়ার জয়েন করেনি'}</div>`, background: '#0d1117', color: '#fff', width: '95%' });
             });
         }
 
@@ -388,10 +369,8 @@
                     const u = uS.val();
                     let curBal = parseFloat(u.balance) || 0;
                     let curWin = parseFloat(u.winning) || 0;
-                    
-                    if(type === 'Deposit') {
-                        await db.ref('users/'+uid).update({ balance: curBal + parseFloat(amt) });
-                    } else if(type === 'Withdraw') {
+                    if(type === 'Deposit') await db.ref('users/'+uid).update({ balance: curBal + parseFloat(amt) });
+                    else if(type === 'Withdraw') {
                         if(curWin < amt) return Swal.fire("Low Winning Balance!", "ইউজারের পর্যাপ্ত উইনিং ব্যালেন্স নেই!", "error");
                         await db.ref('users/'+uid).update({ winning: curWin - parseFloat(amt) });
                     }
@@ -405,136 +384,83 @@
         db.ref('adminHistory/money').on('value', snap => {
             let h = "";
             snap.forEach(child => {
-                const hi = child.val();
-                const key = child.key;
-                const color = hi.type === 'Deposit' ? '#00ffaa' : '#ff3e3e';
-                h += `<div style="background: #000; padding: 12px; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid ${color}; position: relative;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <b style="color:${color}; font-size: 14px;">${hi.type}</b>
-                            <span style="color: #ffcc00; font-weight: bold;">${hi.amount} TK</span>
-                        </div>
-                        <div style="font-size: 10px; color: #8b949e; margin-top: 5px;">
-                            ID: ${hi.uid} <br> ${hi.date}
-                        </div>
-                        <button onclick="deleteSingleHistory('${key}')" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #555; cursor: pointer;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                      </div>`;
+                const hi = child.val(); const key = child.key; const color = hi.type === 'Deposit' ? '#00ffaa' : '#ff3e3e';
+                h += `<div style="background: #000; padding: 12px; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid ${color}; position: relative;"><div style="display: flex; justify-content: space-between; align-items: center;"><b style="color:${color}; font-size: 14px;">${hi.type}</b><span style="color: #ffcc00; font-weight: bold;">${hi.amount} TK</span></div><div style="font-size: 10px; color: #8b949e; margin-top: 5px;">ID: ${hi.uid} <br> ${hi.date}</div><button onclick="deleteSingleHistory('${key}')" style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #555; cursor: pointer;"><i class="fas fa-trash"></i></button></div>`;
             });
             document.getElementById('historyList').innerHTML = h || `<p style="text-align:center; color:#555; font-size:12px;">No transaction history found.</p>`;
         });
 
         function deleteSingleHistory(key) { db.ref('adminHistory/money/' + key).remove(); }
 
-        // --- UPDATED RESULT PORTAL LOGIC ---
+        // --- UPDATED RESULT LOGIC (AUTO-FETCH TIME) ---
         function loadPlayersForResult() {
             const mId = document.getElementById('resMid').value;
+            const dateInput = document.getElementById('resManualDate');
             if(!mId) return Swal.fire("Match No দিন!");
             
-            db.ref('joinedPlayers/' + mId).once('value', snap => {
-                const area = document.getElementById('wRows'); 
-                area.innerHTML = "";
-                
-                if(!snap.exists()) return Swal.fire("এই ম্যাচে কোনো প্লেয়ার নেই!");
+            // Fetching Date/Time automatically from the match list
+            db.ref('matches').once('value', snap => {
+                let foundTime = "";
+                snap.forEach(child => {
+                    if(child.val().matchNo == mId) {
+                        foundTime = child.val().mTimeSelect ? child.val().mTimeSelect.replace('T', ' ') : "";
+                    }
+                });
+                if(foundTime) { dateInput.value = foundTime; }
+            });
 
+            db.ref('joinedPlayers/' + mId).once('value', snap => {
+                const area = document.getElementById('wRows'); area.innerHTML = "";
+                if(!snap.exists()) return Swal.fire("এই ম্যাচে কোনো প্লেয়ার নেই!");
                 snap.forEach(p => {
                     const pl = p.val();
                     if(pl.teamDetails && pl.teamDetails.length > 0) {
-                        pl.teamDetails.forEach(member => { 
-                            let mName = member.name || "Member";
-                            let mUid = member.profileUid || "N/A";
-                            createResultRow(area, `${mName} (${mUid})`); 
-                        });
+                        pl.teamDetails.forEach(member => { createResultRow(area, `${member.name || "Member"} (${member.profileUid || "N/A"})`); });
                     } else {
-                        let pName = pl.playerName || pl.name || "Unknown";
-                        let pUid = pl.profileUid || pl.uid || "N/A";
-                        createResultRow(area, `${pName} (${pUid})`);
+                        createResultRow(area, `${pl.playerName || pl.name} (${pl.profileUid || pl.uid})`);
                     }
                 });
             });
         }
 
         function createResultRow(container, name) {
-            const row = document.createElement('div'); 
-            row.className = "res-row";
-            // Kills and Win TK are manual, Name field is editable
-            row.innerHTML = `
-                <input class="rPos" type="number" value="0">
-                <input class="rName" value="${name}" placeholder="Name (UID)">
-                <input class="rKill" type="number" value="0">
-                <input class="rWin" type="number" value="0">
-                <select class="rType">
-                    <option value="Normal">Normal</option>
-                    <option value="Winner">Winner</option>
-                </select>
-                <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold; font-size:18px;">×</button>`;
+            const row = document.createElement('div'); row.className = "res-row";
+            row.innerHTML = `<input class="rPos" type="number" value="0"><input class="rName" value="${name}" placeholder="Name (UID)"><input class="rKill" type="number" value="0"><input class="rWin" type="number" value="0"><select class="rType"><option value="Normal">Normal</option><option value="Winner">Winner</option></select><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; font-weight:bold; font-size:18px;">×</button>`;
             container.appendChild(row);
         }
 
+        function addW() { createResultRow(document.getElementById('wRows'), ""); }
+
         async function publishFinalResult() {
             const mId = document.getElementById('resMid').value;
+            const manualDate = document.getElementById('resManualDate').value;
             if(!mId) return Swal.fire("Match No দিন!");
-
             let resPlayers = [];
             const rows = document.querySelectorAll('.res-row');
             if(rows.length === 0) return Swal.fire("প্লেয়ার লিস্ট খালি!");
-
             rows.forEach(row => {
-                resPlayers.push({
-                    pos: row.querySelector('.rPos').value,
-                    name: row.querySelector('.rName').value,
-                    kills: row.querySelector('.rKill').value,
-                    winning: row.querySelector('.rWin').value,
-                    type: row.querySelector('.rType').value
-                });
+                resPlayers.push({ pos: row.querySelector('.rPos').value, name: row.querySelector('.rName').value, kills: row.querySelector('.rKill').value, winning: row.querySelector('.rWin').value, type: row.querySelector('.rType').value });
             });
-
-            db.ref('results/' + mId).set({
-                matchId: mId,
-                players: resPlayers,
-                time: Date.now(),
-                publishDate: new Date().toLocaleString()
-            }).then(() => {
-                Swal.fire({title: "Result Deployed!", icon: "success", background: '#0d1117', color: '#fff'});
-                document.getElementById('wRows').innerHTML = "";
-            });
+            const pDate = manualDate || new Date().toLocaleString();
+            db.ref('results/' + mId).set({ matchId: mId, players: resPlayers, time: Date.now(), publishDate: pDate })
+            .then(() => { Swal.fire({title: "Result Deployed!", icon: "success", background: '#0d1117', color: '#fff'}); document.getElementById('wRows').innerHTML = ""; });
         }
 
         db.ref('results').on('value', snap => {
             let html = "";
-            if(!snap.exists()){
-                html = `<p style="text-align:center; color:#555; font-size:12px;">No results published yet.</p>`;
-            } else {
+            if(!snap.exists()) html = `<p style="text-align:center; color:#555; font-size:12px;">No results published yet.</p>`;
+            else {
                 snap.forEach(child => {
-                    const res = child.val();
-                    const key = child.key;
-                    html += `
-                        <div style="background: #000; padding: 12px; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <b style="color: var(--gold);">Match #${res.matchId}</b>
-                                <div style="font-size: 10px; color: #8b949e;">${res.publishDate || ''}</div>
-                            </div>
-                            <button onclick="deleteResult('${key}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold;">
-                                <i class="fas fa-trash"></i> DELETE
-                            </button>
-                        </div>`;
+                    const res = child.val(); const key = child.key;
+                    html += `<div style="background: #000; padding: 12px; border: 1px solid #222; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;"><div><b style="color: var(--gold);">Match #${res.matchId}</b><div style="font-size: 10px; color: #8b949e;">${res.publishDate || ''}</div></div><button onclick="deleteResult('${key}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold;"><i class="fas fa-trash"></i> DELETE</button></div>`;
                 });
             }
             document.getElementById('publishedResultsList').innerHTML = html;
         });
 
         function deleteResult(mId) {
-            Swal.fire({
-                title: 'Delete Result?',
-                text: "Match #" + mId + " এর রেজাল্ট কি ডিলিট করতে চান?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ff3e3e',
-                confirmButtonText: 'Yes, Delete',
-                background: '#0d1117', color: '#fff'
-            }).then((res) => {
-                if(res.isConfirmed) db.ref('results/' + mId).remove();
-            });
+            Swal.fire({ title: 'Delete Result?', text: "Match #" + mId + " এর রেজাল্ট কি ডিলিট করতে চান?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3e3e', confirmButtonText: 'Yes, Delete', background: '#0d1117', color: '#fff' })
+            .then((res) => { if(res.isConfirmed) db.ref('results/' + mId).remove(); });
         }
 
         async function upSlide() { 
@@ -549,25 +475,9 @@
         });
 
         function saveNotice() { db.ref('settings/notice').set(document.getElementById('appNotice').value).then(()=>Swal.fire("Saved")); }
-        
-        // Manual entry function
-        function addW() { 
-            const area = document.getElementById('wRows');
-            createResultRow(area, ""); 
-        }
-        
         function clearAllHistory() { 
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "All history will be deleted!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ff3e3e',
-                confirmButtonText: 'Yes, Delete All',
-                background: '#0d1117', color: '#fff'
-            }).then((res) => {
-                if(res.isConfirmed) db.ref('adminHistory/money').remove();
-            });
+            Swal.fire({ title: 'Are you sure?', text: "All history will be deleted!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3e3e', confirmButtonText: 'Yes, Delete All', background: '#0d1117', color: '#fff' })
+            .then((res) => { if(res.isConfirmed) db.ref('adminHistory/money').remove(); });
         }
     </script>
 </body>
