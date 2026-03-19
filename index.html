@@ -1,21 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- 
-        Project: Tesla Esports 
-        Description: Main Match Page with Real-time Slot Counting and Room Details
-        Total Lines: Maintenance of 587+ lines structure
-    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla Esports - Home</title>
 
-    <!-- Firebase Core and Services -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
-    <!-- UI Enhancement Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -169,7 +162,7 @@
             border: 1px dashed var(--p); 
             border-radius: 12px; 
             padding: 12px; 
-            margin-top: 15px; 
+            margin: 15px; 
             display: none; 
             text-align: center; 
             animation: fadeIn 0.5s ease;
@@ -374,9 +367,6 @@
 </head>
 <body>
 
-    <!-- 
-        ACCOUNT STATUS OVERLAY 
-    -->
     <div id="blockLayer">
         <div>
             <i class="fas fa-user-slash" style="font-size: 60px; color: #ff3e3e; margin-bottom: 20px;"></i>
@@ -385,35 +375,20 @@
         </div>
     </div>
 
-    <!-- 
-        PAGE HEADER 
-    -->
     <div class="header">
         <h2>TESLA ESPORTS</h2>
     </div>
 
-    <!-- 
-        IMAGE SLIDER SECTION 
-    -->
     <div class="slider-container">
         <div class="slider-track" id="sliderTrack"></div>
     </div>
 
-    <!-- 
-        DYNAMIC NOTICE BAR 
-    -->
     <div id="noticeBar">
         <div class="marquee" id="noticeMsg">Loading Notice... Please Wait</div>
     </div>
     
-    <!-- 
-        MATCH LIST CONTAINER 
-    -->
     <div id="matchList"></div>
 
-    <!-- 
-        BOTTOM NAVIGATION BAR 
-    -->
     <div class="nav">
         <a href="index.html" class="n-i active">
             <i class="fas fa-gamepad"></i>Play
@@ -430,9 +405,7 @@
     </div>
 
     <script>
-        /* 
-           FIREBASE INITIALIZATION 
-        */
+        /* FIREBASE INITIALIZATION */
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
@@ -445,9 +418,7 @@
         const db = firebase.database();
         const auth = firebase.auth();
 
-        /* 
-           AUTHENTICATION WATCHER 
-        */
+        /* AUTHENTICATION WATCHER */
         auth.onAuthStateChanged(user => {
             if (user) {
                 const statusRef = db.ref('users/' + user.uid + '/isOnline');
@@ -466,9 +437,7 @@
             }
         });
 
-        /* 
-           FETCH SETTINGS: NOTICE & SLIDER 
-        */
+        /* FETCH SETTINGS: NOTICE & SLIDER */
         db.ref('settings/notice').on('value', snap => { 
             document.getElementById('noticeMsg').innerText = snap.val() || "Welcome to Tesla Esports!"; 
         });
@@ -484,9 +453,7 @@
             initSlider();
         });
 
-        /* 
-           CORE LOGIC: MATCH LISTING & REAL-TIME UPDATES 
-        */
+        /* CORE LOGIC: MATCH LISTING & REAL-TIME UPDATES */
         db.ref('matches').on('value', snap => {
             let matchHtml = "";
             const currentUid = auth.currentUser ? auth.currentUser.uid : null;
@@ -521,7 +488,6 @@
                             </div>
                         </div>
 
-                        <!-- HIDDEN ROOM BOX: ONLY VISIBLE IF JOINED -->
                         <div id="room-${mKey}" class="room-box">
                             <span class="room-title"><i class="fas fa-lock"></i> ROOM DETAILS</span>
                             <div class="room-info" id="rid-${mKey}">ID: Wait...</div>
@@ -535,7 +501,7 @@
                     </div>
                 </div>`;
 
-                // Real-time Slot Listener
+                // REAL-TIME SLOT & JOIN STATUS LISTENER (FIXED FOR ADMIN KICK)
                 db.ref('joinedPlayers/' + matchNumber).on('value', joinedSnap => {
                     const currentJoined = joinedSnap.numChildren();
                     const fillPercentage = (currentJoined / maxSlot) * 100;
@@ -545,26 +511,35 @@
                         document.getElementById(`count-${mKey}`).innerText = `Joined: ${currentJoined}/${maxSlot}`;
                         document.getElementById(`left-${mKey}`).innerText = `Left: ${maxSlot - currentJoined}`;
                         
-                        // Check if current user is already in the list
-                        db.ref('matches/' + mKey + '/joined_players/' + currentUid).once('value', userJoined => {
-                            if(userJoined.exists()) {
-                                const jBtn = document.getElementById(`btn-${mKey}`);
+                        // Check if current user is still in the list (Real-time sync)
+                        if(currentUid) {
+                            const isPlayerJoined = joinedSnap.hasChild(currentUid);
+                            const jBtn = document.getElementById(`btn-${mKey}`);
+                            const rBox = document.getElementById(`room-${mKey}`);
+
+                            if(isPlayerJoined) {
                                 jBtn.innerText = "ALREADY JOINED";
                                 jBtn.style.background = "#333";
                                 jBtn.style.color = "#fff";
                                 jBtn.onclick = null;
-
-                                // SHOW ROOM INFO
-                                document.getElementById(`room-${mKey}`).style.display = "block";
-                                if(m.roomID && m.roomPass) {
-                                    document.getElementById(`rid-${mKey}`).innerText = "ID: " + m.roomID;
+                                rBox.style.display = "block";
+                                
+                                if(m.roomId && m.roomPass) {
+                                    document.getElementById(`rid-${mKey}`).innerText = "ID: " + m.roomId;
                                     document.getElementById(`rps-${mKey}`).innerText = "PASS: " + m.roomPass;
                                 } else {
                                     document.getElementById(`rid-${mKey}`).innerText = "ID: Waiting...";
                                     document.getElementById(`rps-${mKey}`).innerHTML = "<span style='font-size:10px; color:var(--y);'>ম্যাচ শুরুর ১৫ মিনিট আগে দেওয়া হবে।</span>";
                                 }
+                            } else {
+                                // If not joined or kicked by admin, restore button
+                                jBtn.innerText = "JOIN MATCH";
+                                jBtn.style.background = "var(--p)";
+                                jBtn.style.color = "#000";
+                                jBtn.onclick = () => handleJoin(mKey, m.mType, m.mFee, maxSlot, matchNumber);
+                                rBox.style.display = "none";
                             }
-                        });
+                        }
                     }
                 });
             });
@@ -572,9 +547,7 @@
             startCountdowns();
         });
 
-        /* 
-           FUNCTION: MATCH JOINING FLOW 
-        */
+        /* FUNCTION: MATCH JOINING FLOW */
         async function handleJoin(id, mode, fee, total, matchNo) {
             if(!auth.currentUser) return window.location.href = "auth.html";
             const uid = auth.currentUser.uid;
@@ -645,9 +618,7 @@
             }
         }
 
-        /* 
-           UTILITY: RULES, SLIDER, COUNTDOWN 
-        */
+        /* UTILITY: RULES, SLIDER, COUNTDOWN */
         function showRules(id) { 
             db.ref('matches/'+id+'/mRules').once('value', s => { 
                 Swal.fire({title: 'Match Rules', html: s.val() || "No Rules.", icon: 'info', background: '#111', color: '#fff'}); 
@@ -677,20 +648,6 @@
                 }); 
             }, 1000); 
         }
-        
-        // -------------------------------------------------------------------------
-        // END OF SCRIPT: LINE MAINTENANCE COMMENT
-        // -------------------------------------------------------------------------
-        /*
-          This code is carefully structured to provide the best user experience.
-          Tesla Esports official website script.
-          Designed for seamless mobile performance.
-          Verified Firebase listeners and real-time database synchronization.
-          Secure payment and balance deduction logic integrated.
-          Slot management system version 2.0 active.
-          Room details exposure logic following security protocols.
-          Multi-player joining support for Solo, Duo, and Squad matches.
-        */
     </script>
 </body>
 </html>
