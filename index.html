@@ -1,93 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Basic Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla Esports - Home</title>
+
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root { --p: #00ff00; --b: #050505; --c: #111; --y: #ffcc00; }
-        body { font-family: 'Poppins', sans-serif; background: var(--b); color: #fff; margin: 0; padding-bottom: 85px; overflow-x: hidden; }
-        #authModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: #111; width: 88%; max-width: 360px; padding: 35px 20px; border-radius: 20px; border: 1px solid #222; position: relative; text-align: center; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 26px; color: #555; cursor: pointer; }
-        .m-title { font-family: 'Orbitron'; color: var(--p); margin-bottom: 25px; font-size: 18px; }
-        .auth-input { width: 100%; padding: 14px; margin: 8px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; outline: none; }
-        .auth-btn { width: 100%; padding: 15px; background: var(--p); border: none; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; color: #000; }
-        .header { background: #000; padding: 20px 0; border-bottom: 1px solid #1a1a1a; text-align: center; }
-        .header h2 { font-family: 'Orbitron'; color: var(--p); margin: 0; font-size: 22px; letter-spacing: 3px; }
-        .slider-container { width: 92%; height: 160px; overflow: hidden; position: relative; border-radius: 15px; margin: 15px auto; border: 1px solid #222; }
-        .slider-track { display: flex; transition: transform 0.5s ease; height: 100%; }
-        .slide { min-width: 100%; height: 100%; object-fit: cover; }
-        #noticeBar { background: rgba(0, 255, 0, 0.05); color: var(--p); padding: 12px 0; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; overflow: hidden; }
-        .marquee { white-space: nowrap; display: inline-block; animation: marquee 15s linear infinite; font-size: 13px; }
-        @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-        .match-card { background: var(--c); border-radius: 18px; margin: 15px; border: 1px solid #222; overflow: hidden; }
-        .match-header { padding: 12px 15px; background: #1a1a1a; display: flex; justify-content: space-between; align-items: center; }
-        .match-mode { font-family: 'Orbitron'; font-size: 11px; color: var(--p); }
-        .timer-box { background: rgba(255, 204, 0, 0.07); color: var(--y); padding: 10px; border-radius: 10px; text-align: center; font-family: 'Orbitron'; font-size: 12px; margin-bottom: 15px; }
-        .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .g-box { background: #000; padding: 12px 5px; border-radius: 12px; text-align: center; border: 1px solid #222; }
-        .g-label { font-size: 9px; color: #777; text-transform: uppercase; }
-        .g-val { font-size: 12px; font-weight: 700; color: #fff; font-family: 'Orbitron'; }
-        .slot-wrap { margin-top: 15px; background: #0a0a0a; padding: 10px; border-radius: 12px; }
-        .s-bar { height: 8px; background: #222; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
-        .s-fill { height: 100%; background: var(--p); transition: 1s ease-in-out; }
-        .btn-row { display: flex; gap: 12px; margin-top: 15px; }
-        .btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; border: none; font-size: 11px; }
+        :root { 
+            --p: #00ff00; 
+            --b: #050505; 
+            --c: #111; 
+            --y: #ffcc00; 
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--b); 
+            color: #fff; 
+            margin: 0; 
+            padding-bottom: 85px; 
+            overflow-x: hidden; 
+        }
+
+        /* Modal and Block Layer Styles */
+        #authModal { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); 
+            z-index: 2000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .modal-content { 
+            background: #111; 
+            width: 88%; 
+            max-width: 360px; 
+            padding: 35px 20px; 
+            border-radius: 20px; 
+            border: 1px solid #222; 
+            position: relative; 
+            text-align: center; 
+        }
+
+        .close-btn { 
+            position: absolute; 
+            top: 15px; 
+            right: 20px; 
+            font-size: 26px; 
+            color: #555; 
+            cursor: pointer; 
+        }
+
+        .m-title { 
+            font-family: 'Orbitron'; 
+            color: var(--p); 
+            margin-bottom: 25px; 
+            font-size: 18px; 
+        }
+
+        .auth-input { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 8px 0; 
+            background: #000; 
+            border: 1px solid #333; 
+            color: #fff; 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            outline: none; 
+        }
+
+        .auth-btn { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--p); 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-family: 'Orbitron'; 
+            cursor: pointer; 
+            color: #000; 
+        }
+
+        /* Header and Layout Styles */
+        .header { 
+            background: #000; 
+            padding: 20px 0; 
+            border-bottom: 1px solid #1a1a1a; 
+            text-align: center; 
+        }
+
+        .header h2 { 
+            font-family: 'Orbitron'; 
+            color: var(--p); 
+            margin: 0; 
+            font-size: 22px; 
+            letter-spacing: 3px; 
+        }
+
+        .slider-container { 
+            width: 92%; 
+            height: 160px; 
+            overflow: hidden; 
+            position: relative; 
+            border-radius: 15px; 
+            margin: 15px auto; 
+            border: 1px solid #222; 
+        }
+
+        .slider-track { 
+            display: flex; 
+            transition: transform 0.5s ease; 
+            height: 100%; 
+        }
+
+        .slide { 
+            min-width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+
+        #noticeBar { 
+            background: rgba(0, 255, 0, 0.05); 
+            color: var(--p); 
+            padding: 12px 0; 
+            border-top: 1px solid #1a1a1a; 
+            border-bottom: 1px solid #1a1a1a; 
+            overflow: hidden; 
+        }
+
+        .marquee { 
+            white-space: nowrap; 
+            display: inline-block; 
+            animation: marquee 15s linear infinite; 
+            font-size: 13px; 
+        }
+
+        @keyframes marquee { 
+            0% { transform: translateX(100vw); } 
+            100% { transform: translateX(-100%); } 
+        }
+
+        /* Match Card Styles */
+        .match-card { 
+            background: var(--c); 
+            border-radius: 18px; 
+            margin: 15px; 
+            border: 1px solid #222; 
+            overflow: hidden; 
+        }
+
+        .match-header { 
+            padding: 12px 15px; 
+            background: #1a1a1a; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .match-mode { 
+            font-family: 'Orbitron'; 
+            font-size: 11px; 
+            color: var(--p); 
+        }
+
+        .timer-box { 
+            background: rgba(255, 204, 0, 0.07); 
+            color: var(--y); 
+            padding: 10px; 
+            border-radius: 10px; 
+            text-align: center; 
+            font-family: 'Orbitron'; 
+            font-size: 12px; 
+            margin-bottom: 15px; 
+        }
+
+        .m-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            margin-bottom: 15px; 
+        }
+
+        .g-box { 
+            background: #000; 
+            padding: 12px 5px; 
+            border-radius: 12px; 
+            text-align: center; 
+            border: 1px solid #222; 
+        }
+
+        .g-label { 
+            font-size: 9px; 
+            color: #777; 
+            text-transform: uppercase; 
+        }
+
+        .g-val { 
+            font-size: 12px; 
+            font-weight: 700; 
+            color: #fff; 
+            font-family: 'Orbitron'; 
+        }
+
+        .slot-wrap { 
+            margin-top: 15px; 
+            background: #0a0a0a; 
+            padding: 10px; 
+            border-radius: 12px; 
+        }
+
+        .s-bar { 
+            height: 8px; 
+            background: #222; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            margin-bottom: 8px; 
+        }
+
+        .s-fill { 
+            height: 100%; 
+            background: var(--p); 
+            transition: 1.5s ease-in-out; 
+            width: 0%;
+        }
+
+        .btn-row { 
+            display: flex; 
+            gap: 12px; 
+            margin-top: 15px; 
+        }
+
+        .btn { 
+            flex: 1; 
+            padding: 14px; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-family: 'Orbitron'; 
+            cursor: pointer; 
+            border: none; 
+            font-size: 11px; 
+            transition: 0.3s;
+        }
+
         .btn-rules { background: #1a1a1a; color: #fff; }
         .btn-join { background: var(--p); color: #000; }
-        .nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; padding: 14px 0; border-top: 1px solid #1a1a1a; z-index: 1000; }
-        .n-i { flex: 1; text-align: center; color: #555; font-size: 10px; text-decoration: none; }
+
+        /* Navigation Styles */
+        .nav { 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+            background: #000; 
+            display: flex; 
+            padding: 14px 0; 
+            border-top: 1px solid #1a1a1a; 
+            z-index: 1000; 
+        }
+
+        .n-i { 
+            flex: 1; 
+            text-align: center; 
+            color: #555; 
+            font-size: 10px; 
+            text-decoration: none; 
+        }
+
         .n-i.active { color: var(--p); }
         .n-i i { font-size: 22px; display: block; margin-bottom: 5px; }
-        #blockLayer { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; justify-content: center; align-items: center; text-align: center; padding: 20px; }
-        
-        /* Join Form Specific Style */
-        .join-input-box {
-            text-align: left;
-            margin-bottom: 15px;
-            border: 1px solid #333;
-            padding: 12px;
-            border-radius: 10px;
-            background: #000;
+
+        #blockLayer { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: #000; 
+            z-index: 9999; 
+            justify-content: center; 
+            align-items: center; 
+            text-align: center; 
+            padding: 20px; 
         }
-        .join-input-box label {
-            color: var(--p);
-            font-size: 10px;
-            font-family: 'Orbitron';
-            display: block;
-            margin-bottom: 5px;
+
+        /* Custom Input Styles */
+        .join-input-box { 
+            text-align: left; 
+            margin-bottom: 15px; 
+            border: 1px solid #333; 
+            padding: 12px; 
+            border-radius: 10px; 
+            background: #000; 
         }
-        .swal-custom-input {
-            width: 100% !important;
-            margin: 0 !important;
-            background: transparent !important;
-            border: none !important;
-            color: #fff !important;
-            font-size: 14px !important;
-            padding: 5px 0 !important;
-            outline: none !important;
+
+        .join-input-box label { 
+            color: var(--p); 
+            font-size: 10px; 
+            font-family: 'Orbitron'; 
+            display: block; 
+            margin-bottom: 5px; 
+        }
+
+        .swal-custom-input { 
+            width: 100% !important; 
+            margin: 0 !important; 
+            background: transparent !important; 
+            border: none !important; 
+            color: #fff !important; 
+            font-size: 14px !important; 
+            padding: 5px 0 !important; 
+            outline: none !important; 
         }
     </style>
 </head>
 <body>
 
+    <!-- Account Block Layer -->
     <div id="blockLayer">
-        <div><i class="fas fa-user-slash" style="font-size: 60px; color: #ff3e3e; margin-bottom: 20px;"></i><h2 style="font-family: 'Orbitron';">ACCOUNT BLOCKED</h2><p id="blockMsg" style="color: #aaa;"></p></div>
+        <div>
+            <i class="fas fa-user-slash" style="font-size: 60px; color: #ff3e3e; margin-bottom: 20px;"></i>
+            <h2 style="font-family: 'Orbitron';">ACCOUNT BLOCKED</h2>
+            <p id="blockMsg" style="color: #aaa;"></p>
+        </div>
     </div>
 
-    <div class="header"><h2>TESLA ESPORTS</h2></div>
-    <div class="slider-container"><div class="slider-track" id="sliderTrack"></div></div>
-    <div id="noticeBar"><div class="marquee" id="noticeMsg">Loading Notice...</div></div>
+    <!-- Main Header -->
+    <div class="header">
+        <h2>TESLA ESPORTS</h2>
+    </div>
+
+    <!-- Image Slider Section -->
+    <div class="slider-container">
+        <div class="slider-track" id="sliderTrack"></div>
+    </div>
+
+    <!-- Notice Bar Section -->
+    <div id="noticeBar">
+        <div class="marquee" id="noticeMsg">Loading Notice... Please Wait</div>
+    </div>
     
+    <!-- Match List Rendering Area -->
     <div id="matchList"></div>
 
+    <!-- Bottom Navigation Bar -->
     <div class="nav">
         <a href="index.html" class="n-i active"><i class="fas fa-gamepad"></i>Play</a>
         <a href="result.html" class="n-i"><i class="fas fa-poll"></i>Result</a>
@@ -96,6 +364,7 @@
     </div>
 
     <script>
+        // Firebase Configuration Details
         const firebaseConfig = {
             apiKey: "AIzaSyDis0KmJK-GkQP-zoiotVWYDrfZug6v6nc",
             authDomain: "teot-a3046.firebaseapp.com",
@@ -103,9 +372,13 @@
             projectId: "teot-a3046",
             storageBucket: "teot-a3046.appspot.com"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database(), auth = firebase.auth();
 
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+
+        // User Authentication and Status Tracking
         auth.onAuthStateChanged(user => {
             if (user) {
                 const statusRef = db.ref('users/' + user.uid + '/isOnline');
@@ -113,10 +386,10 @@
                 statusRef.onDisconnect().set(false);
 
                 db.ref('users/' + user.uid).on('value', snapshot => {
-                    const u = snapshot.val();
-                    if (u && u.isBlocked) {
+                    const userData = snapshot.val();
+                    if (userData && userData.isBlocked) {
                         document.getElementById('blockLayer').style.display = 'flex';
-                        document.getElementById('blockMsg').innerText = `আপনার অ্যাকাউন্টটি ব্লক করা হয়েছে।`;
+                        document.getElementById('blockMsg').innerText = `আপনার অ্যাকাউন্টটি ব্লক করা হয়েছে। অ্যাডমিনের সাথে যোগাযোগ করুন।`;
                     } else {
                         document.getElementById('blockLayer').style.display = 'none';
                     }
@@ -124,169 +397,191 @@
             }
         });
 
-        db.ref('settings/notice').on('value', s => { document.getElementById('noticeMsg').innerText = s.val() || "Welcome!"; });
+        // Fetch and Update Global Notice
+        db.ref('settings/notice').on('value', snap => { 
+            document.getElementById('noticeMsg').innerText = snap.val() || "Welcome to Tesla Esports!"; 
+        });
         
-        // স্লাইডার আপডেট (লিঙ্ক সাপোর্ট সহ)
+        // Dynamic Slider Implementation
         db.ref('settings/sliders').on('value', snap => {
-            let h = ""; 
-            snap.forEach(c => { 
-                const sData = c.val();
-                const link = sData.link || ""; // যদি লিঙ্ক থাকে
-                if(link) {
-                    h += `<img src="${sData.image}" class="slide" onclick="window.location.href='${link}'" style="cursor:pointer;">`;
-                } else {
-                    h += `<img src="${sData.image}" class="slide">`;
-                }
+            let sliderHtml = ""; 
+            snap.forEach(child => { 
+                const data = child.val();
+                const link = data.link || "";
+                sliderHtml += `<img src="${data.image}" class="slide" onclick="${link ? `window.location.href='${link}'` : ''}" style="${link ? 'cursor:pointer;' : ''}">`;
             });
-            document.getElementById('sliderTrack').innerHTML = h;
+            document.getElementById('sliderTrack').innerHTML = sliderHtml;
             initSlider();
         });
 
+        // Main Match Loading Logic with Real-time Counting
         db.ref('matches').on('value', snap => {
-            let h = "";
+            let matchHtml = "";
             const currentUid = auth.currentUser ? auth.currentUser.uid : null;
             
-            snap.forEach(c => {
-                const m = c.val();
-                const total = parseInt(m.mSlot) || parseInt(m.slot) || 48;
-                const joined = parseInt(m.joined) || 0;
-                const percent = (joined/total)*100;
-                const isJoined = currentUid && m.joined_players && m.joined_players[currentUid];
+            snap.forEach(child => {
+                const m = child.val();
+                const mKey = child.key;
+                const maxSlot = parseInt(m.mSlot) || 48;
+                const matchNumber = m.matchNo;
 
-                h += `<div class="match-card">
-                    <div class="match-header"><span class="match-mode">${m.mType || 'SOLO'}</span><span>#${m.matchNo}</span></div>
+                matchHtml += `
+                <div class="match-card">
+                    <div class="match-header">
+                        <span class="match-mode">${m.mType || 'SOLO'}</span>
+                        <span>#${matchNumber}</span>
+                    </div>
                     <div style="padding:15px;">
                         <div style="font-size:16px; font-weight:600; margin-bottom:12px;">${m.title}</div>
-                        <div class="timer-box" data-time="${m.mTimeSelect}">Loading...</div>
+                        <div class="timer-box" data-time="${m.mTimeSelect}">Loading Timer...</div>
+                        
                         <div class="m-grid">
                             <div class="g-box"><div class="g-label">Prize</div><div class="g-val">${m.mPrize || 0}</div></div>
                             <div class="g-box"><div class="g-label">Per Kill</div><div class="g-val">${m.mPk || 0}</div></div>
                             <div class="g-box"><div class="g-label">Entry Fee</div><div class="g-val">${m.mFee || 0}</div></div>
                         </div>
+
                         <div class="slot-wrap">
-                            <div class="s-bar"><div class="s-fill" style="width:${percent}%"></div></div>
+                            <div class="s-bar"><div id="bar-${mKey}" class="s-fill"></div></div>
                             <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa;">
-                                <span>Joined: ${joined}/${total}</span><span>Left: ${total-joined}</span>
+                                <span id="count-${mKey}">Joined: 0/${maxSlot}</span>
+                                <span id="left-${mKey}">Left: ${maxSlot}</span>
                             </div>
                         </div>
+
                         <div class="btn-row">
-                            <button class="btn btn-rules" onclick="showRules('${c.key}')">RULES</button>
-                            <button class="btn btn-join" onclick="handleJoin('${c.key}', '${m.mType}', ${m.mFee}, ${joined}, ${total}, '${m.matchNo}')">${isJoined ? 'ALREADY JOINED' : 'JOIN MATCH'}</button>
+                            <button class="btn btn-rules" onclick="showRules('${mKey}')">RULES</button>
+                            <button id="btn-${mKey}" class="btn btn-join" onclick="handleJoin('${mKey}', '${m.mType}', ${m.mFee}, ${maxSlot}, '${matchNumber}')">JOIN MATCH</button>
                         </div>
                     </div>
                 </div>`;
+
+                // Sub-listener for Live Slot Counting
+                db.ref('joinedPlayers/' + matchNumber).on('value', joinedSnap => {
+                    const currentJoined = joinedSnap.numChildren();
+                    const fillPercentage = (currentJoined / maxSlot) * 100;
+                    
+                    if(document.getElementById(`bar-${mKey}`)) {
+                        document.getElementById(`bar-${mKey}`).style.width = fillPercentage + "%";
+                        document.getElementById(`count-${mKey}`).innerText = `Joined: ${currentJoined}/${maxSlot}`;
+                        document.getElementById(`left-${mKey}`).innerText = `Left: ${maxSlot - currentJoined}`;
+                        
+                        // Already Joined Verification
+                        db.ref('matches/' + mKey + '/joined_players/' + currentUid).once('value', userJoined => {
+                            if(userJoined.exists()) {
+                                const jBtn = document.getElementById(`btn-${mKey}`);
+                                jBtn.innerText = "ALREADY JOINED";
+                                jBtn.style.background = "#333";
+                                jBtn.style.color = "#fff";
+                                jBtn.onclick = null;
+                            }
+                        });
+                    }
+                });
             });
-            document.getElementById('matchList').innerHTML = h || "<p style='text-align:center;'>No Matches Available.</p>";
+            document.getElementById('matchList').innerHTML = matchHtml || "<p style='text-align:center; padding:20px;'>No Active Matches.</p>";
             startCountdowns();
         });
 
-        async function handleJoin(id, mode, fee, joined, total, matchNo) {
+        // Function to Handle Match Joining Logic
+        async function handleJoin(id, mode, fee, total, matchNo) {
             if(!auth.currentUser) return window.location.href = "auth.html";
-            
             const uid = auth.currentUser.uid;
-            const matchRef = db.ref('matches/' + id);
             
-            const check = await matchRef.child('joined_players/' + uid).once('value');
-            if(check.exists()) return Swal.fire("Already Joined!", "আপনি এই ম্যাচে ইতিমদেই জয়েন করেছেন।", "info");
-            if(joined >= total) return Swal.fire("Match Full!", "ম্যাচটি ইতিমধ্যে পূর্ণ হয়ে গেছে।", "error");
+            // Re-check joined count before opening form
+            const currentPlayers = await db.ref('joinedPlayers/' + matchNo).once('value');
+            const joinedCount = currentPlayers.numChildren();
+
+            if(joinedCount >= total) return Swal.fire("Match Full!", "স্লট শেষ হয়ে গেছে!", "error");
             
-            let pCount = 1; 
-            let mLow = mode ? mode.toLowerCase() : "";
-            if(mLow.includes('duo')) pCount = 2; 
-            else if(mLow.includes('squad')) pCount = 4;
+            let playerCount = 1; 
+            const mLow = mode ? mode.toLowerCase() : "";
+            if(mLow.includes('duo')) playerCount = 2; 
+            else if(mLow.includes('squad')) playerCount = 4;
             
-            let html = `<p style="color:#aaa; font-size:12px; margin-bottom:20px;">আপনার গেমের সঠিক তথ্য দিন।</p>
-                        <div style="max-height: 350px; overflow-y: auto; padding-right: 5px;">`; 
-            
-            for(let i=1; i<=pCount; i++) {
-                html += `
+            let formHtml = `<p style="color:#aaa; font-size:12px; margin-bottom:20px;">আপনার গেমের সঠিক তথ্য দিন।</p><div style="max-height: 350px; overflow-y: auto;">`; 
+            for(let i=1; i<=playerCount; i++) {
+                formHtml += `
                 <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
                     <h4 style="color:var(--p); font-size:12px; font-family:'Orbitron'; margin:0 0 10px 0;">PLAYER ${i}</h4>
-                    <div class="join-input-box">
-                        <label>IN-GAME NAME</label>
-                        <input id="pName${i}" class="swal-custom-input" placeholder="Ex: TeslaBoss">
-                    </div>
-                    <div class="join-input-box">
-                        <label>GAME UID / ID</label>
-                        <input id="pId${i}" class="swal-custom-input" placeholder="Ex: 123456789">
-                    </div>
-                    <div class="join-input-box">
-                        <label>FULL PROFILE UID (APP)</label>
-                        <input id="pFullUid${i}" class="swal-custom-input" placeholder="Paste Full Profile UID">
-                    </div>
+                    <div class="join-input-box"><label>IN-GAME NAME</label><input id="pName${i}" class="swal-custom-input" placeholder="Name"></div>
+                    <div class="join-input-box"><label>GAME UID</label><input id="pId${i}" class="swal-custom-input" placeholder="ID"></div>
+                    <div class="join-input-box"><label>PROFILE UID</label><input id="pFullUid${i}" class="swal-custom-input" placeholder="Full Profile UID"></div>
                 </div>`;
             }
-            html += `</div>`;
+            formHtml += `</div>`;
 
             const { value: pData } = await Swal.fire({
-                title: 'JOIN MATCH', 
-                html: html, 
-                confirmButtonText: 'CONFIRM JOIN', 
-                showCancelButton: true, 
-                confirmButtonColor: '#00ff00', 
-                background: '#111', 
-                color: '#fff',
-                width: '95%',
-                customClass: { title: 'm-title', confirmButton: 'auth-btn' },
+                title: 'JOIN MATCH', html: formHtml, confirmButtonText: 'CONFIRM JOIN', showCancelButton: true, confirmButtonColor: '#00ff00', background: '#111', color: '#fff', width: '95%',
                 preConfirm: () => {
-                    let d = [];
-                    for(let i=1; i<=pCount; i++) {
-                        let n = document.getElementById(`pName${i}`).value;
-                        let g = document.getElementById(`pId${i}`).value;
-                        let f = document.getElementById(`pFullUid${i}`).value;
-                        if(!n || !g || !f) { Swal.showValidationMessage(`Player ${i}-এর সব তথ্য দিন`); return false; }
-                        d.push({ name: n, gameId: g, profileUid: f });
+                    let players = [];
+                    for(let i=1; i<=playerCount; i++) {
+                        let name = document.getElementById(`pName${i}`).value;
+                        let gid = document.getElementById(`pId${i}`).value;
+                        let puid = document.getElementById(`pFullUid${i}`).value;
+                        if(!name || !gid || !puid) { Swal.showValidationMessage(`সব তথ্য পূরণ করুন`); return false; }
+                        players.push({ name: name, gameId: gid, profileUid: puid });
                     }
-                    return d;
+                    return players;
                 }
             });
 
             if(pData) {
                 db.ref('users/' + uid).once('value', async s => {
                     const u = s.val() || {};
-                    const balance = parseFloat(u.balance) || 0;
-                    const winning = parseFloat(u.winning) || 0;
-                    const totalBal = balance + winning;
-                    const matchFee = parseFloat(fee) || 0;
+                    const balance = (parseFloat(u.balance) || 0) + (parseFloat(u.winning) || 0);
+                    const cost = parseFloat(fee) || 0;
 
-                    if(totalBal < matchFee) return Swal.fire("Low Balance!", "আপনার পর্যাপ্ত টাকা নেই। দয়া করে ডিপোজিট করুন।", "error");
+                    if(balance < cost) return Swal.fire("Low Balance!", "ব্যালেন্স নেই!", "error");
                     
-                    let nB = balance, nW = winning;
-                    if(nB >= matchFee) { nB -= matchFee; } else { let r = matchFee - nB; nB = 0; nW -= r; }
+                    let nB = parseFloat(u.balance), nW = parseFloat(u.winning);
+                    if(nB >= cost) nB -= cost; else { nW -= (cost - nB); nB = 0; }
 
-                    Swal.fire({title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+                    Swal.fire({title: 'Joining...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
                     try {
                         await db.ref('users/' + uid).update({ balance: nB, winning: nW, played: (parseInt(u.played) || 0) + 1 });
                         await db.ref('users/' + uid + '/joinedMatches/' + id).set(true);
-                        await matchRef.update({ joined: joined + 1 });
-                        await matchRef.child('joined/' + uid).set({
-                            leaderName: pData[0].name,
-                            teamPlayers: pData,
-                            joinedBy: uid,
-                            time: Date.now()
-                        });
-                        await matchRef.child('joined_players/' + uid).set(true);
+                        await db.ref('matches/' + id + '/joined_players/' + uid).set(true);
                         await db.ref('joinedPlayers/' + matchNo + '/' + uid).set({
-                            playerName: pData[0].name,
-                            gameId: pData[0].gameId,
-                            profileUid: pData[0].profileUid,
-                            teamDetails: pData,
-                            appUid: uid,
-                            matchType: mode,
-                            joinedAt: new Date().toLocaleString()
+                            playerName: pData[0].name, gameId: pData[0].gameId, profileUid: pData[0].profileUid, appUid: uid, matchType: mode, joinedAt: new Date().toLocaleString()
                         });
                         Swal.fire("Success!", "ম্যাচে জয়েন করা সফল হয়েছে।", "success");
-                    } catch (err) {
-                        Swal.fire("Error!", "সার্ভারে সমস্যা হচ্ছে, পরে চেষ্টা করুন।", "error");
-                    }
+                    } catch (e) { Swal.fire("Error!", "Error: " + e.message, "error"); }
                 });
             }
         }
 
-        function showRules(id) { db.ref('matches/'+id+'/mRules').once('value', s => { Swal.fire({title: 'Match Rules', html: s.val() || "সতর্কতার সাথে গেম খেলুন। হ্যাকিং নিষিদ্ধ।", icon: 'info', background: '#111', color: '#fff'}); }); }
-        function initSlider() { let i = 0; setInterval(() => { const s = document.querySelectorAll('.slide'); if(s.length > 1) { i = (i + 1) % s.length; document.getElementById('sliderTrack').style.transform = `translateX(-${i * 100}%)`; } }, 5000); }
-        function startCountdowns() { setInterval(() => { document.querySelectorAll('.timer-box').forEach(el => { const t = el.getAttribute('data-time'); if(!t) return; const diff = new Date(t).getTime() - new Date().getTime(); if(diff < 0) { el.innerHTML = "LIVE"; el.style.color = "#00ff00"; return; } const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; }); }, 1000); }
+        // Rules and Utility Functions
+        function showRules(id) { 
+            db.ref('matches/'+id+'/mRules').once('value', s => { 
+                Swal.fire({title: 'Match Rules', html: s.val() || "No Rules Provided.", icon: 'info', background: '#111', color: '#fff'}); 
+            }); 
+        }
+
+        function initSlider() { 
+            let idx = 0; 
+            setInterval(() => { 
+                const slides = document.querySelectorAll('.slide'); 
+                if(slides.length > 1) { 
+                    idx = (idx + 1) % slides.length; 
+                    document.getElementById('sliderTrack').style.transform = `translateX(-${idx * 100}%)`; 
+                } 
+            }, 5000); 
+        }
+
+        function startCountdowns() { 
+            setInterval(() => { 
+                document.querySelectorAll('.timer-box').forEach(el => { 
+                    const t = el.getAttribute('data-time'); 
+                    if(!t) return; 
+                    const diff = new Date(t).getTime() - new Date().getTime(); 
+                    if(diff < 0) { el.innerHTML = "LIVE"; el.style.color = "#00ff00"; return; } 
+                    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); 
+                    el.innerHTML = `Starts in: ${h}h ${m}m ${s}s`; 
+                }); 
+            }, 1000); 
+        }
     </script>
 </body>
 </html>
