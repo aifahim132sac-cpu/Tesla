@@ -211,7 +211,6 @@
             document.getElementById(id).classList.add('active'); el.classList.add('active');
         }
 
-        // --- EMPTY CHECKER LOGIC ---
         function checkEmpty(ids) {
             let empty = false;
             ids.forEach(id => {
@@ -320,7 +319,7 @@
                 mFee: document.getElementById('mFee').value, 
                 mPk: document.getElementById('mPk').value, 
                 mPrize: document.getElementById('mPrize').value, 
-                mSlot: document.getElementById('mSlot').value, // Corrected to mSlot
+                mSlot: document.getElementById('mSlot').value,
                 mRules: document.getElementById('mRules').value, 
                 joined: 0 
             };
@@ -354,7 +353,6 @@
             document.getElementById('mLive').innerHTML = h || `<p style="text-align:center; color:#555; margin-top:20px;">No published matches found.</p>`;
         });
 
-        // নতুন ডিলিট ফাংশন যা প্লেয়ার লিস্টও ক্লিয়ার করবে
         function deleteMatchWithPlayers(matchKey, matchNo) {
             Swal.fire({
                 title: 'আপনি কি নিশ্চিত?',
@@ -493,6 +491,11 @@
             row.innerHTML = `
                 <label style="color:var(--gold); font-size:9px;">PLAYER NAME (UID)</label>
                 <input class="rName" value="${name}" placeholder="Name (UID)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 5px;">
+                    <label style="font-size:8px; color:#8b949e; text-align:center;">POSITION</label>
+                    <label style="font-size:8px; color:#8b949e; text-align:center;">KILLS</label>
+                    <label style="font-size:8px; color:#8b949e; text-align:center;">PRIZE (TK)</label>
+                </div>
                 <div class="small-input-group">
                     <input class="rPos" type="number" value="0" placeholder="Pos">
                     <input class="rKill" type="number" value="0" placeholder="Kill">
@@ -570,7 +573,6 @@
             .then((res) => { if(res.isConfirmed) db.ref('results/' + mId).remove(); });
         }
 
-        // --- UPDATED SLIDER UPLOAD LOGIC ---
         async function upSlide() { 
             const f = document.getElementById('slFile').files[0]; 
             const link = document.getElementById('slLink').value;
