@@ -310,7 +310,20 @@
 
         function postM() {
             if(checkEmpty(['mNo', 'mType', 'mTitle', 'mTimeSelect', 'mFee', 'mPk', 'mPrize', 'mSlot', 'mRules'])) return;
-            const mData = { matchNo: document.getElementById('mNo').value, mType: document.getElementById('mType').value, title: document.getElementById('mTitle').value, mTimeSelect: document.getElementById('mTimeSelect').value, roomId: document.getElementById('mRoomId').value || "Updating...", roomPass: document.getElementById('mRoomPass').value || "Updating...", mFee: document.getElementById('mFee').value, mPk: document.getElementById('mPk').value, mPrize: document.getElementById('mPrize').value, slot: document.getElementById('mSlot').value, mRules: document.getElementById('mRules').value, joined: 0 };
+            const mData = { 
+                matchNo: document.getElementById('mNo').value, 
+                mType: document.getElementById('mType').value, 
+                title: document.getElementById('mTitle').value, 
+                mTimeSelect: document.getElementById('mTimeSelect').value, 
+                roomId: document.getElementById('mRoomId').value || "Updating...", 
+                roomPass: document.getElementById('mRoomPass').value || "Updating...", 
+                mFee: document.getElementById('mFee').value, 
+                mPk: document.getElementById('mPk').value, 
+                mPrize: document.getElementById('mPrize').value, 
+                mSlot: document.getElementById('mSlot').value, // Corrected to mSlot
+                mRules: document.getElementById('mRules').value, 
+                joined: 0 
+            };
             db.ref('matches').push(mData).then(() => { Swal.fire("Live!"); });
         }
 
@@ -334,12 +347,31 @@
                         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; margin-top:15px;">
                             <button class="btn btn-gold" style="padding: 10px; font-size: 11px;" onclick="setR('${c.key}')"><i class="fas fa-key"></i> Room</button>
                             <button class="btn btn-blue" style="padding: 10px; font-size: 11px;" onclick="viewPlayers('${m.matchNo}')"><i class="fas fa-users"></i> Players</button>
-                            <button class="btn btn-red" style="padding: 10px; font-size: 11px;" onclick="db.ref('matches/${c.key}').remove()"><i class="fas fa-trash-alt"></i> Delete</button>
+                            <button class="btn btn-red" style="padding: 10px; font-size: 11px;" onclick="deleteMatchWithPlayers('${c.key}', '${m.matchNo}')"><i class="fas fa-trash-alt"></i> Delete</button>
                         </div>
                     </div>`; 
             });
             document.getElementById('mLive').innerHTML = h || `<p style="text-align:center; color:#555; margin-top:20px;">No published matches found.</p>`;
         });
+
+        // নতুন ডিলিট ফাংশন যা প্লেয়ার লিস্টও ক্লিয়ার করবে
+        function deleteMatchWithPlayers(matchKey, matchNo) {
+            Swal.fire({
+                title: 'আপনি কি নিশ্চিত?',
+                text: "ম্যাচ ডিলিট করলে ওই ম্যাচের সকল জয়েন করা প্লেয়ারের ডাটাও মুছে যাবে!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff3e3e',
+                confirmButtonText: 'হ্যাঁ, ডিলিট করুন!',
+                background: '#0d1117', color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    db.ref('matches/' + matchKey).remove();
+                    db.ref('joinedPlayers/' + matchNo).remove();
+                    Swal.fire("Deleted!", "ম্যাচ এবং প্লেয়ার ডাটা ক্লিয়ার করা হয়েছে।", "success");
+                }
+            });
+        }
 
         async function setR(id) {
             const {value: v} = await Swal.fire({ 
@@ -546,7 +578,6 @@
 
             if(!f) return Swal.fire("Select a file!"); 
 
-            // আপলোডিং শুরু
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             btn.disabled = true;
 
@@ -562,8 +593,6 @@
                         image: d.data.url, 
                         link: link
                     });
-
-                    // সাকসেস মেসেজ ও ইনপুট ক্লিয়ার
                     Swal.fire({ icon: 'success', title: 'Slider Uploaded!', background: '#0d1117', color: '#fff' });
                     document.getElementById('slFile').value = "";
                     document.getElementById('slLink').value = "";
@@ -574,7 +603,6 @@
                 console.error(err);
                 Swal.fire({ icon: 'error', title: 'Network Error!', background: '#0d1117', color: '#fff' });
             } finally {
-                // বাটন আগের অবস্থায় ফিরিয়ে আনা
                 btn.innerHTML = 'Upload Slider';
                 btn.disabled = false;
             }
