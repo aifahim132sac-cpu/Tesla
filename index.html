@@ -501,7 +501,7 @@
                     </div>
                 </div>`;
 
-                // REAL-TIME SLOT & JOIN STATUS LISTENER (FIXED FOR ADMIN KICK)
+                // REAL-TIME SLOT & JOIN STATUS LISTENER
                 db.ref('joinedPlayers/' + matchNumber).on('value', joinedSnap => {
                     const currentJoined = joinedSnap.numChildren();
                     const fillPercentage = (currentJoined / maxSlot) * 100;
@@ -511,7 +511,6 @@
                         document.getElementById(`count-${mKey}`).innerText = `Joined: ${currentJoined}/${maxSlot}`;
                         document.getElementById(`left-${mKey}`).innerText = `Left: ${maxSlot - currentJoined}`;
                         
-                        // Check if current user is still in the list (Real-time sync)
                         if(currentUid) {
                             const isPlayerJoined = joinedSnap.hasChild(currentUid);
                             const jBtn = document.getElementById(`btn-${mKey}`);
@@ -524,7 +523,8 @@
                                 jBtn.onclick = null;
                                 rBox.style.display = "block";
                                 
-                                if(m.roomId && m.roomPass) {
+                                // Fixed for Admin Panel 'roomId' and 'roomPass'
+                                if(m.roomId && m.roomPass && m.roomId !== "Updating..." && m.roomPass !== "Updating...") {
                                     document.getElementById(`rid-${mKey}`).innerText = "ID: " + m.roomId;
                                     document.getElementById(`rps-${mKey}`).innerText = "PASS: " + m.roomPass;
                                 } else {
@@ -532,7 +532,6 @@
                                     document.getElementById(`rps-${mKey}`).innerHTML = "<span style='font-size:10px; color:var(--y);'>ম্যাচ শুরুর ১৫ মিনিট আগে দেওয়া হবে।</span>";
                                 }
                             } else {
-                                // If not joined or kicked by admin, restore button
                                 jBtn.innerText = "JOIN MATCH";
                                 jBtn.style.background = "var(--p)";
                                 jBtn.style.color = "#000";
