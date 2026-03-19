@@ -32,7 +32,6 @@
         .btn-rules { width: 100%; background: #222; color: #fff; border: none; padding: 10px; border-radius: 8px; font-family: 'Orbitron'; font-size: 11px; margin-top: 10px; cursor: pointer; }
         .countdown-timer { color: var(--y); font-family: 'Orbitron'; font-size: 11px; margin-left: 10px; font-weight: bold; }
 
-        /* --- BIGGER NO MATCH UI --- */
         #no-match { text-align: center; padding: 120px 20px; display: none; }
         #no-match i { font-size: 100px; color: var(--p); opacity: 0.3; margin-bottom: 25px; display: block; filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.2)); }
         #no-match .big-text { font-family: 'Orbitron', sans-serif; font-size: 24px; letter-spacing: 2px; color: #fff; margin-bottom: 10px; font-weight: 700; }
@@ -82,7 +81,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth(), db = firebase.database();
 
-        let timerIntervals = [];
+        let timerIntervals = {};
 
         auth.onAuthStateChanged(user => { 
             if (user) { loadMyMatches(user.uid); } 
@@ -102,21 +101,16 @@
                     return;
                 }
 
-                noMatchArea.style.display = "none";
                 const joinedIds = Object.keys(userSnap.val());
 
                 db.ref('matches').on('value', (snap) => {
                     loadingArea.style.display = "none";
                     const allMatches = snap.val();
-                    
-                    if(!allMatches) {
-                        noMatchArea.style.display = "block";
-                        listArea.innerHTML = "";
-                        return;
-                    }
+                    if(!allMatches) { noMatchArea.style.display = "block"; listArea.innerHTML = ""; return; }
 
-                    timerIntervals.forEach(clearInterval);
-                    timerIntervals = [];
+                    // অ্যাডমিন ডেটা চেঞ্জ করলে পুরনো সব টাইমার স্টপ করে নতুন শুরু করা
+                    Object.values(timerIntervals).forEach(clearInterval);
+                    timerIntervals = {};
 
                     let h = "";
                     let matchFound = false;
@@ -129,6 +123,7 @@
                             const rPass = m.roomPass || "";
                             const isAvailable = (rId !== "" && rId !== "Updating..." && rPass !== "" && rPass !== "Updating...");
                             const timerId = `timer-${id}`;
+                            const displayDate = m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA';
 
                             h += `<div class="my-card">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -137,7 +132,7 @@
                                 </div>
                                 <h3 style="margin:12px 0 5px 0; font-size:17px;">${m.title}</h3>
                                 <div style="font-size:11px; color:#aaa; display:flex; align-items:center;">
-                                    <i class="far fa-clock"></i>&nbsp;${m.mTimeSelect ? m.mTimeSelect.replace('T', ' ') : 'TBA'}
+                                    <i class="far fa-clock"></i>&nbsp;<span>${displayDate}</span>
                                     <span class="countdown-timer" id="${timerId}"></span>
                                 </div>
                                 <div class="match-info-grid">
@@ -161,39 +156,39 @@
                         }
                     });
 
-                    if(!matchFound) {
-                        noMatchArea.style.display = "block";
-                        listArea.innerHTML = "";
-                    } else {
-                        noMatchArea.style.display = "none";
-                        listArea.innerHTML = h;
-                    }
+                    listArea.innerHTML = h;
+                    noMatchArea.style.display = matchFound ? "none" : "block";
                 });
-            }, (error) => {
-                loadingArea.style.display = "none";
-                noMatchArea.style.display = "block";
             });
         }
 
         function startTimer(targetTime, elementId) {
-            const countDownDate = new Date(targetTime).getTime();
-            const timerObj = setInterval(function() {
+            if(timerIntervals[elementId]) clearInterval(timerIntervals[elementId]);
+
+            // ISO Format Compatibility (replace space with T)
+            const countDownDate = new Date(targetTime.replace(' ', 'T')).getTime();
+
+            timerIntervals[elementId] = setInterval(function() {
                 const now = new Date().getTime();
                 const distance = countDownDate - now;
                 const element = document.getElementById(elementId);
+                
                 if (!element) return;
+
                 if (distance < 0) {
-                    clearInterval(timerObj);
+                    clearInterval(timerIntervals[elementId]);
                     element.innerHTML = "STARTED";
                     element.style.color = "#ff4444";
                 } else {
-                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    element.innerHTML = hours + "h " + minutes + "m " + seconds + "s";
+                    const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((distance % (1000 * 60)) / 1000);
+                    
+                    // দিন ১ এর বেশি হলে d h m দেখাবে, কম হলে h m s দেখাবে
+                    element.innerHTML = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${s}s`;
                 }
             }, 1000);
-            timerIntervals.push(timerObj);
         }
 
         function fetchPlayerDetails(matchNo, uid, divId) {
