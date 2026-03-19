@@ -148,7 +148,7 @@
             
             snap.forEach(c => {
                 const m = c.val();
-                const total = parseInt(m.slot) || 48;
+                const total = parseInt(m.mSlot) || parseInt(m.slot) || 48;
                 const joined = parseInt(m.joined) || 0;
                 const percent = (joined/total)*100;
                 const isJoined = currentUid && m.joined_players && m.joined_players[currentUid];
